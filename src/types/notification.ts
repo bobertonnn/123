@@ -6,9 +6,9 @@ export type NotificationIconName =
   | "Bell" 
   | "FileText" 
   | "UserPlus"
-  | "Settings2" // Example: if settings notifications are added
-  | "CheckCircle" // Example: for success
-  | "AlertCircle"; // Example: for warnings/errors
+  | "Settings2" 
+  | "CheckCircle" 
+  | "AlertCircle"; 
 
 export interface Notification {
   id: string;
@@ -20,4 +20,3 @@ export interface Notification {
   iconName?: NotificationIconName; // Store the name of the icon
   category?: 'system' | 'document' | 'user'; // Optional category
 }
-

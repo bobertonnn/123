@@ -424,6 +424,8 @@ export default function SignUpPage() {
     setIsLoading(true);
     console.log("Saving signature for user:", userToSave.email);
     const registrationTimestamp = new Date().toISOString();
+    const userTag = `${accountDetails.fullName.split(" ")[0]}#${userToSave.uid.substring(0, 4)}`;
+
     try {
       localStorage.setItem("userUID", userToSave.uid);
       localStorage.setItem("userFullName", accountDetails.fullName); 
@@ -431,12 +433,13 @@ export default function SignUpPage() {
       localStorage.setItem("userSignature", dataUrl);
       localStorage.setItem("userJoinDate", registrationTimestamp);
       localStorage.setItem("userAvatarUrl", userToSave.photoURL || ""); 
+      localStorage.setItem("userTag", userTag); // Save the generated tag
 
       console.log("Signature and user data saved to localStorage.");
 
       addNotification({
         title: "Welcome to DocuSigner!",
-        description: `Explore your dashboard and start managing documents efficiently, ${accountDetails.fullName}.`,
+        description: `Your user tag is ${userTag}. Explore your dashboard and start managing documents efficiently, ${accountDetails.fullName}.`,
         iconName: "Bell",
         link: "/dashboard",
         category: "system",

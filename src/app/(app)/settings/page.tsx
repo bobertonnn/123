@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Lock, Bell, CreditCard, Save, Edit3, XCircle, Loader2, Check, UploadCloud, Trash2, LogOut, DollarSign, ShoppingBag, FileClock, AlertTriangle, Package, Star, Zap } from "lucide-react";
+import { User, Lock, Bell, CreditCard, Save, Edit3, XCircle, Loader2, Check, UploadCloud, Trash2, LogOut, DollarSign, ShoppingBag, FileClock, AlertTriangle, Package, Star, Zap, Tag } from "lucide-react";
 import { SignatureCanvas } from "@/components/auth/SignatureCanvas";
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
@@ -28,7 +28,7 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
-import { Button as AlertDialogButton, buttonVariants } from "@/components/ui/button"; // Correct import
+import { Button as AlertDialogButton, buttonVariants } from "@/components/ui/button"; 
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,7 +50,7 @@ const SIGNATURE_MAX_ROTATION_HOVER = 15;
 const SIGNATURE_DRAG_SENSITIVITY = 0.2; 
 const signatureSpringConfig = { stiffness: 150, damping: 30, mass: 0.8 };
 
-export interface UserSubscription { // Exporting for use in other components
+export interface UserSubscription { 
   planName: string;
   planPrice: string;
   renewsOn?: string | null;
@@ -91,6 +91,7 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [userJoinDate, setUserJoinDate] = useState<string | null>(null);
+  const [userTag, setUserTag] = useState<string | null>(null);
 
 
   const [profileSaveStatus, setProfileSaveStatus] = useState<SaveStatus>("idle");
@@ -254,15 +255,19 @@ export default function SettingsPage() {
         }
       }
       
-      if (newBillingHistory.length === 0) {
+      // Ensure "Activated Free Trial" entry exists if no history or if it's missing
+      const hasFreeTrialEntry = newBillingHistory.some(entry => entry.description === "Activated Free Trial");
+      if (newBillingHistory.length === 0 || !hasFreeTrialEntry) {
+        const joinDate = localStorage.getItem("userJoinDate") || new Date().toISOString();
         const freeTrialEntry: BillingHistoryEntry = {
             id: Date.now().toString(),
-            date: format(new Date(), "yyyy-MM-dd"),
+            date: format(parseISO(joinDate), "yyyy-MM-dd"), // Use join date
             description: "Activated Free Trial",
             amount: defaultFreePlan.price.replace("/month", ""), 
             status: "Active",
         };
-        newBillingHistory = [freeTrialEntry];
+        // Add to the beginning if history is empty, or if it's missing and history exists ensure it's first or appropriate place
+        newBillingHistory = !hasFreeTrialEntry ? [freeTrialEntry, ...newBillingHistory.filter(e => e.description !== "Activated Free Trial")] : newBillingHistory;
         localStorage.setItem("userBillingHistory", JSON.stringify(newBillingHistory));
       }
       setBillingHistory(newBillingHistory);
@@ -275,6 +280,7 @@ export default function SettingsPage() {
     const storedSignature = localStorage.getItem("userSignature");
     const storedAvatar = localStorage.getItem("userAvatarUrl");
     const storedJoinDate = localStorage.getItem("userJoinDate");
+    const storedUserTag = localStorage.getItem("userTag");
 
     if (storedFullName && storedFullName.trim() !== "") setUserFullName(storedFullName.trim());
     else setUserFullName("User");
@@ -295,8 +301,12 @@ export default function SettingsPage() {
     if (storedJoinDate) {
         setUserJoinDate(new Date(storedJoinDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
     } else {
-        setUserJoinDate(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
+        const newJoinDate = new Date();
+        localStorage.setItem("userJoinDate", newJoinDate.toISOString());
+        setUserJoinDate(newJoinDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
     }
+    if (storedUserTag) setUserTag(storedUserTag);
+
     loadSubscriptionData();
 
   }, []);
@@ -444,7 +454,6 @@ export default function SettingsPage() {
       return;
     }
     
-    // If not Free Trial, or moving to Free Trial, allow (mock success for now)
     const newSubscription: UserSubscription = {
         planName: newPlanDetails.name,
         planPrice: newPlanDetails.price,
@@ -454,8 +463,12 @@ export default function SettingsPage() {
     
     if (newPlanDetails.id !== "free" && (!newSubscription.paymentMethod || newSubscription.paymentMethod.last4 === "••••")) {
         setIsChangePlanDialogOpen(false); 
-        setIsUpdatePaymentDialogOpen(true); 
-        toast({title: "Payment Method Required", description: `Please add a payment method for the ${newPlanDetails.name}.`});
+        toast({
+            variant: "destructive",
+            title: "Payment Method Required",
+            description: `Please contact support to add a payment method for the ${newPlanDetails.name}.`,
+            duration: 7000,
+        });
         return; 
     }
 
@@ -475,7 +488,6 @@ export default function SettingsPage() {
       setBillingHistory(updatedHistory);
       localStorage.setItem("userBillingHistory", JSON.stringify(updatedHistory));
     } else if (newPlanDetails.id === "free" && currentSubscription.planName !== "Free Trial") {
-        // If moving TO Free Trial from a paid plan
         const freeTrialEntry: BillingHistoryEntry = {
             id: Date.now().toString(),
             date: format(new Date(), "yyyy-MM-dd"),
@@ -518,7 +530,6 @@ export default function SettingsPage() {
       duration: 7000,
     });
     setIsUpdatePaymentDialogOpen(false);
-    // Do not save card details to localStorage
     setTempCardNumber("");
     setTempCardExpiry("");
     setTempCardCvc("");
@@ -623,6 +634,21 @@ export default function SettingsPage() {
                   <Label htmlFor="email">Email Address</Label>
                   <Input id="email" type="email" value={userEmail} onChange={(e) => setUserEmail(e.target.value)} className="mt-1" />
                 </div>
+              </div>
+              <div>
+                 <Label>Your User Tag</Label>
+                <div className="mt-1 flex items-center space-x-2">
+                    <Input id="userTag" value={userTag || "N/A"} readOnly className="bg-muted/50"/>
+                    <Button variant="outline" size="sm" onClick={() => {
+                        if(userTag) {
+                            navigator.clipboard.writeText(userTag);
+                            toast({title: "User Tag Copied!", description: "Your user tag has been copied to the clipboard."});
+                        }
+                    }} disabled={!userTag}>
+                       <Tag className="mr-2 h-4 w-4" /> Copy Tag
+                    </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">This is your unique tag for connecting with others.</p>
               </div>
               <div>
                 <Label>Your Signature</Label>
@@ -960,6 +986,7 @@ export default function SettingsPage() {
                         <CardTitle className="text-lg font-semibold">Account Details</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2 text-sm">
+                        <p><strong className="font-medium text-foreground">User Tag:</strong> {userTag || "Not set"}</p>
                         <p><strong className="font-medium text-foreground">Joined DocuSigner:</strong> {userJoinDate || "N/A"}</p>
                         <p><strong className="font-medium text-foreground">User Role:</strong> User</p> 
                     </CardContent>

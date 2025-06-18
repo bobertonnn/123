@@ -4,11 +4,11 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Edit3, Mail, Phone, Building, CalendarDays, Briefcase } from "lucide-react";
+import { User, Edit3, Mail, Phone, Building, CalendarDays, Briefcase, Tag } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { GradientBirdIcon } from "@/components/icons/Logo"; // Added GradientBirdIcon
+import { GradientBirdIcon } from "@/components/icons/Logo"; 
 import { cn } from "@/lib/utils";
 
 interface UserProfileData {
@@ -20,18 +20,20 @@ interface UserProfileData {
   phone: string;
   joinDate: string; 
   signatureUrl: string | null;
+  userTag: string | null;
 }
 
 export default function ProfilePage() {
   const [profileData, setProfileData] = useState<UserProfileData>({
-    name: "User", // Defaulted to "User"
-    email: "user@example.com", // Defaulted
+    name: "User", 
+    email: "user@example.com", 
     avatarUrl: undefined, 
     title: "Document Signer", 
     department: "N/A", 
     phone: "N/A", 
     joinDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), 
     signatureUrl: null,
+    userTag: null,
   });
 
   useEffect(() => {
@@ -41,6 +43,7 @@ export default function ProfilePage() {
         const storedSignature = localStorage.getItem("userSignature");
         const storedAvatar = localStorage.getItem("userAvatarUrl");
         const storedJoinDate = localStorage.getItem("userJoinDate") || new Date().toISOString();
+        const storedUserTag = localStorage.getItem("userTag");
 
         setProfileData(prev => ({
         ...prev,
@@ -49,6 +52,7 @@ export default function ProfilePage() {
         signatureUrl: storedSignature || null,
         avatarUrl: (storedAvatar && storedAvatar.trim() !== "") ? storedAvatar : undefined,
         joinDate: new Date(storedJoinDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+        userTag: storedUserTag || null,
         }));
     };
     
@@ -83,7 +87,7 @@ export default function ProfilePage() {
               <AvatarFallback className={!profileData.avatarUrl ? "bg-card border border-border flex items-center justify-center" : "bg-muted flex items-center justify-center"}>
                 <GradientBirdIcon 
                   className={cn(
-                    "h-16 w-16", // Base size for profile page avatar
+                    "h-16 w-16", 
                     !profileData.avatarUrl ? "text-primary" : "text-muted-foreground"
                   )}
                 />
@@ -95,6 +99,7 @@ export default function ProfilePage() {
               <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                 {profileData.email !== "user@example.com" && <span className="flex items-center"><Mail className="mr-1.5 h-4 w-4"/> {profileData.email}</span>}
                 {profileData.phone !== "N/A" && <span className="flex items-center"><Phone className="mr-1.5 h-4 w-4"/> {profileData.phone}</span>}
+                {profileData.userTag && <span className="flex items-center bg-primary/10 text-primary px-2 py-0.5 rounded-full"><Tag className="mr-1.5 h-3 w-3"/> {profileData.userTag}</span>}
               </div>
             </div>
           </div>
@@ -118,6 +123,7 @@ export default function ProfilePage() {
                 <CardTitle className="text-lg font-semibold">Account Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
+                <p><strong className="font-medium text-foreground">User Tag:</strong> {profileData.userTag || "Not set"}</p>
                 <p><strong className="font-medium text-foreground">Joined DocuSigner:</strong> {profileData.joinDate}</p>
                 <p><strong className="font-medium text-foreground">User Role:</strong> User</p> 
               </CardContent>

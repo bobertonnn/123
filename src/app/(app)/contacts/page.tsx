@@ -1,12 +1,13 @@
 
 "use client";
 
-import { Button, buttonVariants } from "@/components/ui/button"; // Added buttonVariants
+import { Button, buttonVariants } from "@/components/ui/button"; 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlusCircle, Users, Search, MoreHorizontal, Edit, Trash2, Loader2 } from "lucide-react";
+import { PlusCircle, Users, Search, MoreHorizontal, Edit, Trash2, Loader2, Tag, UserPlus, Send } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +19,7 @@ import { useState, useEffect } from "react";
 import type { Contact } from "@/types/contact";
 import { getContacts, deleteContact as deleteContactFromStorage } from "@/lib/contactManager";
 import { useToast } from "@/hooks/use-toast";
+import { addNotification } from "@/lib/notificationManager";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,20 +29,29 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { getInitials } from "@/lib/utils"; // Ensured getInitials is imported
+} from "@/components/ui/alert-dialog"; // Removed AlertDialogTrigger as it's used with DropdownMenuItem
+import { getInitials } from "@/lib/utils";
+
+const simulatedOtherUsers = [
+  { id: 'sim1', name: 'Demo User One', email: 'demo1@example.com', tag: 'DemoUser#0001', avatar: 'https://placehold.co/40x40.png?text=D1' },
+  { id: 'sim2', name: 'Test User Two', email: 'test2@example.com', tag: 'TestUser#0002', avatar: 'https://placehold.co/40x40.png?text=T2' },
+  { id: 'sim3', name: 'Sample User Three', email: 'sample3@example.com', tag: 'Sample#0003', avatar: 'https://placehold.co/40x40.png?text=S3' },
+];
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [userTagInput, setUserTagInput] = useState("");
+  const [currentUserTag, setCurrentUserTag] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     setIsLoading(true);
     const loadedContacts = getContacts();
     setContacts(loadedContacts);
+    const storedTag = localStorage.getItem("userTag");
+    setCurrentUserTag(storedTag);
     setIsLoading(false);
   }, []);
 
@@ -57,6 +68,41 @@ export default function ContactsPage() {
         variant: "destructive",
         title: "Error",
         description: "Could not delete the contact.",
+      });
+    }
+  };
+
+  const handleSendFriendRequest = () => {
+    if (!userTagInput.trim()) {
+      toast({ variant: "destructive", title: "Empty Tag", description: "Please enter a user tag." });
+      return;
+    }
+    if (userTagInput.trim() === currentUserTag) {
+      toast({ variant: "destructive", title: "Cannot Add Self", description: "You cannot send a friend request to yourself." });
+      return;
+    }
+
+    const matchedSimulatedUser = simulatedOtherUsers.find(user => user.tag === userTagInput.trim());
+
+    if (matchedSimulatedUser) {
+      addNotification({
+        title: "Friend Request Sent",
+        description: `Your friend request to ${matchedSimulatedUser.name} (${matchedSimulatedUser.tag}) has been sent.`,
+        iconName: "UserPlus",
+        category: "user",
+        link: "/contacts",
+      });
+      toast({
+        title: "Request Sent!",
+        description: `Friend request sent to ${matchedSimulatedUser.name}. (This is a simulation)`,
+      });
+      setUserTagInput(""); // Clear input after sending
+    } else {
+      toast({
+        variant: "destructive",
+        title: "User Not Found",
+        description: `No user found with the tag "${userTagInput.trim()}". Please check the tag and try again. (Note: This is a simulated user directory for demo purposes).`,
+        duration: 7000,
       });
     }
   };
@@ -83,18 +129,41 @@ export default function ContactsPage() {
         <Button asChild className="btn-gradient-hover">
           <Link href="/contacts/new">
             <PlusCircle className="mr-2 h-5 w-5" />
-            <span>Add New Contact</span>
+            <span>Add New Contact Manually</span>
           </Link>
         </Button>
       </div>
+      
+      <Card className="mb-8 shadow-lg rounded-xl">
+        <CardHeader>
+          <CardTitle className="text-xl font-headline flex items-center"><Tag className="mr-2 h-5 w-5 text-primary"/>Add Contact by Tag</CardTitle>
+          <CardDescription>Enter a user's unique tag (e.g., UserName#1234) to send them a friend request.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col sm:flex-row items-end gap-3">
+          <div className="flex-grow w-full sm:w-auto">
+            <Label htmlFor="userTagInput">User Tag</Label>
+            <Input 
+              id="userTagInput"
+              placeholder="e.g., DemoUser#0001" 
+              value={userTagInput}
+              onChange={(e) => setUserTagInput(e.target.value)}
+              className="mt-1"
+            />
+          </div>
+          <Button onClick={handleSendFriendRequest} className="w-full sm:w-auto btn-gradient-hover">
+            <Send className="mr-2 h-4 w-4" /> Send Friend Request
+          </Button>
+        </CardContent>
+      </Card>
+
 
       <Card className="shadow-xl rounded-2xl">
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <CardTitle className="text-xl font-headline">Your Contacts</CardTitle>
-            <CardDescription>Manage your list of contacts.</CardDescription>
+            <CardTitle className="text-xl font-headline">Your Contact List</CardTitle>
+            <CardDescription>Manage your saved contacts.</CardDescription>
           </div>
-          <div className="relative w-full max-w-xs">
+          <div className="relative w-full sm:max-w-xs">
             <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search contacts..."
@@ -145,7 +214,7 @@ export default function ContactsPage() {
                           </DropdownMenuItem>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600 focus:text-red-600 focus:bg-red-50">
+                               <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600 focus:text-red-600 focus:bg-red-50">
                                   <Trash2 className="mr-2 h-4 w-4" /> Delete
                               </DropdownMenuItem>
                             </AlertDialogTrigger>
@@ -174,14 +243,19 @@ export default function ContactsPage() {
           ) : (
             <div className="text-center py-10">
               <Users className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-2 text-xl font-semibold">No Contacts Yet</h3>
+              <h3 className="mt-2 text-xl font-semibold">
+                {contacts.length > 0 ? "No Contacts Match Search" : "No Contacts Yet"}
+              </h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                {contacts.length > 0 ? "No contacts match your search." : "Add your first contact to get started."}
+                {contacts.length > 0 
+                  ? "Try a different search term or clear your search." 
+                  : "Add contacts manually or send a friend request using their tag."
+                }
               </p>
               {contacts.length === 0 && !searchTerm && (
                 <Button className="mt-6 btn-gradient-hover" asChild>
                   <Link href="/contacts/new">
-                    <PlusCircle className="mr-2 h-4 w-4" /> <span>Add Contact</span>
+                    <PlusCircle className="mr-2 h-4 w-4" /> <span>Add Your First Contact</span>
                   </Link>
                 </Button>
               )}
