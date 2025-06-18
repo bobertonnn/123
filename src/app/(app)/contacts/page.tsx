@@ -29,7 +29,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { getInitials } from "@/lib/utils";
+import { getInitials } from "@/lib/utils"; // Ensured getInitials is imported
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);

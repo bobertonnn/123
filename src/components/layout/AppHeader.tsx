@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { cn, getInitials } from "@/lib/utils"; // Added getInitials
+import { cn, getInitials } from "@/lib/utils"; // Ensured getInitials is imported
 import React, { useState, useEffect } from "react";
 import { type Notification, type NotificationIconName } from "@/types/notification";
 import { getNotifications, addMockNotifications, markNotificationAsRead, markAllNotificationsAsRead, clearAllNotifications, deleteNotificationById } from "@/lib/notificationManager";
@@ -75,8 +75,8 @@ export function AppHeader() {
   const currentPathname = usePathname();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [userName, setUserName] = useState("User"); // Added for avatar
-  const [userAvatarUrl, setUserAvatarUrl] = useState<string | undefined>(undefined); // Added for avatar
+  const [userName, setUserName] = useState("User"); 
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const storedName = localStorage.getItem("userFullName");
@@ -118,7 +118,6 @@ export function AppHeader() {
 
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('notificationsUpdated', handleCustomEvent);
-    // Listen for profile updates that might affect avatar/name
     window.addEventListener('profileUpdated', handleCustomEvent);
 
 

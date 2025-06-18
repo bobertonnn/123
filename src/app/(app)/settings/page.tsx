@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
-import { getInitials } from "@/lib/utils";
+import { getInitials } from "@/lib/utils"; // Ensured getInitials is imported
 
 type SaveStatus = "idle" | "saving" | "success" | "error";
 
@@ -126,6 +126,10 @@ export default function SettingsPage() {
         setUserAvatarUrl(avatarPreview);
         setAvatarPreview(null);
         }
+        // Dispatch a custom event to notify other components (like AppSidebar/Header)
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('profileUpdated'));
+        }
     });
   };
 
@@ -224,7 +228,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <Label>Your Signature</Label>
-                <Card className="mt-1 p-4 bg-muted/30">
+                <Card className="mt-1 p-4 bg-muted/30" id="signature">
                   {userSignature && !showUpdateSignatureArea && (
                      <div className="flex flex-col items-center">
                         <Image src={userSignature} alt="Current signature" width={400} height={150} className="border rounded-md bg-card mx-auto mb-2 shadow-sm" data-ai-hint="signature image" />

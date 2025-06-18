@@ -8,7 +8,7 @@ import { User, Edit3, Mail, Phone, Building, CalendarDays, Briefcase } from "luc
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { getInitials } from "@/lib/utils";
+import { getInitials } from "@/lib/utils"; // Ensured getInitials is imported
 
 interface UserProfileData {
   name: string;
@@ -34,21 +34,29 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
-    const storedFullName = localStorage.getItem("userFullName");
-    const storedEmail = localStorage.getItem("userEmail");
-    const storedSignature = localStorage.getItem("userSignature");
-    const storedAvatar = localStorage.getItem("userAvatarUrl");
-    const storedJoinDate = localStorage.getItem("userJoinDate") || new Date().toISOString();
+    const loadProfileData = () => {
+        const storedFullName = localStorage.getItem("userFullName");
+        const storedEmail = localStorage.getItem("userEmail");
+        const storedSignature = localStorage.getItem("userSignature");
+        const storedAvatar = localStorage.getItem("userAvatarUrl");
+        const storedJoinDate = localStorage.getItem("userJoinDate") || new Date().toISOString();
 
+        setProfileData(prev => ({
+        ...prev,
+        name: storedFullName || "User Name",
+        email: storedEmail || "user@example.com",
+        signatureUrl: storedSignature || null,
+        avatarUrl: storedAvatar || undefined,
+        joinDate: new Date(storedJoinDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+        }));
+    };
+    
+    loadProfileData();
+    window.addEventListener('profileUpdated', loadProfileData);
+    return () => {
+        window.removeEventListener('profileUpdated', loadProfileData);
+    }
 
-    setProfileData(prev => ({
-      ...prev,
-      name: storedFullName || "User Name",
-      email: storedEmail || "user@example.com",
-      signatureUrl: storedSignature || null,
-      avatarUrl: storedAvatar || undefined,
-      joinDate: new Date(storedJoinDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-    }));
   }, []);
 
   return (

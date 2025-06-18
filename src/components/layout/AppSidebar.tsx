@@ -33,7 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState, useEffect } from "react";
-import { getInitials } from "@/lib/utils";
+import { getInitials } from "@/lib/utils"; // Ensured getInitials is imported
 
 const mainNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
@@ -61,6 +61,19 @@ export function AppSidebar() {
     if (storedName) setUserName(storedName);
     if (storedEmail) setUserEmail(storedEmail);
     if (storedAvatar) setUserAvatarUrl(storedAvatar);
+
+    const handleProfileUpdate = () => {
+        const newName = localStorage.getItem("userFullName");
+        const newAvatar = localStorage.getItem("userAvatarUrl");
+        if (newName) setUserName(newName);
+        if (newAvatar) setUserAvatarUrl(newAvatar);
+    }
+
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+    return () => {
+        window.removeEventListener('profileUpdated', handleProfileUpdate);
+    }
+
   }, []);
 
   const NavLink = ({ href, label, icon: Icon }: { href: string; label: string; icon: React.ElementType }) => (
