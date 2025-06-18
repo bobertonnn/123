@@ -21,8 +21,8 @@ import { motion, useMotionValue, useSpring } from "framer-motion";
 
 type SaveStatus = "idle" | "saving" | "success" | "error";
 
-const SIGNATURE_MAX_ROTATION = 15; // Reduced for a subtler effect
-const signatureSpringConfig = { stiffness: 150, damping: 30, mass: 0.8 }; // Adjusted for smoother animation
+const SIGNATURE_MAX_ROTATION = 15; 
+const signatureSpringConfig = { stiffness: 150, damping: 30, mass: 0.8 }; 
 
 export default function SettingsPage() {
   const [userFullName, setUserFullName] = useState("User");
@@ -91,7 +91,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const currentSignatureContainer = signatureContainerRef.current;
-    if (currentSignatureContainer && userSignature && !showUpdateSignatureArea) { // Only add listeners if signature is shown
+    if (currentSignatureContainer && userSignature && !showUpdateSignatureArea) { 
       currentSignatureContainer.addEventListener('mousemove', handleSignatureMouseMove);
       currentSignatureContainer.addEventListener('mouseleave', handleSignatureMouseLeave);
     }
@@ -257,7 +257,7 @@ export default function SettingsPage() {
               <div className="flex items-center space-x-4">
                 <Avatar className="h-20 w-20">
                    {avatarPreview || userAvatarUrl ? (
-                    <AvatarImage src={avatarPreview || userAvatarUrl!} alt={`${userFullName}'s avatar`} data-ai-hint="person avatar" />
+                    <AvatarImage src={avatarPreview || userAvatarUrl!} alt={`${userFullName}'s avatar`} data-ai-hint="user avatar" />
                   ) : (
                     <AvatarFallback className="bg-card border border-border flex items-center justify-center">
                         <GradientBirdIcon className="h-10 w-10 text-primary" />
@@ -307,7 +307,7 @@ export default function SettingsPage() {
                             src={userSignature} 
                             alt="Current signature" 
                             width={400} height={150} 
-                            className="border rounded-md bg-card mx-auto mb-2 shadow-sm backface-hidden" 
+                            className="border rounded-md bg-card mx-auto mb-2 backface-hidden" 
                             data-ai-hint="signature image"
                             priority 
                           />
