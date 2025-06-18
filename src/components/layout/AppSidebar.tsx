@@ -50,21 +50,26 @@ const helpNavItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const [userName, setUserName] = useState("User");
-  const [userEmail, setUserEmail] = useState("user@example.com");
+  const [userName, setUserName] = useState("User"); // Initialize with default
+  const [userEmail, setUserEmail] = useState("user@example.com"); // Initialize with default
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | undefined>(undefined);
 
   const loadProfileData = () => {
     let storedName = localStorage.getItem("userFullName");
-    // Explicitly check for null, undefined, or empty string after trimming
-    if (storedName === null || storedName === undefined || storedName.trim() === "") {
-      storedName = "User";
+    if (storedName && storedName.trim() !== "") {
+      setUserName(storedName.trim());
+    } else {
+      setUserName("User"); // Fallback to default
     }
+
     const storedEmail = localStorage.getItem("userEmail");
-    const storedAvatar = localStorage.getItem("userAvatarUrl");
+    if (storedEmail && storedEmail.trim() !== "") {
+      setUserEmail(storedEmail.trim());
+    } else {
+      setUserEmail("user@example.com"); // Fallback to default
+    }
     
-    setUserName(storedName); // Use the potentially defaulted name
-    setUserEmail(storedEmail || "user@example.com"); // Fallback for email
+    const storedAvatar = localStorage.getItem("userAvatarUrl");
     setUserAvatarUrl(storedAvatar || undefined);
   };
 
@@ -181,5 +186,3 @@ export function AppSidebar() {
     </div>
   );
 }
-
-    

@@ -75,17 +75,17 @@ export function AppHeader() {
   const currentPathname = usePathname();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [userName, setUserName] = useState("User"); 
+  const [userName, setUserName] = useState("User"); // Initialize with default
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | undefined>(undefined);
 
   const loadProfileData = () => {
     let storedName = localStorage.getItem("userFullName");
-    // Explicitly check for null, undefined, or empty string after trimming
-    if (storedName === null || storedName === undefined || storedName.trim() === "") {
-      storedName = "User";
+    if (storedName && storedName.trim() !== "") {
+      setUserName(storedName.trim());
+    } else {
+      setUserName("User"); // Fallback to default if stored name is null, empty, or whitespace
     }
     const storedAvatar = localStorage.getItem("userAvatarUrl");
-    setUserName(storedName); // Use the potentially defaulted name
     setUserAvatarUrl(storedAvatar || undefined);
   };
 
@@ -322,5 +322,3 @@ export function AppHeader() {
     </header>
   );
 }
-
-    
