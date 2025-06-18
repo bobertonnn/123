@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Edit3, Mail, Phone, Tag } from "lucide-react"; // Removed unused icons
+import { User, Edit3, Mail, Phone, Tag, Building } from "lucide-react"; 
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
@@ -17,11 +17,12 @@ interface UserProfileData {
   email: string;
   avatarUrl: string | undefined;
   title: string;
-  department: string; // Keep for structure, though not editable in settings
-  phone: string;     // Keep for structure, though not editable in settings
+  department: string; 
+  phoneNumber: string; // Changed from phone for consistency with settings
+  companyName: string; // Added companyName
   joinDate: string;
   signatureUrl: string | null;
-  userTag: string | null; // Added userTag
+  userTag: string | null;
 }
 
 export default function ProfilePage() {
@@ -31,35 +32,39 @@ export default function ProfilePage() {
     email: "user@example.com",
     avatarUrl: undefined,
     title: "Document Signer",
-    department: "N/A", // Default
-    phone: "N/A",       // Default
+    department: "N/A", 
+    phoneNumber: "N/A",
+    companyName: "N/A",
     joinDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     signatureUrl: null,
-    userTag: null, // Initialize userTag
+    userTag: null,
   });
 
   const loadProfileData = () => {
       let storedFullName = localStorage.getItem("userFullName");
       let storedEmail = localStorage.getItem("userEmail");
+      const storedPhoneNumber = localStorage.getItem("userPhoneNumber");
+      const storedCompanyName = localStorage.getItem("userCompanyName");
       const storedSignature = localStorage.getItem("userSignature");
       const storedAvatar = localStorage.getItem("userAvatarUrl");
       const storedJoinDate = localStorage.getItem("userJoinDate") || new Date().toISOString();
-      const storedUserTag = localStorage.getItem("userTag"); // Load userTag
+      const storedUserTag = localStorage.getItem("userTag"); 
 
       setProfileData(prev => ({
       ...prev,
       name: (storedFullName && storedFullName.trim() !== "") ? storedFullName.trim() : "User",
       email: (storedEmail && storedEmail.trim() !== "") ? storedEmail.trim() : "user@example.com",
+      phoneNumber: storedPhoneNumber || "N/A",
+      companyName: storedCompanyName || "N/A",
       signatureUrl: storedSignature || null,
       avatarUrl: (storedAvatar && storedAvatar.trim() !== "") ? storedAvatar : undefined,
       joinDate: new Date(storedJoinDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-      userTag: storedUserTag || null, // Set userTag
+      userTag: storedUserTag || null, 
       }));
   };
 
   useEffect(() => {
     loadProfileData();
-    // Listen for custom event if profile is updated elsewhere (e.g. settings page)
     window.addEventListener('profileUpdated', loadProfileData);
     return () => {
         window.removeEventListener('profileUpdated', loadProfileData);
@@ -110,7 +115,8 @@ export default function ProfilePage() {
               <p className="text-lg text-muted-foreground">{profileData.title}</p>
               <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground items-center">
                 {profileData.email !== "user@example.com" && <span className="flex items-center"><Mail className="mr-1.5 h-4 w-4"/> {profileData.email}</span>}
-                {profileData.phone !== "N/A" && <span className="flex items-center"><Phone className="mr-1.5 h-4 w-4"/> {profileData.phone}</span>}
+                {profileData.phoneNumber !== "N/A" && <span className="flex items-center"><Phone className="mr-1.5 h-4 w-4"/> {profileData.phoneNumber}</span>}
+                {profileData.companyName !== "N/A" && <span className="flex items-center"><Building className="mr-1.5 h-4 w-4"/> {profileData.companyName}</span>}
                 {profileData.userTag && (
                   <div className="flex items-center space-x-2">
                     <span className="flex items-center bg-primary/10 text-primary px-2 py-1 rounded-full text-xs sm:text-sm">
@@ -134,7 +140,8 @@ export default function ProfilePage() {
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <p><strong className="font-medium text-foreground">Email:</strong> {profileData.email}</p>
-                <p><strong className="font-medium text-foreground">Phone:</strong> {profileData.phone}</p>
+                <p><strong className="font-medium text-foreground">Phone:</strong> {profileData.phoneNumber}</p>
+                <p><strong className="font-medium text-foreground">Company:</strong> {profileData.companyName}</p>
                 <p><strong className="font-medium text-foreground">Department:</strong> {profileData.department}</p>
               </CardContent>
             </Card>
@@ -176,3 +183,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+

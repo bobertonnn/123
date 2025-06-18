@@ -84,8 +84,11 @@ export function DocumentEditor({
   const [tempCompanyName, setTempCompanyName] = useState("");
   const [tempSignatureDataUrl, setTempSignatureDataUrl] = useState<string | null>(null);
   const [tempDate, setTempDate] = useState<Date | undefined>(new Date());
+  
   const [initialProfileSignatureUrl, setInitialProfileSignatureUrl] = useState<string | null>(null);
   const [initialProfileFullName, setInitialProfileFullName] = useState<string | null>(null);
+  const [initialProfilePhoneNumber, setInitialProfilePhoneNumber] = useState<string | null>(null);
+  const [initialProfileCompanyName, setInitialProfileCompanyName] = useState<string | null>(null);
 
 
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
@@ -94,13 +97,18 @@ export function DocumentEditor({
     if (isSigningSheetOpen) {
       const profileFullName = typeof window !== "undefined" ? localStorage.getItem("userFullName") : null;
       const profileSignature = typeof window !== "undefined" ? localStorage.getItem("userSignature") : null;
+      const profilePhoneNumber = typeof window !== "undefined" ? localStorage.getItem("userPhoneNumber") : null;
+      const profileCompanyName = typeof window !== "undefined" ? localStorage.getItem("userCompanyName") : null;
+      
       setInitialProfileSignatureUrl(profileSignature);
       setInitialProfileFullName(profileFullName);
+      setInitialProfilePhoneNumber(profilePhoneNumber);
+      setInitialProfileCompanyName(profileCompanyName);
       
       setTempSigningRole(appendedRole || null); 
       setTempFullName(appendedFullName || profileFullName || ""); 
-      setTempPhoneNumber(appendedPhoneNumber || "");
-      setTempCompanyName(appendedCompanyName || "");
+      setTempPhoneNumber(appendedPhoneNumber || profilePhoneNumber || "");
+      setTempCompanyName(appendedCompanyName || profileCompanyName || "");
       setTempSignatureDataUrl(null); 
       setTempDate(appendedDate || new Date()); 
       setSigningSheetStep(0); 
@@ -118,8 +126,6 @@ export function DocumentEditor({
       toast({ variant: "destructive", title: "Full Name Required", description: "Please enter your full name."});
       return;
     }
-
-    // Phone number and Company Name are optional, so no validation needed here to proceed.
 
     if (signingSheetStep === 4 && !tempSignatureDataUrl && !(initialProfileSignatureUrl || appendedSignatureUrl)) {
       toast({ variant: "destructive", title: "Signature Required", description: "Please provide your signature."});
@@ -141,8 +147,8 @@ export function DocumentEditor({
     const finalSignatureUrl = tempSignatureDataUrl || initialProfileSignatureUrl;
     const finalDate = tempDate;
     const finalRole = tempSigningRole;
-    const finalPhoneNumber = tempPhoneNumber.trim() !== "" ? tempPhoneNumber.trim() : null;
-    const finalCompanyName = tempCompanyName.trim() !== "" ? tempCompanyName.trim() : null;
+    const finalPhoneNumber = tempPhoneNumber.trim() !== "" ? tempPhoneNumber.trim() : (initialProfilePhoneNumber || null);
+    const finalCompanyName = tempCompanyName.trim() !== "" ? tempCompanyName.trim() : (initialProfileCompanyName || null);
 
 
     if (!finalRole) {
@@ -176,6 +182,12 @@ export function DocumentEditor({
     }
     if (finalSignatureUrl === initialProfileSignatureUrl && !tempSignatureDataUrl) {
         description += " Signature from profile used.";
+    }
+    if (finalPhoneNumber === initialProfilePhoneNumber && tempPhoneNumber.trim() === "") {
+        description += " Phone number from profile used.";
+    }
+    if (finalCompanyName === initialProfileCompanyName && tempCompanyName.trim() === "") {
+        description += " Company name from profile used.";
     }
     toast({ title: "Details Applied", description: description.trim() });
   };
@@ -262,7 +274,7 @@ export function DocumentEditor({
       const { width: pageWidth, height: pageHeight } = lastPage.getSize();
   
       const generalMargin = 50; 
-      const boxHeight = 130; // Increased height for more fields   
+      const boxHeight = 130; 
       const boxWidth = (pageWidth - (generalMargin * 3)) / 2; 
       const boxBottomY = 50;    
       const labelOffsetY = 5;   
@@ -318,7 +330,7 @@ export function DocumentEditor({
         lastPage.drawText(`Phone: ${appendedPhoneNumber}`, {
           x: targetBoxX + contentPadding, y: currentContentY, font: helveticaFont, size: 8, color: rgb(0, 0, 0), maxWidth: boxWidth - (2 * contentPadding),
         });
-        currentContentY -= (textLineHeight + 5); // Extra space before signature
+        currentContentY -= (textLineHeight + 5); 
       }
   
       if (appendedSignatureUrl) { 
@@ -328,7 +340,7 @@ export function DocumentEditor({
         const maxSigHeight = Math.max(remainingHeightForSig, 20); 
         const sigScaleByWidth = (boxWidth - 2 * contentPadding) / signatureImage.width;
         const sigScaleByHeight = maxSigHeight / signatureImage.height;
-        const sigScale = Math.min(sigScaleByWidth, sigScaleByHeight, 0.30); // Adjusted scale if needed
+        const sigScale = Math.min(sigScaleByWidth, sigScaleByHeight, 0.30); 
         const signatureDims = signatureImage.scale(sigScale);
         const sigX = targetBoxX + (boxWidth - signatureDims.width) / 2; 
         const sigY = targetBoxY + contentPadding + Math.max(0, (remainingHeightForSig - signatureDims.height) / 2);
@@ -680,7 +692,7 @@ export function DocumentEditor({
                     autoFocus
                 />
                  <p className="text-xs text-muted-foreground mt-1">
-                  Defaults to your profile name if left blank.
+                  Defaults to your profile name ({initialProfileFullName || "not set"}) if left blank.
                 </p>
               </div>
             )}
@@ -696,6 +708,9 @@ export function DocumentEditor({
                     className="mt-1"
                     autoFocus
                 />
+                 <p className="text-xs text-muted-foreground mt-1">
+                  Defaults to your profile phone ({initialProfilePhoneNumber || "not set"}) if left blank.
+                </p>
               </div>
             )}
             {signingSheetStep === 3 && (
@@ -709,6 +724,9 @@ export function DocumentEditor({
                     className="mt-1"
                     autoFocus
                 />
+                 <p className="text-xs text-muted-foreground mt-1">
+                  Defaults to your profile company ({initialProfileCompanyName || "not set"}) if left blank.
+                </p>
               </div>
             )}
             {signingSheetStep === 4 && (

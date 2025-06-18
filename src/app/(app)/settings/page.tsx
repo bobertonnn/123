@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Lock, Bell, CreditCard, Save, Edit3, XCircle, Loader2, Check, UploadCloud, Trash2, LogOut, DollarSign, ShoppingBag, FileClock, AlertTriangle, Package, Star, Zap, Tag, CalendarDays } from "lucide-react";
+import { User, Lock, Bell, CreditCard, Save, Edit3, XCircle, Loader2, Check, UploadCloud, Trash2, LogOut, DollarSign, ShoppingBag, FileClock, AlertTriangle, Package, Star, Zap, Tag, CalendarDays, Phone, Building } from "lucide-react";
 import { SignatureCanvas } from "@/components/auth/SignatureCanvas";
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
@@ -80,6 +80,8 @@ const availablePlans = [
 export default function SettingsPage() {
   const [userFullName, setUserFullName] = useState("User");
   const [userEmail, setUserEmail] = useState("user@example.com");
+  const [userPhoneNumber, setUserPhoneNumber] = useState("");
+  const [userCompanyName, setUserCompanyName] = useState("");
   const [userSignature, setUserSignature] = useState<string | null>(null);
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | undefined>(undefined);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -279,6 +281,8 @@ export default function SettingsPage() {
   useEffect(() => {
     let storedFullName = localStorage.getItem("userFullName");
     const storedEmail = localStorage.getItem("userEmail");
+    const storedPhoneNumber = localStorage.getItem("userPhoneNumber");
+    const storedCompanyName = localStorage.getItem("userCompanyName");
     const storedSignature = localStorage.getItem("userSignature");
     const storedAvatar = localStorage.getItem("userAvatarUrl");
     let storedJoinDate = localStorage.getItem("userJoinDate");
@@ -289,6 +293,9 @@ export default function SettingsPage() {
 
     if (storedEmail && storedEmail.trim() !== "") setUserEmail(storedEmail.trim());
     else setUserEmail("user@example.com");
+
+    if (storedPhoneNumber) setUserPhoneNumber(storedPhoneNumber);
+    if (storedCompanyName) setUserCompanyName(storedCompanyName);
 
     if (storedSignature) {
         setUserSignature(storedSignature);
@@ -309,14 +316,14 @@ export default function SettingsPage() {
         const newJoinDate = new Date();
         localStorage.setItem("userJoinDate", newJoinDate.toISOString());
         setUserJoinDate(newJoinDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
-        storedJoinDate = newJoinDate.toISOString(); // ensure storedJoinDate is set for tag generation if needed
+        storedJoinDate = newJoinDate.toISOString(); 
     }
 
     if (storedUserTag) {
         setUserTag(storedUserTag);
     } else {
       const uid = localStorage.getItem("userUID");
-      if (!storedFullName || storedFullName.trim() === "") storedFullName = "User"; // Ensure namePart is not empty
+      if (!storedFullName || storedFullName.trim() === "") storedFullName = "User"; 
       const namePart = storedFullName.split(" ")[0];
       const tagPart = uid ? uid.substring(0, 4) : Math.random().toString(36).substring(2,6); 
       const generatedTag = `${namePart}#${tagPart}`;
@@ -390,6 +397,9 @@ export default function SettingsPage() {
     await simulateSave(setProfileSaveStatus, "Your profile changes have been saved to local storage.", async () => {
         localStorage.setItem("userFullName", userFullName);
         localStorage.setItem("userEmail", userEmail);
+        localStorage.setItem("userPhoneNumber", userPhoneNumber);
+        localStorage.setItem("userCompanyName", userCompanyName);
+
         if (userSignature) {
         localStorage.setItem("userSignature", userSignature);
         } else {
@@ -664,6 +674,14 @@ export default function SettingsPage() {
                 <div>
                   <Label htmlFor="email">Email Address</Label>
                   <Input id="email" type="email" value={userEmail} onChange={(e) => setUserEmail(e.target.value)} className="mt-1" />
+                </div>
+                 <div>
+                  <Label htmlFor="phoneNumber">Phone Number (Optional)</Label>
+                  <Input id="phoneNumber" type="tel" value={userPhoneNumber} onChange={(e) => setUserPhoneNumber(e.target.value)} placeholder="e.g., (123) 456-7890" className="mt-1"/>
+                </div>
+                 <div>
+                  <Label htmlFor="companyName">Company Name (Optional)</Label>
+                  <Input id="companyName" value={userCompanyName} onChange={(e) => setUserCompanyName(e.target.value)} placeholder="e.g., Acme Corp" className="mt-1"/>
                 </div>
               </div>
               <div>
@@ -1067,6 +1085,5 @@ export default function SettingsPage() {
     </div>
   );
 }
-
 
     
