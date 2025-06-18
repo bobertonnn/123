@@ -7,6 +7,9 @@
 Убедитесь, что на вашем сервере установлены:
 - **Node.js**: Рекомендуется последняя LTS-версия. Вы можете установить его с помощью `nvm` (Node Version Manager) для удобства управления версиями.
 - **npm** (обычно поставляется с Node.js) или **yarn**.
+- **Git** (для клонирования репозитория).
+- (Опционально, но рекомендуется) **Docker** и **Docker Compose**, если вы планируете использовать контейнеризацию.
+- (Опционально, но рекомендуется) **MySQL сервер**, если вы переходите на него с `localStorage`.
 
 ## 2. Подготовка проекта на сервере
 
@@ -25,29 +28,30 @@
 
 ## 3. Переменные окружения
 
-Вашему приложению для корректной работы (например, для Firebase) потребуются переменные окружения.
+Вашему приложению для корректной работы (например, для Firebase, подключения к MySQL, Genkit) потребуются переменные окружения.
 
-- Создайте файл `.env.production` в корне вашего проекта на сервере:
+- В корне вашего проекта на сервере создайте файл `.env.production` из примера `db_schema/mysql/.env.production.example`:
   ```bash
-  touch .env.production
+  cp db_schema/mysql/.env.production.example .env.production
   ```
-- Откройте этот файл в текстовом редакторе и добавьте необходимые переменные. Пример для Firebase (возьмите значения из вашего `.env.local` или из настроек Firebase):
-  ```env
-  NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
-  NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
-  NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-  NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
-
-  # Любые другие переменные, которые могут понадобиться
-  # GENKIT_API_KEY=your_genkit_api_key (если используется)
-  ```
-- **Важно:** Никогда не добавляйте файл `.env.production` с реальными секретами в систему контроля версий (git). Добавьте `.env.production` в ваш файл `.gitignore`, если его там еще нет.
+- Откройте `.env.production` в текстовом редакторе (например, `nano .env.production`) и **заполните все необходимые значения** вашими реальными данными (API ключи, данные для подключения к БД и т.д.).
+- **Важно:** Никогда не добавляйте файл `.env.production` с реальными секретами в систему контроля версий (git). Убедитесь, что `.env.production` добавлен в ваш файл `.gitignore`.
 - Next.js автоматически загрузит переменные из `.env.production` при сборке и запуске в продакшен-режиме.
 
-## 4. Сборка приложения
+## 4. База данных MySQL (если используется)
+
+1.  **Установите и настройте MySQL сервер** на вашем выделенном сервере.
+2.  **Создайте базу данных** и пользователя для вашего приложения.
+3.  **Примените SQL-схемы**, предоставленные в папке `db_schema/mysql/`. Вы можете выполнить их, например, через MySQL CLI:
+    ```bash
+    mysql -u your_mysql_user -p your_database_name < db_schema/mysql/01_users.sql
+    mysql -u your_mysql_user -p your_database_name < db_schema/mysql/02_contacts.sql
+    mysql -u your_mysql_user -p your_database_name < db_schema/mysql/03_notifications.sql
+    # ... и так далее для других SQL файлов
+    ```
+4.  **Разработайте API эндпоинты** в вашем Next.js приложении для взаимодействия с этой базой данных и **обновите клиентскую логику** (например, в `src/lib/contactManager.ts`) для использования этих API вместо `localStorage`. (См. комментарии-заглушки в этих файлах).
+
+## 5. Сборка приложения
 
 Соберите ваше приложение для продакшена:
 ```bash
@@ -55,7 +59,7 @@ npm run build
 ```
 Эта команда создаст оптимизированную сборку в папке `.next`.
 
-## 5. Запуск приложения
+## 6. Запуск приложения
 
 Для запуска продакшен-сервера используйте:
 ```bash
@@ -63,7 +67,7 @@ npm run start
 ```
 По умолчанию Next.js запустится на порту 3000. Вы можете изменить порт, указав его при запуске: `npm run start -- -p <your_port_number>`.
 
-## 6. Менеджер процессов (PM2)
+## 7. Менеджер процессов (PM2)
 
 Чтобы ваше приложение работало в фоновом режиме, автоматически перезапускалось при сбоях и после перезагрузки сервера, рекомендуется использовать менеджер процессов, такой как PM2.
 
@@ -72,11 +76,15 @@ npm run start
     npm install pm2 -g
     ```
 
-2.  **Запустите ваше приложение с помощью PM2:**
+2.  **Настройте PM2 для вашего приложения.** Вы можете использовать пример `ecosystem.config.js.example`. Скопируйте его в `ecosystem.config.js` и настройте:
     ```bash
-    pm2 start npm --name "my-nextjs-app" -- run start -- -p 3000
+    cp ecosystem.config.js.example ecosystem.config.js
+    # Отредактируйте ecosystem.config.js (например, имя приложения, порт)
     ```
-    (Замените `my-nextjs-app` на имя вашего приложения и `3000` на нужный порт, если он отличается).
+    Запустите приложение с помощью PM2, указав окружение `production`:
+    ```bash
+    pm2 start ecosystem.config.js --env production
+    ```
 
 3.  **Основные команды PM2:**
     -   `pm2 list`: Показать список всех запущенных приложений.
@@ -86,7 +94,7 @@ npm run start
     -   `pm2 startup`: Настроить PM2 для автоматического запуска ваших приложений при загрузке системы.
     -   `pm2 save`: Сохранить текущий список процессов PM2.
 
-## 7. Обратный прокси (Nginx)
+## 8. Обратный прокси (Nginx)
 
 Настоятельно рекомендуется использовать веб-сервер, такой как Nginx, в качестве обратного прокси. Nginx будет принимать HTTP/HTTPS запросы и перенаправлять их на ваше Next.js приложение.
 
@@ -96,44 +104,11 @@ npm run start
     sudo apt install nginx
     ```
 
-2.  **Настройте Nginx для вашего сайта.** Создайте новый файл конфигурации для вашего сайта в `/etc/nginx/sites-available/`:
+2.  **Настройте Nginx для вашего сайта.** Создайте новый файл конфигурации для вашего сайта в `/etc/nginx/sites-available/`. Вы можете использовать пример `nginx.conf.example` как основу. Замените `your-domain.com` на ваш домен, `/path/to/your-project-directory/` на реальный путь и `3000` на порт вашего Next.js приложения.
     ```bash
     sudo nano /etc/nginx/sites-available/your-domain.com
     ```
-    Пример базовой конфигурации (замените `your-domain.com` на ваш домен и `3000` на порт вашего Next.js приложения):
-    ```nginx
-    server {
-        listen 80;
-        server_name your-domain.com www.your-domain.com;
-
-        location / {
-            proxy_pass http://localhost:3000; # Порт, на котором запущено ваше Next.js приложение
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection 'upgrade';
-            proxy_set_header Host $host;
-            proxy_cache_bypass $http_upgrade;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        # Для обслуживания статических файлов Next.js напрямую через Nginx (оптимизация)
-        location /_next/static {
-            alias /path/to/your-project-directory/.next/static; # Укажите правильный путь
-            expires 1y;
-            access_log off;
-            add_header Cache-Control "public";
-        }
-
-        location /static {
-            alias /path/to/your-project-directory/public/static; # Укажите правильный путь к папке public/static
-            expires 1y;
-            access_log off;
-            add_header Cache-Control "public";
-        }
-    }
-    ```
+    Скопируйте и адаптируйте содержимое из `nginx.conf.example`.
 
 3.  **Создайте символическую ссылку на ваш файл конфигурации в `sites-enabled`:**
     ```bash
@@ -158,7 +133,7 @@ npm run start
     ```
     Certbot автоматически изменит вашу конфигурацию Nginx для использования HTTPS.
 
-## 8. Брандмауэр
+## 9. Брандмауэр
 
 Убедитесь, что ваш брандмауэр (например, `ufw`) настроен на разрешение трафика на порты 80 (HTTP) и 443 (HTTPS).
 ```bash
@@ -167,12 +142,31 @@ sudo ufw enable
 sudo ufw status
 ```
 
-## 9. Обновление приложения
+## 10. Docker (Опционально)
+
+Если вы предпочитаете использовать Docker для развертывания:
+1.  Убедитесь, что Docker установлен на вашем сервере.
+2.  Используйте предоставленный `Dockerfile` для сборки образа вашего приложения:
+    ```bash
+    # Пример передачи build-time переменных (если они у вас есть в Dockerfile)
+    # docker build --build-arg NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key -t my-nextjs-app-image .
+    docker build -t my-nextjs-app-image .
+    ```
+3.  Запустите контейнер из созданного образа, передав необходимые переменные окружения:
+    ```bash
+    docker run -d -p 3000:3000 \
+      --env-file ./.env.production \ # Или передавайте переменные по одной: -e VAR_NAME=value
+      --name my-nextjs-container \
+      my-nextjs-app-image
+    ```
+    В этом случае Nginx будет проксировать запросы на порт 3000 вашего хоста, который Docker сопоставил с портом 3000 контейнера.
+
+## 11. Обновление приложения
 
 Когда вы вносите изменения в код:
 1.  Загрузите изменения на сервер (например, `git pull`).
 2.  Установите новые зависимости, если есть (`npm install`).
 3.  Пересоберите приложение (`npm run build`).
-4.  Перезапустите приложение с помощью PM2 (`pm2 restart my-nextjs-app`).
+4.  Перезапустите приложение с помощью PM2 (`pm2 restart my-nextjs-app`) или пересоберите и перезапустите Docker-контейнер.
 
 Это базовое руководство. В зависимости от ваших конкретных потребностей, могут потребоваться дополнительные настройки.
