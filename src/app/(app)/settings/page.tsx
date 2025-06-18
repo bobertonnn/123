@@ -148,7 +148,7 @@ export default function SettingsPage() {
           if (planExists) {
             loadedSubscription = {
               ...parsedSubscription,
-              planPrice: planExists.price, // Ensure price comes from definition
+              planPrice: planExists.price, 
             };
           }
         } catch (e) {
@@ -156,12 +156,13 @@ export default function SettingsPage() {
         }
       }
       
-      // If no valid subscription loaded, default to Free Trial
       if (!loadedSubscription) {
         loadedSubscription = { planName: defaultFreePlan.name, planPrice: defaultFreePlan.price, renewsOn: null, paymentMethod: null };
         localStorage.setItem("userSubscription", JSON.stringify(loadedSubscription));
       }
       setCurrentSubscription(loadedSubscription);
+      setSelectedPlanInModal(availablePlans.find(p => p.name === loadedSubscription?.planName)?.id || defaultFreePlan.id);
+
 
       const storedHistory = localStorage.getItem("userBillingHistory");
       if (storedHistory) {
@@ -173,13 +174,12 @@ export default function SettingsPage() {
         }
       }
       
-      // Add default "Free Trial" entry if history is empty
       if (newBillingHistory.length === 0) {
         const freeTrialEntry: BillingHistoryEntry = {
             id: Date.now().toString(),
             date: format(new Date(), "yyyy-MM-dd"),
             description: "Activated Free Trial",
-            amount: defaultFreePlan.price.replace("/month", ""), // Use numeric price or format price string
+            amount: defaultFreePlan.price.replace("/month", ""), 
             status: "Active",
         };
         newBillingHistory = [freeTrialEntry];
@@ -314,10 +314,21 @@ export default function SettingsPage() {
       toast({ variant: "destructive", title: "Error", description: "New passwords do not match." });
       return;
     }
-    if (newPassword.length < 6) {
+    if (newPassword.length > 0 && newPassword.length < 6) {
       toast({ variant: "destructive", title: "Error", description: "New password must be at least 6 characters long." });
       return;
     }
+    if (newPassword.length === 0 && currentPassword.length === 0) {
+      toast({ title: "No Changes", description: "No password changes were entered."});
+      return;
+    }
+     if (newPassword.length > 0 && currentPassword.length === 0) {
+      toast({ variant: "destructive", title: "Current Password Required", description: "Please enter your current password to set a new one."});
+      setSecuritySaveStatus("error");
+      setTimeout(() => setSecuritySaveStatus("idle"), 3000);
+      return;
+    }
+
 
     const user = auth.currentUser;
     if (!user || !user.email) {
@@ -359,10 +370,6 @@ export default function SettingsPage() {
       return;
     }
     
-    // If already on a paid plan, allow change to another paid plan (or free, though cancel is better for that)
-    // This specific error logic only applies if upgrading from free.
-    // Other plan changes proceed as before.
-
     const newSubscription: UserSubscription = {
         planName: newPlanDetails.name,
         planPrice: newPlanDetails.price,
@@ -370,7 +377,7 @@ export default function SettingsPage() {
         paymentMethod: newPlanDetails.id !== "free" ? (currentSubscription.paymentMethod || { type: "Visa", last4: "••••", expiry: "MM/YY" }) : null
     };
     
-    if (newPlanDetails.id !== "free" && !newSubscription.paymentMethod?.last4.match(/\d{4}/)) {
+    if (newPlanDetails.id !== "free" && (!newSubscription.paymentMethod || newSubscription.paymentMethod.last4 === "••••")) {
         setIsChangePlanDialogOpen(false); 
         setIsUpdatePaymentDialogOpen(true); 
         toast({title: "Payment Method Required", description: `Please add a payment method for the ${newPlanDetails.name}.`});
@@ -380,7 +387,7 @@ export default function SettingsPage() {
     setCurrentSubscription(newSubscription);
     localStorage.setItem("userSubscription", JSON.stringify(newSubscription));
 
-    if (newPlanDetails.id !== "free") { // Only add history for actual paid subscriptions
+    if (newPlanDetails.id !== "free" && newPlanDetails.priceNumeric > 0) { 
       const newHistoryEntry: BillingHistoryEntry = {
         id: Date.now().toString(),
         date: format(new Date(), "yyyy-MM-dd"),
@@ -389,7 +396,7 @@ export default function SettingsPage() {
         status: "Paid",
         invoiceUrl: "#mockInvoice"
       };
-      const updatedHistory = [newHistoryEntry, ...billingHistory];
+      const updatedHistory = [newHistoryEntry, ...billingHistory.filter(entry => entry.description !== "Activated Free Trial" || newPlanDetails.id === "free")];
       setBillingHistory(updatedHistory);
       localStorage.setItem("userBillingHistory", JSON.stringify(updatedHistory));
     }
@@ -407,7 +414,7 @@ export default function SettingsPage() {
         toast({ variant: "destructive", title: "Invalid Card Number", description: "Please enter a valid card number."});
         return;
     }
-    if (!/^(0[1-9]|1[0-2])\/?([0-9]{2})$/.test(tempCardExpiry)) {
+    if (!/^(0[1-9]|1[0-2])\/?([0-9]{2})$/.test(tempCardExpiry)) { // Supports MM/YY and MMYY
         toast({ variant: "destructive", title: "Invalid Expiry Date", description: "Please use MM/YY format."});
         return;
     }
@@ -423,6 +430,10 @@ export default function SettingsPage() {
       duration: 7000,
     });
     setIsUpdatePaymentDialogOpen(false);
+    // Clear temp fields after attempting save
+    setTempCardNumber("");
+    setTempCardExpiry("");
+    setTempCardCvc("");
   };
 
   const handleCancelSubscription = () => {
@@ -434,6 +445,7 @@ export default function SettingsPage() {
         paymentMethod: null,
     };
     setCurrentSubscription(newSubscription);
+    setSelectedPlanInModal(freeTrialPlan.id);
     localStorage.setItem("userSubscription", JSON.stringify(newSubscription));
 
     const cancellationEntry: BillingHistoryEntry = {
@@ -443,7 +455,7 @@ export default function SettingsPage() {
         amount: "$0",
         status: "Active", 
     };
-    const updatedHistory = [cancellationEntry, ...billingHistory];
+    const updatedHistory = [cancellationEntry, ...billingHistory.filter(entry => entry.description !== "Activated Free Trial")];
     setBillingHistory(updatedHistory);
     localStorage.setItem("userBillingHistory", JSON.stringify(updatedHistory));
 
@@ -604,10 +616,6 @@ export default function SettingsPage() {
               <div>
                 <Label htmlFor="confirmNewPassword">Confirm New Password</Label>
                 <Input id="confirmNewPassword" type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} className="mt-1"/>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch id="2fa" />
-                <Label htmlFor="2fa">Enable Two-Factor Authentication (2FA)</Label>
               </div>
                <div className="flex justify-end">
                 <Button
