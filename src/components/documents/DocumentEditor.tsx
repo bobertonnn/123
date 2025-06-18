@@ -85,13 +85,15 @@ export function DocumentEditor({
 
   useEffect(() => {
     if (isSigningSheetOpen) {
-      setTempSigningRole(appendedRole); 
-      setTempFullName(appendedFullName || "");
-      setTempSignatureDataUrl(null); // Reset signature canvas on open
-      setTempDate(appendedDate || new Date());
+      const profileFullName = typeof window !== "undefined" ? localStorage.getItem("userFullName") : null;
+      
+      setTempSigningRole(appendedRole || null); 
+      setTempFullName(appendedFullName || profileFullName || ""); 
+      setTempSignatureDataUrl(null); 
+      setTempDate(appendedDate || new Date()); 
       setSigningSheetStep(0); 
     }
-  }, [isSigningSheetOpen, appendedFullName, appendedDate, appendedRole]);
+  }, [isSigningSheetOpen, appendedRole, appendedFullName, appendedDate]);
 
 
   const handleSheetNextStep = () => {
@@ -99,11 +101,12 @@ export function DocumentEditor({
       toast({ variant: "destructive", title: "Role Required", description: "Please select a signing role."});
       return;
     }
-    if (signingSheetStep === 1 && tempFullName.trim() === "") {
+    // Full Name validation only checks if user actively cleared it, not if pre-filled was empty
+    if (signingSheetStep === 1 && tempFullName.trim() === "" && !(localStorage.getItem("userFullName") || appendedFullName)) {
       toast({ variant: "destructive", title: "Full Name Required", description: "Please enter your full name."});
       return;
     }
-    if (signingSheetStep === 2 && !tempSignatureDataUrl) {
+    if (signingSheetStep === 2 && !tempSignatureDataUrl && !(localStorage.getItem("userSignature") || appendedSignatureUrl)) {
       toast({ variant: "destructive", title: "Signature Required", description: "Please provide your signature."});
       return;
     }
@@ -119,16 +122,45 @@ export function DocumentEditor({
   };
 
   const handleApplySignatureDetailsFromSheet = () => {
-    if (!tempSigningRole || tempFullName.trim() === "" || !tempSignatureDataUrl || !tempDate) {
-         toast({ variant: "destructive", title: "Missing Information", description: "Please complete all steps to apply details."});
+    const profileFullName = typeof window !== "undefined" ? localStorage.getItem("userFullName") : null;
+    const profileSignature = typeof window !== "undefined" ? localStorage.getItem("userSignature") : null;
+
+    const finalFullName = tempFullName.trim() !== "" ? tempFullName.trim() : (profileFullName || "");
+    const finalSignatureUrl = tempSignatureDataUrl || profileSignature;
+    const finalDate = tempDate;
+    const finalRole = tempSigningRole;
+
+    if (!finalRole) {
+        toast({ variant: "destructive", title: "Role Required", description: "Please select a signing role."});
         return;
     }
-    setAppendedRole(tempSigningRole);
-    setAppendedFullName(tempFullName);
-    setAppendedSignatureUrl(tempSignatureDataUrl); 
-    setAppendedDate(tempDate);
+    if (finalFullName.trim() === "") {
+        toast({ variant: "destructive", title: "Full Name Missing", description: "Please enter your full name or set it in your profile."});
+        return;
+    }
+    if (!finalSignatureUrl) {
+        toast({ variant: "destructive", title: "Signature Missing", description: "Please provide your signature or set it in your profile."});
+        return;
+    }
+    if (!finalDate) { 
+        toast({ variant: "destructive", title: "Date Missing", description: "Please select a date."});
+        return;
+    }
+
+    setAppendedRole(finalRole);
+    setAppendedFullName(finalFullName);
+    setAppendedSignatureUrl(finalSignatureUrl);
+    setAppendedDate(finalDate);
     setIsSigningSheetOpen(false);
-    toast({ title: "Details Applied", description: "Signature details are ready to be finalized onto the document."});
+
+    let description = "Your details have been applied.";
+    if (finalFullName === profileFullName && tempFullName.trim() === "") {
+        description += " Full name from profile used.";
+    }
+    if (finalSignatureUrl === profileSignature && !tempSignatureDataUrl) {
+        description += " Signature from profile used.";
+    }
+    toast({ title: "Details Applied", description: description.trim() });
   };
   
   const handleFinalizeAndPrepareForSignedPage = async () => {
@@ -586,6 +618,9 @@ export function DocumentEditor({
                     className="mt-1"
                     autoFocus
                 />
+                 <p className="text-xs text-muted-foreground mt-1">
+                  Defaults to your profile name if left blank.
+                </p>
               </div>
             )}
             {signingSheetStep === 2 && (
@@ -601,6 +636,9 @@ export function DocumentEditor({
                     penColor="hsl(var(--foreground))"
                 />
                 {tempSignatureDataUrl && <CheckCircle className="text-green-500 mt-2 h-5 w-5" title="Signature captured"/>}
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                    Draw a new signature. If left blank and you have a signature in your profile, that will be used.
+                </p>
               </div>
             )}
             {signingSheetStep === 3 && (
