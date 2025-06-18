@@ -51,7 +51,7 @@ const signatureSpringConfig = { stiffness: 150, damping: 30, mass: 0.8 };
 
 interface UserSubscription {
   planName: string;
-  planPrice: string; // Added planPrice
+  planPrice: string;
   renewsOn?: string | null;
   paymentMethod?: {
     type: string;
@@ -65,7 +65,7 @@ interface BillingHistoryEntry {
     date: string;
     description: string;
     amount: string;
-    status: "Paid" | "Pending" | "Failed";
+    status: "Paid" | "Pending" | "Failed" | "Active";
     invoiceUrl?: string;
 }
 
@@ -136,6 +136,9 @@ export default function SettingsPage() {
 
   const loadSubscriptionData = () => {
     const defaultFreePlan = availablePlans.find(p => p.id === 'free')!;
+    let newBillingHistory = [...billingHistory];
+    let subscriptionChanged = false;
+
     if (typeof window !== 'undefined') {
       const storedSubscription = localStorage.getItem("userSubscription");
       if (storedSubscription) {
@@ -145,28 +148,49 @@ export default function SettingsPage() {
           if (planExists) {
              setCurrentSubscription({
                 ...parsedSubscription,
-                planPrice: planExists.price, // Ensure price is updated from availablePlans
+                planPrice: planExists.price,
              });
           } else {
              setCurrentSubscription({ planName: defaultFreePlan.name, planPrice: defaultFreePlan.price, renewsOn: null, paymentMethod: null });
              localStorage.setItem("userSubscription", JSON.stringify({ planName: defaultFreePlan.name, planPrice: defaultFreePlan.price, renewsOn: null, paymentMethod: null }));
+             subscriptionChanged = true;
           }
         } catch (e) {
           console.error("Failed to parse subscription from localStorage", e);
           setCurrentSubscription({ planName: defaultFreePlan.name, planPrice: defaultFreePlan.price, renewsOn: null, paymentMethod: null });
+          localStorage.setItem("userSubscription", JSON.stringify({ planName: defaultFreePlan.name, planPrice: defaultFreePlan.price, renewsOn: null, paymentMethod: null }));
+          subscriptionChanged = true;
         }
       } else {
+         setCurrentSubscription({ planName: defaultFreePlan.name, planPrice: defaultFreePlan.price, renewsOn: null, paymentMethod: null });
          localStorage.setItem("userSubscription", JSON.stringify({ planName: defaultFreePlan.name, planPrice: defaultFreePlan.price, renewsOn: null, paymentMethod: null }));
+         subscriptionChanged = true;
       }
 
       const storedHistory = localStorage.getItem("userBillingHistory");
       if (storedHistory) {
         try {
-          setBillingHistory(JSON.parse(storedHistory));
+          newBillingHistory = JSON.parse(storedHistory);
+          setBillingHistory(newBillingHistory);
         } catch (e) {
             console.error("Failed to parse billing history", e);
+            newBillingHistory = [];
             setBillingHistory([]);
         }
+      }
+      
+      // Add default "Free Trial" entry if history is empty and plan is Free Trial (or just set to it)
+      if (newBillingHistory.length === 0 && (currentSubscription.planName === "Free Trial" || subscriptionChanged)) {
+        const freeTrialEntry: BillingHistoryEntry = {
+            id: Date.now().toString(),
+            date: format(new Date(), "yyyy-MM-dd"),
+            description: "Activated Free Trial",
+            amount: "$0",
+            status: "Active",
+        };
+        newBillingHistory = [freeTrialEntry];
+        setBillingHistory(newBillingHistory);
+        localStorage.setItem("userBillingHistory", JSON.stringify(newBillingHistory));
       }
     }
   };
@@ -330,18 +354,18 @@ export default function SettingsPage() {
     const newPlanDetails = availablePlans.find(p => p.id === selectedPlanInModal);
     if (!newPlanDetails) return;
 
-    // Simulate an error if trying to upgrade to Business Tier
-    if (newPlanDetails.id === "business" && currentSubscription.planName === "Free Trial") {
+    if (currentSubscription.planName === "Free Trial" && newPlanDetails.id !== "free") {
       toast({
         variant: "destructive",
-        title: "Plan Change Failed",
-        description: "Simulated Error: We encountered an issue processing your upgrade to the Business Tier. Please try again later or contact support.",
+        title: "Plan Update Failed",
+        description: "Please contact support to change your subscription.",
         duration: 7000,
       });
       setIsChangePlanDialogOpen(false);
       return;
     }
 
+    // Existing logic for successful plan change (e.g., paid to paid, or paid to free if cancel not used)
     const newSubscription: UserSubscription = {
         planName: newPlanDetails.name,
         planPrice: newPlanDetails.price,
@@ -349,6 +373,7 @@ export default function SettingsPage() {
         paymentMethod: newPlanDetails.id !== "free" ? (currentSubscription.paymentMethod || { type: "Visa", last4: "••••", expiry: "MM/YY" }) : null
     };
     
+    // This part might be redundant if all plan changes are now blocked by "contact support" for upgrades
     if (newPlanDetails.id !== "free" && !newSubscription.paymentMethod?.last4.match(/\d{4}/)) {
         setIsChangePlanDialogOpen(false); 
         setIsUpdatePaymentDialogOpen(true); 
@@ -364,7 +389,7 @@ export default function SettingsPage() {
         id: Date.now().toString(),
         date: format(new Date(), "yyyy-MM-dd"),
         description: `Subscribed to ${newPlanDetails.name}`,
-        amount: newPlanDetails.price.replace("/мес", ""), // Adjusted for Russian month
+        amount: newPlanDetails.price.replace("/мес", ""),
         status: "Paid",
         invoiceUrl: "#mockInvoice"
       };
@@ -395,24 +420,15 @@ export default function SettingsPage() {
         return;
     }
 
-
-    const updatedPaymentMethod = {
-        type: "Visa", 
-        last4: tempCardNumber.slice(-4),
-        expiry: tempCardExpiry
-    };
-    const updatedSubscription = { ...currentSubscription, paymentMethod: updatedPaymentMethod };
-    setCurrentSubscription(updatedSubscription);
-    localStorage.setItem("userSubscription", JSON.stringify(updatedSubscription));
-    toast({ title: "Payment Method Updated!", description: "Your payment details have been saved."});
+    toast({
+      variant: "destructive",
+      title: "Payment Update Failed",
+      description: "Please contact support to update your payment method.",
+      duration: 7000,
+    });
     setIsUpdatePaymentDialogOpen(false);
-    setTempCardNumber(""); setTempCardExpiry(""); setTempCardCvc("");
-
-    const planToUpgradeTo = availablePlans.find(p => p.id === selectedPlanInModal);
-    if (planToUpgradeTo && planToUpgradeTo.id !== "free" && currentSubscription.planName === "Free Trial") {
-        handlePlanChange(); 
-    }
-
+    // Do NOT save the card details or update localStorage
+    // setTempCardNumber(""); setTempCardExpiry(""); setTempCardCvc(""); // Optionally clear fields or keep them for user to see
   };
 
   const handleCancelSubscription = () => {
@@ -425,6 +441,19 @@ export default function SettingsPage() {
     };
     setCurrentSubscription(newSubscription);
     localStorage.setItem("userSubscription", JSON.stringify(newSubscription));
+
+    // Add a history entry for cancellation if needed, or simply revert
+    const cancellationEntry: BillingHistoryEntry = {
+        id: Date.now().toString(),
+        date: format(new Date(), "yyyy-MM-dd"),
+        description: `Subscription cancelled. Reverted to ${freeTrialPlan.name}.`,
+        amount: "$0", // Or indicate change, not a charge
+        status: "Active", // Or "Cancelled"
+    };
+    const updatedHistory = [cancellationEntry, ...billingHistory];
+    setBillingHistory(updatedHistory);
+    localStorage.setItem("userBillingHistory", JSON.stringify(updatedHistory));
+
 
     toast({ title: "Subscription Cancelled", description: `You have been moved to the ${freeTrialPlan.name}.`});
     setIsCancelSubscriptionAlertOpen(false);
@@ -813,7 +842,8 @@ export default function SettingsPage() {
                                             <span className={cn("px-2 py-0.5 rounded-full text-xs",
                                                 item.status === "Paid" && "bg-green-100 text-green-700",
                                                 item.status === "Pending" && "bg-yellow-100 text-yellow-700",
-                                                item.status === "Failed" && "bg-red-100 text-red-700"
+                                                item.status === "Failed" && "bg-red-100 text-red-700",
+                                                item.status === "Active" && "bg-blue-100 text-blue-700"
                                             )}>{item.status}</span>
                                         </TableCell>
                                         <TableCell>
@@ -866,5 +896,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    
