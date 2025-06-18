@@ -28,7 +28,7 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
-import { Button as AlertDialogButton, buttonVariants } from "@/components/ui/button";
+import { Button as AlertDialogButton, buttonVariants } from "@/components/ui/button"; // Correct import
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,7 +50,7 @@ const SIGNATURE_MAX_ROTATION_HOVER = 15;
 const SIGNATURE_DRAG_SENSITIVITY = 0.2; 
 const signatureSpringConfig = { stiffness: 150, damping: 30, mass: 0.8 };
 
-interface UserSubscription {
+export interface UserSubscription { // Exporting for use in other components
   planName: string;
   planPrice: string;
   renewsOn?: string | null;
@@ -444,6 +444,7 @@ export default function SettingsPage() {
       return;
     }
     
+    // If not Free Trial, or moving to Free Trial, allow (mock success for now)
     const newSubscription: UserSubscription = {
         planName: newPlanDetails.name,
         planPrice: newPlanDetails.price,
@@ -473,7 +474,20 @@ export default function SettingsPage() {
       const updatedHistory = [newHistoryEntry, ...billingHistory.filter(entry => entry.description !== "Activated Free Trial" || newPlanDetails.id === "free")];
       setBillingHistory(updatedHistory);
       localStorage.setItem("userBillingHistory", JSON.stringify(updatedHistory));
+    } else if (newPlanDetails.id === "free" && currentSubscription.planName !== "Free Trial") {
+        // If moving TO Free Trial from a paid plan
+        const freeTrialEntry: BillingHistoryEntry = {
+            id: Date.now().toString(),
+            date: format(new Date(), "yyyy-MM-dd"),
+            description: "Reverted to Free Trial",
+            amount: "$0", 
+            status: "Active",
+        };
+        const updatedHistory = [freeTrialEntry, ...billingHistory];
+        setBillingHistory(updatedHistory);
+        localStorage.setItem("userBillingHistory", JSON.stringify(updatedHistory));
     }
+
 
     toast({ title: "Plan Updated!", description: `You are now on the ${newPlanDetails.name}.` });
     setIsChangePlanDialogOpen(false);
@@ -504,6 +518,7 @@ export default function SettingsPage() {
       duration: 7000,
     });
     setIsUpdatePaymentDialogOpen(false);
+    // Do not save card details to localStorage
     setTempCardNumber("");
     setTempCardExpiry("");
     setTempCardCvc("");

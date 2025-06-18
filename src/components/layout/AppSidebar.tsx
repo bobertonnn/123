@@ -2,8 +2,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Logo, GradientBirdIcon } from "@/components/icons/Logo"; // Added GradientBirdIcon
+import { usePathname, useRouter } from "next/navigation"; // Added useRouter
+import { Logo, GradientBirdIcon } from "@/components/icons/Logo";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -33,12 +33,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast"; // Added useToast
+import type { UserSubscription } from "@/app/(app)/settings/page"; // Assuming this type is available
 
 const mainNavItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
-  { href: "/documents/upload", label: "Upload Document", icon: UploadCloud },
-  { href: "/templates", label: "Templates", icon: FileText },
-  { href: "/contacts", label: "Contacts", icon: Users },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutGrid, id: "dashboard" },
+  { href: "/documents/upload", label: "Upload Document", icon: UploadCloud, id: "upload" },
+  { href: "/templates", label: "Templates", icon: FileText, id: "templates" },
+  { href: "/contacts", label: "Contacts", icon: Users, id: "contacts" },
 ];
 
 const helpNavItems = [
@@ -49,11 +51,14 @@ const helpNavItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter(); // Added router
+  const { toast } = useToast(); // Added toast
   const [userName, setUserName] = useState("User");
   const [userEmail, setUserEmail] = useState("user@example.com");
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | undefined>(undefined);
+  const [currentPlan, setCurrentPlan] = useState<string | null>(null);
 
-  const loadProfileData = () => {
+  const loadUserData = () => {
     let storedName = localStorage.getItem("userFullName");
     if (storedName && storedName.trim() !== "") {
       setUserName(storedName.trim());
@@ -70,33 +75,72 @@ export function AppSidebar() {
     
     const storedAvatar = localStorage.getItem("userAvatarUrl");
     setUserAvatarUrl(storedAvatar && storedAvatar.trim() !== "" ? storedAvatar : undefined);
+
+    const storedSubscription = localStorage.getItem("userSubscription");
+    if (storedSubscription) {
+      try {
+        const parsedSubscription: UserSubscription = JSON.parse(storedSubscription);
+        setCurrentPlan(parsedSubscription.planName);
+      } catch (e) {
+        console.error("Failed to parse subscription from localStorage in sidebar", e);
+        setCurrentPlan("Free Trial");
+      }
+    } else {
+      setCurrentPlan("Free Trial");
+    }
   };
 
   useEffect(() => {
-    loadProfileData(); 
+    loadUserData(); 
 
-    const handleProfileUpdate = () => {
-      loadProfileData();
+    const handleUserDataUpdate = () => {
+      loadUserData();
     }
 
-    window.addEventListener('profileUpdated', handleProfileUpdate);
+    window.addEventListener('profileUpdated', handleUserDataUpdate);
+    // Listen for subscription changes if you have a custom event for it
+    // window.addEventListener('subscriptionUpdated', handleUserDataUpdate); 
     return () => {
-        window.removeEventListener('profileUpdated', handleProfileUpdate);
+        window.removeEventListener('profileUpdated', handleUserDataUpdate);
+        // window.removeEventListener('subscriptionUpdated', handleUserDataUpdate);
     }
   }, []);
 
-  const NavLink = ({ href, label, icon: Icon }: { href: string; label: string; icon: React.ElementType }) => (
+  const NavLink = ({ href, label, icon: Icon, id }: { href: string; label: string; icon: React.ElementType, id?: string }) => {
+    const handleClick = (e: React.MouseEvent) => {
+      if (id === "templates" && currentPlan === "Free Trial") {
+        e.preventDefault();
+        toast({
+          title: "Premium Feature",
+          description: "Templates are a premium feature. Please upgrade your plan to use them.",
+          variant: "default", 
+        });
+      } else {
+        router.push(href); // Standard navigation
+      }
+    };
+    
+    return (
     <Button
       variant={pathname === href ? "secondary" : "ghost"}
       className="w-full justify-start"
-      asChild
+      onClick={id === "templates" ? handleClick : undefined} // Only add custom click for templates
+      asChild={id !== "templates"} // Only use asChild if not handling click customly
     >
-      <Link href={href}>
-        <Icon className="mr-2 h-4 w-4" />
-        {label}
-      </Link>
+      {id === "templates" ? ( // If it's templates, render a span or div to attach onClick
+        <span className="flex items-center w-full">
+          <Icon className="mr-2 h-4 w-4" />
+          {label}
+        </span>
+      ) : (
+        <Link href={href}>
+          <Icon className="mr-2 h-4 w-4" />
+          {label}
+        </Link>
+      )}
     </Button>
-  );
+    );
+  };
   
   return (
     <div className="hidden border-r bg-card md:block h-full">
@@ -144,7 +188,7 @@ export function AppSidebar() {
                     <AvatarFallback className={!userAvatarUrl ? "bg-card border border-border flex items-center justify-center" : "bg-muted flex items-center justify-center"}>
                         <GradientBirdIcon 
                             className={cn(
-                                "h-5 w-5", // Base size for sidebar avatar
+                                "h-5 w-5", 
                                 !userAvatarUrl ? "text-primary" : "text-muted-foreground"
                             )}
                         />

@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation"; // Added useRouter
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -30,31 +30,20 @@ import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import type { LucideIcon } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast"; // Added useToast
+import type { UserSubscription } from "@/app/(app)/settings/page"; // Assuming this type is available
 
 const mainNavItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
-  { href: "/documents/upload", label: "Upload Document", icon: UploadCloud },
-  { href: "/templates", label: "Templates", icon: FileTextIcon },
-  { href: "/contacts", label: "Contacts", icon: Users },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutGrid, id: "dashboard" },
+  { href: "/documents/upload", label: "Upload Document", icon: UploadCloud, id: "upload" },
+  { href: "/templates", label: "Templates", icon: FileTextIcon, id: "templates" },
+  { href: "/contacts", label: "Contacts", icon: Users, id: "contacts" },
 ];
 
 const helpNavItems = [
  { href: "/settings", label: "Settings", icon: Settings2 },
  { href: "/help", label: "Help & Support", icon: HelpCircle },
 ];
-
-const MobileNavLink = ({ href, label, icon: Icon, currentPathname }: { href: string; label: string; icon: React.ElementType, currentPathname: string }) => (
-  <Button
-    variant={currentPathname === href ? "secondary" : "ghost"}
-    className="w-full justify-start text-base py-3" 
-    asChild
-  >
-    <Link href={href}>
-      <Icon className="mr-3 h-5 w-5" /> 
-      {label}
-    </Link>
-  </Button>
-);
 
 const iconMap: Record<NotificationIconName, LucideIcon> = {
   Bell: Bell,
@@ -69,12 +58,15 @@ const DefaultNotificationIcon = Bell;
 
 export function AppHeader() {
   const currentPathname = usePathname();
+  const router = useRouter(); // Added router
+  const { toast } = useToast(); // Added toast
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [userName, setUserName] = useState("User");
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | undefined>(undefined);
+  const [currentPlan, setCurrentPlan] = useState<string | null>(null); // Added currentPlan
 
-  const loadProfileData = () => {
+  const loadUserDataAndSubscription = () => {
     let storedName = localStorage.getItem("userFullName");
     if (storedName && storedName.trim() !== "") {
       setUserName(storedName.trim());
@@ -83,18 +75,31 @@ export function AppHeader() {
     }
     const storedAvatar = localStorage.getItem("userAvatarUrl");
     setUserAvatarUrl(storedAvatar && storedAvatar.trim() !== "" ? storedAvatar : undefined);
+
+    const storedSubscription = localStorage.getItem("userSubscription");
+    if (storedSubscription) {
+      try {
+        const parsedSubscription: UserSubscription = JSON.parse(storedSubscription);
+        setCurrentPlan(parsedSubscription.planName);
+      } catch (e) {
+        console.error("Failed to parse subscription from localStorage in header", e);
+        setCurrentPlan("Free Trial");
+      }
+    } else {
+      setCurrentPlan("Free Trial");
+    }
   };
 
   useEffect(() => {
-    loadProfileData(); 
+    loadUserDataAndSubscription(); 
     refreshNotifications(); 
 
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'userSiteNotifications') {
         refreshNotifications();
       }
-      if (event.key === 'userFullName' || event.key === 'userAvatarUrl') {
-        loadProfileData();
+      if (event.key === 'userFullName' || event.key === 'userAvatarUrl' || event.key === 'userSubscription') {
+        loadUserDataAndSubscription();
       }
     };
     
@@ -102,22 +107,63 @@ export function AppHeader() {
       if ((event as CustomEvent).type === 'notificationsUpdated') {
         refreshNotifications();
       }
-      if ((event as CustomEvent).type === 'profileUpdated') {
-        loadProfileData();
+      if ((event as CustomEvent).type === 'profileUpdated' || (event as CustomEvent).type === 'subscriptionUpdated') { // Assume subscriptionUpdated event exists if settings page dispatches it
+        loadUserDataAndSubscription();
       }
     };
 
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('notificationsUpdated', handleCustomEvent);
     window.addEventListener('profileUpdated', handleCustomEvent);
+    // window.addEventListener('subscriptionUpdated', handleCustomEvent);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('notificationsUpdated', handleCustomEvent);
       window.removeEventListener('profileUpdated', handleCustomEvent);
+      // window.removeEventListener('subscriptionUpdated', handleCustomEvent);
     };
   }, []);
 
+  const MobileNavLink = ({ href, label, icon: Icon, currentPathname, id }: { href: string; label: string; icon: React.ElementType, currentPathname: string, id?: string }) => {
+    const handleClick = (e: React.MouseEvent) => {
+      if (id === "templates" && currentPlan === "Free Trial") {
+        e.preventDefault();
+        toast({
+          title: "Premium Feature",
+          description: "Templates are a premium feature. Please upgrade your plan to use them.",
+          variant: "default",
+        });
+        // Optionally close the sheet if it's a SheetClose trigger, or handle sheet state
+        const sheetCloseButton = (e.target as HTMLElement).closest('[cmdk-root]')?.parentElement?.querySelector('[cmdk-sheet-close]');
+        if(sheetCloseButton instanceof HTMLElement) sheetCloseButton.click();
+
+      } else {
+        router.push(href);
+      }
+    };
+
+    return (
+    <Button
+      variant={currentPathname === href ? "secondary" : "ghost"}
+      className="w-full justify-start text-base py-3" 
+      onClick={id === "templates" ? handleClick : undefined}
+      asChild={id !== "templates"}
+    >
+       {id === "templates" ? ( 
+        <span className="flex items-center w-full">
+          <Icon className="mr-3 h-5 w-5" /> 
+          {label}
+        </span>
+      ) : (
+        <Link href={href}>
+          <Icon className="mr-3 h-5 w-5" /> 
+          {label}
+        </Link>
+      )}
+    </Button>
+    );
+  };
 
   const refreshNotifications = () => {
     let currentNotifications = getNotifications();
@@ -235,8 +281,7 @@ export function AppHeader() {
                         e.preventDefault(); 
                         handleMarkAsRead(notification.id);
                         if (notification.link) {
-                            // router.push(notification.link); // Placeholder if using Next Router here
-                            window.location.href = notification.link; // Simple redirect for now
+                            router.push(notification.link); 
                         }
                     }}
                   >

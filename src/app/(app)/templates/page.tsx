@@ -1,11 +1,15 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { FileText, PlusCircle, Edit, Trash2, Search } from "lucide-react";
+import { FileText, PlusCircle, Edit, Trash2, Search, AlertTriangle, CreditCard, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+import type { UserSubscription } from "@/app/(app)/settings/page"; // Adjusted path
 
 const mockTemplates = [
   { id: "tpl1", name: "Standard NDA", description: "Non-Disclosure Agreement for new clients.", lastModified: "2023-10-15" },
@@ -13,7 +17,72 @@ const mockTemplates = [
   { id: "tpl3", name: "Consulting Agreement", description: "Standard terms for consulting services.", lastModified: "2023-11-01" },
 ];
 
+const FreeTrialRestrictionCard = () => (
+  <Card className="shadow-xl rounded-2xl text-center max-w-2xl mx-auto my-10">
+    <CardHeader>
+      <AlertTriangle className="mx-auto h-16 w-16 text-destructive mb-4" />
+      <CardTitle className="text-3xl font-headline">Templates are a Premium Feature</CardTitle>
+      <CardDescription className="text-lg text-muted-foreground">
+        To create, manage, and use document templates, please upgrade your plan.
+      </CardDescription>
+    </CardHeader>
+    <CardContent>
+      <p className="text-muted-foreground mb-6">
+        Upgrade to a paid plan to unlock powerful template features, save time, and streamline your workflows.
+      </p>
+      <Button asChild size="lg" className="btn-gradient-hover">
+        <Link href="/settings#billing">
+          <CreditCard className="mr-2 h-5 w-5" />
+          View Subscription Plans
+        </Link>
+      </Button>
+    </CardContent>
+  </Card>
+);
+
 export default function TemplatesPage() {
+  const [currentPlan, setCurrentPlan] = useState<string | null>(null);
+  const [isLoadingPlan, setIsLoadingPlan] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedSubscription = localStorage.getItem("userSubscription");
+      if (storedSubscription) {
+        try {
+          const parsedSubscription: UserSubscription = JSON.parse(storedSubscription);
+          setCurrentPlan(parsedSubscription.planName);
+        } catch (e) {
+          console.error("Failed to parse subscription from localStorage", e);
+          setCurrentPlan("Free Trial"); // Default to free trial on error
+        }
+      } else {
+        setCurrentPlan("Free Trial"); // Default if no subscription found
+      }
+      setIsLoadingPlan(false);
+    }
+  }, []);
+
+  if (isLoadingPlan) {
+    return (
+      <div className="container mx-auto text-center py-20">
+        <p>Loading template settings...</p>
+      </div>
+    );
+  }
+
+  if (currentPlan === "Free Trial") {
+    return (
+      <div className="container mx-auto py-8">
+         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+          <h1 className="text-3xl font-bold font-headline">Document Templates</h1>
+          {/* Button is hidden for free trial, but header remains for context */}
+        </div>
+        <FreeTrialRestrictionCard />
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
