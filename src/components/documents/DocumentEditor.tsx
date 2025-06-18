@@ -80,12 +80,16 @@ export function DocumentEditor({
   const [tempFullName, setTempFullName] = useState("");
   const [tempSignatureDataUrl, setTempSignatureDataUrl] = useState<string | null>(null);
   const [tempDate, setTempDate] = useState<Date | undefined>(new Date());
+  const [initialProfileSignatureUrl, setInitialProfileSignatureUrl] = useState<string | null>(null);
+
 
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
 
   useEffect(() => {
     if (isSigningSheetOpen) {
       const profileFullName = typeof window !== "undefined" ? localStorage.getItem("userFullName") : null;
+      const profileSignature = typeof window !== "undefined" ? localStorage.getItem("userSignature") : null;
+      setInitialProfileSignatureUrl(profileSignature);
       
       setTempSigningRole(appendedRole || null); 
       setTempFullName(appendedFullName || profileFullName || ""); 
@@ -101,12 +105,15 @@ export function DocumentEditor({
       toast({ variant: "destructive", title: "Role Required", description: "Please select a signing role."});
       return;
     }
-    // Full Name validation only checks if user actively cleared it, not if pre-filled was empty
-    if (signingSheetStep === 1 && tempFullName.trim() === "" && !(localStorage.getItem("userFullName") || appendedFullName)) {
+    
+    const profileFullName = typeof window !== "undefined" ? localStorage.getItem("userFullName") : null;
+    if (signingSheetStep === 1 && tempFullName.trim() === "" && !(profileFullName || appendedFullName)) {
       toast({ variant: "destructive", title: "Full Name Required", description: "Please enter your full name."});
       return;
     }
-    if (signingSheetStep === 2 && !tempSignatureDataUrl && !(localStorage.getItem("userSignature") || appendedSignatureUrl)) {
+
+    const profileSignature = typeof window !== "undefined" ? localStorage.getItem("userSignature") : null;
+    if (signingSheetStep === 2 && !tempSignatureDataUrl && !(profileSignature || appendedSignatureUrl)) {
       toast({ variant: "destructive", title: "Signature Required", description: "Please provide your signature."});
       return;
     }
@@ -220,14 +227,13 @@ export function DocumentEditor({
         }
         
         const pageDiagonal = Math.sqrt(width * width + height * height);
-        // Adjust font size to be large and cover the document
-        let fontSize = pageDiagonal / watermarkText.length; 
-        fontSize = Math.max(24, Math.min(fontSize, 150)); // Clamp font size (min 24pt, max 150pt)
         
-        // Simplified positioning for diagonal watermark
-        // Start near top-left, let rotation and length span the page
-        const x = width * 0.05; // 5% from the left
-        const y = height * 0.75; // 75% from the bottom (25% from the top)
+        let fontSize = pageDiagonal / watermarkText.length; 
+        fontSize = Math.max(24, Math.min(fontSize, 150)); 
+        
+        
+        const x = width * 0.05; 
+        const y = height * 0.75; 
 
 
         page.drawText(watermarkText, {
@@ -637,8 +643,17 @@ export function DocumentEditor({
                 />
                 {tempSignatureDataUrl && <CheckCircle className="text-green-500 mt-2 h-5 w-5" title="Signature captured"/>}
                 <p className="text-xs text-muted-foreground mt-2 text-center">
-                    Draw a new signature. If left blank and you have a signature in your profile, that will be used.
+                    {tempSignatureDataUrl
+                        ? "New signature drawn."
+                        : initialProfileSignatureUrl
+                        ? "Your saved profile signature will be used. Draw above to use a new one for this document."
+                        : "Please draw your signature. No signature saved in profile."}
                 </p>
+                {!tempSignatureDataUrl && initialProfileSignatureUrl && (
+                    <div className="mt-2 p-2 border rounded-md bg-muted/50 inline-block">
+                        <Image src={initialProfileSignatureUrl} alt="Saved signature preview" width={150} height={50} className="object-contain" data-ai-hint="signature image"/>
+                    </div>
+                )}
               </div>
             )}
             {signingSheetStep === 3 && (
