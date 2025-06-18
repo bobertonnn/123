@@ -26,8 +26,8 @@ import { useToast } from "@/hooks/use-toast";
 import { auth } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile, onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
 import { addNotification } from "@/lib/notificationManager";
-import { addContact } from "@/lib/contactManager"; // Added for referral feature
-import { getInitials } from "@/lib/utils"; // Added for avatar generation
+import { addContact } from "@/lib/contactManager";
+import { getInitials } from "@/lib/utils";
 
 const accountDetailsSchema = z.object({
   fullName: z.string()
@@ -81,23 +81,39 @@ export default function SignUpPage() {
     })));
   }, [currentStep]);
 
+  // Effect for handling the referral parameter ('ref') from the URL
   useEffect(() => {
-    const verifyProcess = searchParams.get('verifyProcess');
-    const emailFromQuery = searchParams.get('email');
-    const refTagFromQuery = searchParams.get('ref'); // Capture ref tag for referrals
+    const refTagFromQuery = searchParams.get('ref');
+    const hasProcessedRefThisSession = sessionStorage.getItem('hasProcessedRefThisSession');
 
-    console.log("SignUpForm useEffect for searchParams triggered.");
-    console.log("URL Params: verifyProcess=", verifyProcess, "emailFromQuery=", emailFromQuery, "refTag=", refTagFromQuery, "initialAuthChecked=", initialAuthChecked);
-
-    if (refTagFromQuery && typeof window !== 'undefined') {
+    if (refTagFromQuery && !hasProcessedRefThisSession && typeof window !== 'undefined') {
         sessionStorage.setItem('referrerUserTag', refTagFromQuery);
-        console.log("Referrer tag stored in sessionStorage:", refTagFromQuery);
-        // Clean up the ref from URL to avoid issues on refresh or back navigation
+        sessionStorage.setItem('hasProcessedRefThisSession', 'true'); // Set flag
+        console.log("Referral Debug: Stored referrerUserTag in sessionStorage:", refTagFromQuery);
+        
         const newUrl = new URL(window.location.href);
         newUrl.searchParams.delete('ref');
         router.replace(newUrl.pathname + newUrl.search, { scroll: false });
+        console.log("Referral Debug: Cleaned 'ref' parameter from URL.");
+    } else if (refTagFromQuery && hasProcessedRefThisSession) {
+        // If ref is still in URL but we've processed, clean it to prevent issues on potential re-renders.
+        console.log("Referral Debug: 'ref' parameter already processed in this session. Ensuring URL is clean.");
+        const newUrl = new URL(window.location.href);
+        if (newUrl.searchParams.has('ref')) {
+            newUrl.searchParams.delete('ref');
+            router.replace(newUrl.pathname + newUrl.search, { scroll: false });
+        }
     }
+  }, [searchParams, router]);
 
+
+  // Effect for handling email verification process and initial auth state
+  useEffect(() => {
+    const verifyProcess = searchParams.get('verifyProcess');
+    const emailFromQuery = searchParams.get('email');
+
+    console.log("SignUpForm useEffect for email verification/auth triggered.");
+    console.log("URL Params: verifyProcess=", verifyProcess, "emailFromQuery=", emailFromQuery, "initialAuthChecked=", initialAuthChecked);
 
     let unsubscribeAuth: (() => void) | null = null; 
 
@@ -164,7 +180,6 @@ export default function SignUpPage() {
         newUrl.searchParams.delete('mode');
         newUrl.searchParams.delete('oobCode');
         newUrl.searchParams.delete('apiKey');
-        // We already deleted 'ref' if it was present, so no need to do it again here.
         router.replace(newUrl.pathname + newUrl.search, { scroll: false });
 
         setIsProcessingRedirect(false);
@@ -193,7 +208,7 @@ export default function SignUpPage() {
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, router, initialAuthChecked]);
+  }, [searchParams, router, initialAuthChecked]); // Removed 'ref' related dependencies as it's handled in its own effect
 
 
   useEffect(() => {
@@ -463,16 +478,27 @@ export default function SignUpPage() {
       // Handle referral
       if (typeof window !== 'undefined') {
         const referrerUserTag = sessionStorage.getItem('referrerUserTag');
+        console.log("[handleSaveSignature] Attempting to retrieve referrerUserTag from sessionStorage. Value:", referrerUserTag);
+
         if (referrerUserTag) {
-          console.log("Processing referral for tag:", referrerUserTag);
-          const referrerName = referrerUserTag.split('#')[0] || referrerUserTag;
+          console.log("[handleSaveSignature] Processing referral for tag:", referrerUserTag);
+          const referrerNameParts = referrerUserTag.split('#');
+          const referrerName = referrerNameParts[0] || referrerUserTag;
+          console.log("[handleSaveSignature] Derived referrerName:", referrerName);
+
           const referrerContactData = {
             name: referrerName,
-            email: `${referrerUserTag.replace('#', '.')}@referral.docusigner.com`, // Placeholder email
+            email: `${referrerUserTag.replace('#', '.')}@referral.docusigner.com`, 
             avatar: `https://placehold.co/40x40.png?text=${getInitials(referrerName)}`,
-            company: "Via Referral" // Placeholder
+            company: "Via Referral"
           };
-          addContact(referrerContactData); // This saves to new user's localStorage
+          console.log("[handleSaveSignature] Referrer contact data to add:", referrerContactData);
+          
+          addContact(referrerContactData); 
+          
+          const updatedContacts = localStorage.getItem("userContacts");
+          console.log("[handleSaveSignature] userContacts from localStorage after addContact:", updatedContacts);
+
           addNotification({
             title: "Referrer Added!",
             description: `${referrerName} (${referrerUserTag}), who referred you, has been added to your contacts.`,
@@ -481,7 +507,10 @@ export default function SignUpPage() {
             category: "user",
           });
           sessionStorage.removeItem('referrerUserTag');
-          console.log("Referrer contact added and tag removed from sessionStorage.");
+          sessionStorage.removeItem('hasProcessedRefThisSession'); // Clean up the flag too
+          console.log("[handleSaveSignature] Referrer contact added and tags removed from sessionStorage.");
+        } else {
+            console.log("[handleSaveSignature] No referrerUserTag found in sessionStorage.");
         }
       }
       
