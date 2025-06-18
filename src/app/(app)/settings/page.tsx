@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Lock, Bell, CreditCard, Save, Edit3, XCircle, Loader2, Check, UploadCloud, Trash2, LogOut, DollarSign, ShoppingBag, FileClock, AlertTriangle, Package, Star, Zap, Tag } from "lucide-react";
+import { User, Lock, Bell, CreditCard, Save, Edit3, XCircle, Loader2, Check, UploadCloud, Trash2, LogOut, DollarSign, ShoppingBag, FileClock, AlertTriangle, Package, Star, Zap, Tag, CalendarDays } from "lucide-react";
 import { SignatureCanvas } from "@/components/auth/SignatureCanvas";
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
@@ -676,6 +676,15 @@ export default function SettingsPage() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">This is your unique tag for connecting with others.</p>
               </div>
+              {userJoinDate && (
+                <div className="space-y-1">
+                    <Label>Joined DocuSigner</Label>
+                    <div className="mt-1 flex items-center space-x-2">
+                        <CalendarDays className="h-5 w-5 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">{userJoinDate}</p>
+                    </div>
+                </div>
+              )}
               <div>
                 <Label>Your Signature</Label>
                 <Card
@@ -1058,3 +1067,6 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+
+    
