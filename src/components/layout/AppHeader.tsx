@@ -11,7 +11,7 @@ import {
     Users, Settings2, HelpCircle, ChevronDown, CheckCheck, MailWarning, Trash2,
     AlertCircle
 } from "lucide-react";
-import { Logo, GradientBirdIcon } from "@/components/icons/Logo"; // Added GradientBirdIcon
+import { Logo, GradientBirdIcon } from "@/components/icons/Logo";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,7 +25,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { cn } from "@/lib/utils";
 import React, { useState, useEffect } from "react";
 import { type Notification, type NotificationIconName } from "@/types/notification";
-import { getNotifications, addMockNotifications, markNotificationAsRead, markAllNotificationsAsRead, clearAllNotifications } from "@/lib/notificationManager"; // Removed deleteNotificationById for now
+import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, clearAllNotifications } from "@/lib/notificationManager";
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -121,11 +121,6 @@ export function AppHeader() {
 
   const refreshNotifications = () => {
     let currentNotifications = getNotifications();
-    if (currentNotifications.length === 0 && typeof window !== 'undefined' && !localStorage.getItem('mockNotificationsAdded')) {
-      addMockNotifications(); 
-      localStorage.setItem('mockNotificationsAdded', 'true'); 
-      currentNotifications = getNotifications();
-    }
     setNotifications(currentNotifications.sort((a, b) => parseISO(b.timestamp).getTime() - parseISO(a.timestamp).getTime()));
   };
 
@@ -239,7 +234,10 @@ export function AppHeader() {
                     onSelect={(e) => { 
                         e.preventDefault(); 
                         handleMarkAsRead(notification.id);
-                        // If notification.link, router.push(notification.link) or similar
+                        if (notification.link) {
+                            // router.push(notification.link); // Placeholder if using Next Router here
+                            window.location.href = notification.link; // Simple redirect for now
+                        }
                     }}
                   >
                     <div className={cn("mt-1 flex-shrink-0 h-5 w-5 flex items-center justify-center", !notification.read ? "text-primary" : "text-muted-foreground")}>
@@ -282,11 +280,6 @@ export function AppHeader() {
                 >
                     <Trash2 className="mr-2 h-4 w-4" /> Clear All Notifications
                 </DropdownMenuItem>
-                <DropdownMenuItem className="justify-center" asChild>
-                    <Link href="/notifications" className="w-full flex justify-center">
-                        View all notifications
-                    </Link>
-                </DropdownMenuItem>
                 </>
             )}
           </DropdownMenuContent>
@@ -298,15 +291,11 @@ export function AppHeader() {
               <Avatar className="h-full w-full">
                 {userAvatarUrl ? (
                   <AvatarImage src={userAvatarUrl} alt={userName} data-ai-hint="user avatar" />
-                ) : null}
-                <AvatarFallback className={!userAvatarUrl ? "bg-card border border-border flex items-center justify-center" : "bg-muted flex items-center justify-center"}>
-                  <GradientBirdIcon
-                    className={cn(
-                      "h-5 w-5", // Base size for header avatar
-                      !userAvatarUrl ? "text-primary" : "text-muted-foreground"
-                    )}
-                  />
-                </AvatarFallback>
+                ) : (
+                  <AvatarFallback className="bg-card border border-border flex items-center justify-center">
+                     <GradientBirdIcon className="h-5 w-5 text-primary" />
+                  </AvatarFallback>
+                )}
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
