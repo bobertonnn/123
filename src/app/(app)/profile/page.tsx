@@ -10,7 +10,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { GradientBirdIcon } from "@/components/icons/Logo";
 import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast"; // Added for copy feedback
+import { useToast } from "@/hooks/use-toast"; 
 
 interface UserProfileData {
   name: string;
@@ -25,7 +25,7 @@ interface UserProfileData {
 }
 
 export default function ProfilePage() {
-  const { toast } = useToast(); // Added for copy feedback
+  const { toast } = useToast(); 
   const [profileData, setProfileData] = useState<UserProfileData>({
     name: "User",
     email: "user@example.com",

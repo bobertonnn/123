@@ -28,7 +28,7 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
-import { Button as AlertDialogButton } from "@/components/ui/button";
+import { Button as AlertDialogButton } from "@/components/ui/button"; // Alias to prevent conflict
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,7 +43,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format, addMonths, parseISO, isValid } from "date-fns";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button"; // Correct import for buttonVariants
 
 type SaveStatus = "idle" | "saving" | "success" | "error";
 
@@ -260,7 +260,7 @@ export default function SettingsPage() {
       if (newBillingHistory.length === 0 || !hasFreeTrialEntry) {
         const joinDateStr = localStorage.getItem("userJoinDate") || new Date().toISOString();
         let joinDate = new Date(joinDateStr);
-        if (!isValid(joinDate)) joinDate = new Date(); // Fallback if stored date is invalid
+        if (!isValid(joinDate)) joinDate = new Date(); 
 
         const freeTrialEntry: BillingHistoryEntry = {
             id: Date.now().toString(),
@@ -277,12 +277,12 @@ export default function SettingsPage() {
   };
 
   useEffect(() => {
-    const storedFullName = localStorage.getItem("userFullName");
+    let storedFullName = localStorage.getItem("userFullName");
     const storedEmail = localStorage.getItem("userEmail");
     const storedSignature = localStorage.getItem("userSignature");
     const storedAvatar = localStorage.getItem("userAvatarUrl");
-    const storedJoinDate = localStorage.getItem("userJoinDate");
-    const storedUserTag = localStorage.getItem("userTag");
+    let storedJoinDate = localStorage.getItem("userJoinDate");
+    let storedUserTag = localStorage.getItem("userTag");
 
     if (storedFullName && storedFullName.trim() !== "") setUserFullName(storedFullName.trim());
     else setUserFullName("User");
@@ -300,28 +300,32 @@ export default function SettingsPage() {
     else {
       setUserAvatarUrl(undefined);
     }
+
     if (storedJoinDate) {
         let parsedJoinDate = new Date(storedJoinDate);
-        if (!isValid(parsedJoinDate)) parsedJoinDate = new Date(); // Fallback for invalid date
+        if (!isValid(parsedJoinDate)) parsedJoinDate = new Date(); 
         setUserJoinDate(parsedJoinDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
     } else {
         const newJoinDate = new Date();
         localStorage.setItem("userJoinDate", newJoinDate.toISOString());
         setUserJoinDate(newJoinDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
+        storedJoinDate = newJoinDate.toISOString(); // ensure storedJoinDate is set for tag generation if needed
     }
-    if (storedUserTag) setUserTag(storedUserTag);
-    else {
+
+    if (storedUserTag) {
+        setUserTag(storedUserTag);
+    } else {
       const uid = localStorage.getItem("userUID");
-      const namePart = (storedFullName && storedFullName.trim() !== "") ? storedFullName.split(" ")[0] : "User";
-      const tagPart = uid ? uid.substring(0, 4) : Math.random().toString(36).substring(2,6); // fallback tag part
+      if (!storedFullName || storedFullName.trim() === "") storedFullName = "User"; // Ensure namePart is not empty
+      const namePart = storedFullName.split(" ")[0];
+      const tagPart = uid ? uid.substring(0, 4) : Math.random().toString(36).substring(2,6); 
       const generatedTag = `${namePart}#${tagPart}`;
       setUserTag(generatedTag);
       localStorage.setItem("userTag", generatedTag);
     }
 
-
     loadSubscriptionData();
-
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
 
@@ -399,7 +403,7 @@ export default function SettingsPage() {
             localStorage.removeItem("userAvatarUrl");
             setUserAvatarUrl(undefined);
         }
-        // User Tag: regenerate if full name changed and was part of old tag
+        
         const oldTag = localStorage.getItem("userTag");
         const namePartFromOldTag = oldTag ? oldTag.split("#")[0] : "";
         const currentNamePart = userFullName.split(" ")[0];
@@ -486,17 +490,6 @@ export default function SettingsPage() {
         paymentMethod: newPlanDetails.id !== "free" ? (currentSubscription.paymentMethod || { type: "Visa", last4: "••••", expiry: "MM/YY" }) : null
     };
 
-    if (newPlanDetails.id !== "free" && (!newSubscription.paymentMethod || newSubscription.paymentMethod.last4 === "••••")) {
-        setIsChangePlanDialogOpen(false);
-        toast({
-            variant: "destructive",
-            title: "Payment Method Required",
-            description: `Please contact support to add a payment method for the ${newPlanDetails.name}.`,
-            duration: 7000,
-        });
-        return;
-    }
-
     setCurrentSubscription(newSubscription);
     localStorage.setItem("userSubscription", JSON.stringify(newSubscription));
 
@@ -517,7 +510,7 @@ export default function SettingsPage() {
             id: Date.now().toString(),
             date: format(new Date(), "yyyy-MM-dd"),
             description: "Reverted to Free Trial",
-            amount: "$0",
+            amount: "$0/month",
             status: "Active",
         };
         const updatedHistory = [freeTrialEntry, ...billingHistory];
@@ -528,7 +521,7 @@ export default function SettingsPage() {
 
     toast({ title: "Plan Updated!", description: `You are now on the ${newPlanDetails.name}.` });
     setIsChangePlanDialogOpen(false);
-    window.dispatchEvent(new CustomEvent('subscriptionUpdated')); // Dispatch event
+    window.dispatchEvent(new CustomEvent('subscriptionUpdated')); 
   };
 
   const handlePaymentMethodSave = () => {
@@ -577,7 +570,7 @@ export default function SettingsPage() {
         id: Date.now().toString(),
         date: format(new Date(), "yyyy-MM-dd"),
         description: `Subscription cancelled. Reverted to ${freeTrialPlan.name}.`,
-        amount: "$0",
+        amount: "$0/month",
         status: "Active",
     };
     const updatedHistory = [cancellationEntry, ...billingHistory.filter(entry => entry.description !== "Activated Free Trial")];
@@ -587,7 +580,7 @@ export default function SettingsPage() {
 
     toast({ title: "Subscription Cancelled", description: `You have been moved to the ${freeTrialPlan.name}.`});
     setIsCancelSubscriptionAlertOpen(false);
-    window.dispatchEvent(new CustomEvent('subscriptionUpdated')); // Dispatch event
+    window.dispatchEvent(new CustomEvent('subscriptionUpdated')); 
   };
 
 
