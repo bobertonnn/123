@@ -26,11 +26,13 @@ import { useToast } from "@/hooks/use-toast";
 import { auth } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile, onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
 import { addNotification } from "@/lib/notificationManager";
+import { addContact } from "@/lib/contactManager"; // Added for referral feature
+import { getInitials } from "@/lib/utils"; // Added for avatar generation
 
 const accountDetailsSchema = z.object({
   fullName: z.string()
     .min(3, { message: "Full name must be at least 3 characters." })
-    .regex(new RegExp("^\\p{L}+(?:['\\-\\s]+\\p{L}+)+$", "u"), { // Unicode aware, at least two words
+    .regex(new RegExp("^\\p{L}+(?:['\\-\\s]+\\p{L}+)+$", "u"), { 
       message: "Please enter a valid full name (e.g., John Doe). It should consist of at least two parts, using letters and optionally spaces, hyphens, or apostrophes.",
     }),
   email: z.string().email({ message: "Invalid email address." }),
@@ -82,9 +84,20 @@ export default function SignUpPage() {
   useEffect(() => {
     const verifyProcess = searchParams.get('verifyProcess');
     const emailFromQuery = searchParams.get('email');
+    const refTagFromQuery = searchParams.get('ref'); // Capture ref tag for referrals
 
     console.log("SignUpForm useEffect for searchParams triggered.");
-    console.log("URL Params: verifyProcess=", verifyProcess, "emailFromQuery=", emailFromQuery, "initialAuthChecked=", initialAuthChecked);
+    console.log("URL Params: verifyProcess=", verifyProcess, "emailFromQuery=", emailFromQuery, "refTag=", refTagFromQuery, "initialAuthChecked=", initialAuthChecked);
+
+    if (refTagFromQuery && typeof window !== 'undefined') {
+        sessionStorage.setItem('referrerUserTag', refTagFromQuery);
+        console.log("Referrer tag stored in sessionStorage:", refTagFromQuery);
+        // Clean up the ref from URL to avoid issues on refresh or back navigation
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('ref');
+        router.replace(newUrl.pathname + newUrl.search, { scroll: false });
+    }
+
 
     let unsubscribeAuth: (() => void) | null = null; 
 
@@ -151,6 +164,7 @@ export default function SignUpPage() {
         newUrl.searchParams.delete('mode');
         newUrl.searchParams.delete('oobCode');
         newUrl.searchParams.delete('apiKey');
+        // We already deleted 'ref' if it was present, so no need to do it again here.
         router.replace(newUrl.pathname + newUrl.search, { scroll: false });
 
         setIsProcessingRedirect(false);
@@ -433,7 +447,7 @@ export default function SignUpPage() {
       localStorage.setItem("userSignature", dataUrl);
       localStorage.setItem("userJoinDate", registrationTimestamp);
       localStorage.setItem("userAvatarUrl", userToSave.photoURL || ""); 
-      localStorage.setItem("userTag", userTag); // Save the generated tag
+      localStorage.setItem("userTag", userTag); 
 
       console.log("Signature and user data saved to localStorage.");
 
@@ -445,6 +459,31 @@ export default function SignUpPage() {
         category: "system",
         timestamp: registrationTimestamp,
       });
+
+      // Handle referral
+      if (typeof window !== 'undefined') {
+        const referrerUserTag = sessionStorage.getItem('referrerUserTag');
+        if (referrerUserTag) {
+          console.log("Processing referral for tag:", referrerUserTag);
+          const referrerName = referrerUserTag.split('#')[0] || referrerUserTag;
+          const referrerContactData = {
+            name: referrerName,
+            email: `${referrerUserTag.replace('#', '.')}@referral.docusigner.com`, // Placeholder email
+            avatar: `https://placehold.co/40x40.png?text=${getInitials(referrerName)}`,
+            company: "Via Referral" // Placeholder
+          };
+          addContact(referrerContactData); // This saves to new user's localStorage
+          addNotification({
+            title: "Referrer Added!",
+            description: `${referrerName} (${referrerUserTag}), who referred you, has been added to your contacts.`,
+            iconName: "UserPlus",
+            link: "/contacts",
+            category: "user",
+          });
+          sessionStorage.removeItem('referrerUserTag');
+          console.log("Referrer contact added and tag removed from sessionStorage.");
+        }
+      }
       
       toast({
         title: "Registration Successful!",

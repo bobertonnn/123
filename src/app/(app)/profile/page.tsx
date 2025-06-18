@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Edit3, Mail, Phone, Tag, Building } from "lucide-react"; 
+import { User, Edit3, Mail, Phone, Tag, Building, Link as LinkIcon, Share2 } from "lucide-react"; 
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
@@ -18,11 +18,12 @@ interface UserProfileData {
   avatarUrl: string | undefined;
   title: string;
   department: string; 
-  phoneNumber: string; // Changed from phone for consistency with settings
-  companyName: string; // Added companyName
+  phoneNumber: string;
+  companyName: string;
   joinDate: string;
   signatureUrl: string | null;
   userTag: string | null;
+  referralLink: string | null; // Added
 }
 
 export default function ProfilePage() {
@@ -38,6 +39,7 @@ export default function ProfilePage() {
     joinDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     signatureUrl: null,
     userTag: null,
+    referralLink: null, // Added
   });
 
   const loadProfileData = () => {
@@ -49,6 +51,11 @@ export default function ProfilePage() {
       const storedAvatar = localStorage.getItem("userAvatarUrl");
       const storedJoinDate = localStorage.getItem("userJoinDate") || new Date().toISOString();
       const storedUserTag = localStorage.getItem("userTag"); 
+      
+      let referralLinkValue = null;
+      if (typeof window !== 'undefined' && storedUserTag) {
+        referralLinkValue = `${window.location.origin}/auth/signup?ref=${encodeURIComponent(storedUserTag)}`;
+      }
 
       setProfileData(prev => ({
       ...prev,
@@ -60,6 +67,7 @@ export default function ProfilePage() {
       avatarUrl: (storedAvatar && storedAvatar.trim() !== "") ? storedAvatar : undefined,
       joinDate: new Date(storedJoinDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
       userTag: storedUserTag || null, 
+      referralLink: referralLinkValue, // Added
       }));
   };
 
@@ -71,12 +79,12 @@ export default function ProfilePage() {
     }
   }, []);
 
-  const handleCopyTag = () => {
-    if (profileData.userTag) {
-      navigator.clipboard.writeText(profileData.userTag);
+  const handleCopyText = (textToCopy: string | null, successMessage: string) => {
+    if (textToCopy) {
+      navigator.clipboard.writeText(textToCopy);
       toast({
-        title: "User Tag Copied!",
-        description: `${profileData.userTag} has been copied to your clipboard.`,
+        title: "Copied!",
+        description: successMessage,
       });
     }
   };
@@ -118,13 +126,12 @@ export default function ProfilePage() {
                 {profileData.phoneNumber !== "N/A" && <span className="flex items-center"><Phone className="mr-1.5 h-4 w-4"/> {profileData.phoneNumber}</span>}
                 {profileData.companyName !== "N/A" && <span className="flex items-center"><Building className="mr-1.5 h-4 w-4"/> {profileData.companyName}</span>}
                 {profileData.userTag && (
-                  <div className="flex items-center space-x-2">
-                    <span className="flex items-center bg-primary/10 text-primary px-2 py-1 rounded-full text-xs sm:text-sm">
-                        <Tag className="mr-1.5 h-3 w-3 sm:h-4 sm:w-4"/> {profileData.userTag}
-                    </span>
-                    <Button variant="outline" size="xs" onClick={handleCopyTag} className="h-auto px-2 py-1">
-                        Copy Tag
-                    </Button>
+                  <div className="flex items-center space-x-2 bg-primary/10 text-primary px-2 py-1 rounded-full text-xs sm:text-sm cursor-pointer hover:bg-primary/20"
+                       onClick={() => handleCopyText(profileData.userTag, `${profileData.userTag} has been copied to your clipboard.`)}
+                       title="Copy User Tag"
+                  >
+                    <Tag className="mr-1.5 h-3 w-3 sm:h-4 sm:w-4"/> 
+                    <span>{profileData.userTag}</span>
                   </div>
                 )}
               </div>
@@ -154,11 +161,15 @@ export default function ProfilePage() {
                  <p><strong className="font-medium text-foreground">User Tag:</strong> {profileData.userTag || "Not set"}</p>
                 <p><strong className="font-medium text-foreground">Joined DocuSigner:</strong> {profileData.joinDate}</p>
                 <p><strong className="font-medium text-foreground">User Role:</strong> User</p>
+                 <p className="flex items-center">
+                    <strong className="font-medium text-foreground">Date Registered:</strong>
+                    <span className="text-muted-foreground ml-2">{profileData.joinDate}</span>
+                  </p>
               </CardContent>
             </Card>
           </div>
 
-          <div>
+          <div className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg font-semibold">Registered Signature</CardTitle>
@@ -168,7 +179,7 @@ export default function ProfilePage() {
                 {profileData.signatureUrl ? (
                   <Image src={profileData.signatureUrl} alt="User signature" width={400} height={150} className="border rounded-md bg-card shadow-sm" data-ai-hint="signature image" />
                 ) : (
-                  <div className="w-[400px] h-[150px] border rounded-md bg-muted flex items-center justify-center">
+                  <div className="w-full max-w-[400px] h-[150px] border rounded-md bg-muted flex items-center justify-center">
                     <p className="text-muted-foreground">No signature set</p>
                   </div>
                 )}
@@ -177,10 +188,40 @@ export default function ProfilePage() {
                 </Button>
               </CardContent>
             </Card>
+            
+            {profileData.referralLink && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold flex items-center">
+                    <Share2 className="mr-2 h-5 w-5 text-primary"/> Your Referral Link
+                  </CardTitle>
+                  <CardDescription>Share this link with others to invite them to DocuSigner.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                        <LinkIcon className="h-4 w-4 text-muted-foreground"/>
+                        <input 
+                            type="text" 
+                            value={profileData.referralLink} 
+                            readOnly 
+                            className="text-xs text-muted-foreground bg-transparent flex-grow p-1 rounded-sm focus:outline-none focus:ring-1 focus:ring-primary" 
+                            onFocus={(e) => e.target.select()}
+                        />
+                    </div>
+                     <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => handleCopyText(profileData.referralLink, "Referral link copied to clipboard!")}
+                    >
+                        Copy Link
+                    </Button>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </CardContent>
       </Card>
     </div>
   );
 }
-
