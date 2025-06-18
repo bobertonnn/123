@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Users, CalendarDays, CheckCircle, Clock, Edit, Share2, Trash2, AlertCircle, UploadCloudIcon, MessageSquare } from "lucide-react";
 import Image from "next/image";
@@ -15,7 +15,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical } from "lucide-react";
-// Removed useState, useEffect as summary is now passed via props
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export interface Document {
   id: string;
@@ -31,6 +41,7 @@ export interface Document {
 
 interface DocumentCardProps {
   document: Document;
+  onDeleteDocument?: (documentId: string) => void;
 }
 
 const statusStyles = {
@@ -41,7 +52,7 @@ const statusStyles = {
   Uploaded: { icon: UploadCloudIcon, color: "bg-blue-500", text: "text-blue-700", border: "border-blue-500" },
 };
 
-export function DocumentCard({ document }: DocumentCardProps) {
+export function DocumentCard({ document, onDeleteDocument }: DocumentCardProps) {
   const currentStatusStyle = statusStyles[document.status] || statusStyles.Pending; 
   const StatusIcon = currentStatusStyle.icon;
   const statusTextColor = currentStatusStyle.text;
@@ -73,14 +84,40 @@ export function DocumentCard({ document }: DocumentCardProps) {
                     Edit/View Fields
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem disabled> {/* Share functionality not implemented yet */}
                   <Share2 className="mr-2 h-4 w-4" />
                   Share
                 </DropdownMenuItem>
-                 <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
+                {onDeleteDocument && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <DropdownMenuItem
+                        onSelect={(e) => e.preventDefault()}
+                        className="text-red-600 focus:text-red-600 focus:bg-red-50/50 dark:focus:bg-red-900/30"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete
+                      </DropdownMenuItem>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete the document
+                          "{document.name}".
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => onDeleteDocument(document.id)}
+                          className={buttonVariants({ variant: "destructive" })}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

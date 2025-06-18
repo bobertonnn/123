@@ -3,7 +3,7 @@
 
 import { DocumentCard, type Document } from '@/components/documents/DocumentCard';
 import { DocumentFilters } from '@/components/documents/DocumentFilters';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { PlusCircle, FileText, Settings, UploadCloud, FileSignature, Info, CheckCircle, Loader2 } from 'lucide-react'; 
 import Link from 'next/link';
@@ -13,6 +13,17 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; 
 import { useToast } from "@/hooks/use-toast"; 
 import { ProductTour, type TourStep } from '@/components/shared/ProductTour';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 const initialOnboardingSteps = [
   { id: 'profile', label: 'Complete Your Profile', check: () => typeof window !== 'undefined' && !!(localStorage.getItem('userFullName') && localStorage.getItem('userSignature')), icon: Settings, href: '/profile' },
@@ -28,6 +39,18 @@ const tourSteps: TourStep[] = [
   { title: "Navigation Sidebar", description: "Use the sidebar (on larger screens) to navigate to different sections like Templates or Settings.", targetId: null  },
   { title: "You're All Set!", description: "Explore and enjoy streamlining your document workflows!", targetId: null },
 ];
+
+const getStoredDocuments = (): Document[] => {
+  if (typeof window === 'undefined') return [];
+  const stored = localStorage.getItem('uploadedDocuments');
+  return stored ? JSON.parse(stored) : [];
+};
+
+const saveStoredDocuments = (documents: Document[]) => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('uploadedDocuments', JSON.stringify(documents));
+  window.dispatchEvent(new CustomEvent('storageChanged', { detail: { key: 'uploadedDocuments' } }));
+};
 
 
 export default function DashboardPage() {
@@ -54,10 +77,9 @@ export default function DashboardPage() {
   useEffect(() => {
     setIsLoadingDocuments(true);
     if (typeof window !== 'undefined') {
-        const storedDocumentsRaw = localStorage.getItem('uploadedDocuments');
-        const loadedDocs = storedDocumentsRaw ? JSON.parse(storedDocumentsRaw) : [];
+        const loadedDocs = getStoredDocuments();
         setAllLoadedDocuments(loadedDocs);
-        setDisplayedDocuments(loadedDocs); // Initially display all loaded documents
+        // setDisplayedDocuments(loadedDocs); // Filter logic will handle this
 
         const onboardingDismissed = localStorage.getItem('onboardingPromptDismissed');
         if (!onboardingDismissed) {
@@ -134,6 +156,17 @@ export default function DashboardPage() {
 
   const handleTourFinish = () => {
     setIsTourOpen(false);
+  };
+
+  const handleDeleteDocument = (documentId: string) => {
+    const updatedDocuments = allLoadedDocuments.filter(doc => doc.id !== documentId);
+    saveStoredDocuments(updatedDocuments);
+    setAllLoadedDocuments(updatedDocuments);
+    // displayedDocuments will update via useEffect
+    toast({
+      title: "Document Deleted",
+      description: "The document has been successfully removed.",
+    });
   };
 
 
@@ -220,7 +253,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {displayedDocuments.map((doc, index) => (
             <div key={doc.id} id={index === 0 ? "document-card-example" : undefined}>
-              <DocumentCard document={doc} />
+              <DocumentCard document={doc} onDeleteDocument={handleDeleteDocument} />
             </div>
           ))}
         </div>
