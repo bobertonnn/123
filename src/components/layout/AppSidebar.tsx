@@ -33,7 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState, useEffect } from "react";
-import { getInitials } from "@/lib/utils"; // Ensured getInitials is imported
+import { getInitials } from "@/lib/utils";
 
 const mainNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
@@ -54,26 +54,26 @@ export function AppSidebar() {
   const [userEmail, setUserEmail] = useState("user@example.com");
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | undefined>(undefined);
 
-  useEffect(() => {
+  const loadProfileData = () => {
     const storedName = localStorage.getItem("userFullName");
     const storedEmail = localStorage.getItem("userEmail");
     const storedAvatar = localStorage.getItem("userAvatarUrl");
-    if (storedName) setUserName(storedName);
-    if (storedEmail) setUserEmail(storedEmail);
-    if (storedAvatar) setUserAvatarUrl(storedAvatar);
+    setUserName(storedName || "User"); // Fallback to "User"
+    setUserEmail(storedEmail || "user@example.com"); // Fallback
+    setUserAvatarUrl(storedAvatar || undefined);
+  };
+
+  useEffect(() => {
+    loadProfileData(); // Initial load
 
     const handleProfileUpdate = () => {
-        const newName = localStorage.getItem("userFullName");
-        const newAvatar = localStorage.getItem("userAvatarUrl");
-        if (newName) setUserName(newName);
-        if (newAvatar) setUserAvatarUrl(newAvatar);
+      loadProfileData();
     }
 
     window.addEventListener('profileUpdated', handleProfileUpdate);
     return () => {
         window.removeEventListener('profileUpdated', handleProfileUpdate);
     }
-
   }, []);
 
   const NavLink = ({ href, label, icon: Icon }: { href: string; label: string; icon: React.ElementType }) => (

@@ -21,12 +21,12 @@ import {
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuPortal,
-  DropdownMenuSubContent, // Added this back, might be needed if we re-add submenus
+  DropdownMenuSubContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { cn, getInitials } from "@/lib/utils"; // Ensured getInitials is imported
+import { cn, getInitials } from "@/lib/utils";
 import React, { useState, useEffect } from "react";
 import { type Notification, type NotificationIconName } from "@/types/notification";
 import { getNotifications, addMockNotifications, markNotificationAsRead, markAllNotificationsAsRead, clearAllNotifications, deleteNotificationById } from "@/lib/notificationManager";
@@ -78,12 +78,46 @@ export function AppHeader() {
   const [userName, setUserName] = useState("User"); 
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | undefined>(undefined);
 
-  useEffect(() => {
+  const loadProfileData = () => {
     const storedName = localStorage.getItem("userFullName");
     const storedAvatar = localStorage.getItem("userAvatarUrl");
-    if (storedName) setUserName(storedName);
-    if (storedAvatar) setUserAvatarUrl(storedAvatar);
+    setUserName(storedName || "User"); // Fallback to "User"
+    setUserAvatarUrl(storedAvatar || undefined);
+  };
+
+  useEffect(() => {
+    loadProfileData(); // Initial load
+    refreshNotifications(); 
+
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'userSiteNotifications') {
+        refreshNotifications();
+      }
+      if (event.key === 'userFullName' || event.key === 'userAvatarUrl') {
+        loadProfileData();
+      }
+    };
+    
+    const handleCustomEvent = (event: Event) => {
+      if ((event as CustomEvent).type === 'notificationsUpdated') {
+        refreshNotifications();
+      }
+      if ((event as CustomEvent).type === 'profileUpdated') {
+        loadProfileData();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('notificationsUpdated', handleCustomEvent);
+    window.addEventListener('profileUpdated', handleCustomEvent);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('notificationsUpdated', handleCustomEvent);
+      window.removeEventListener('profileUpdated', handleCustomEvent);
+    };
   }, []);
+
 
   const refreshNotifications = () => {
     let currentNotifications = getNotifications();
@@ -94,39 +128,6 @@ export function AppHeader() {
     }
     setNotifications(currentNotifications.sort((a, b) => parseISO(b.timestamp).getTime() - parseISO(a.timestamp).getTime()));
   };
-
-  useEffect(() => {
-    refreshNotifications(); 
-
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'userSiteNotifications' || event.key === 'userFullName' || event.key === 'userAvatarUrl') {
-        refreshNotifications();
-        const storedName = localStorage.getItem("userFullName");
-        const storedAvatar = localStorage.getItem("userAvatarUrl");
-        if (storedName) setUserName(storedName);
-        if (storedAvatar) setUserAvatarUrl(storedAvatar);
-      }
-    };
-    const handleCustomEvent = () => {
-      refreshNotifications();
-      const storedName = localStorage.getItem("userFullName");
-      const storedAvatar = localStorage.getItem("userAvatarUrl");
-      if (storedName) setUserName(storedName);
-      if (storedAvatar) setUserAvatarUrl(storedAvatar);
-    };
-
-
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('notificationsUpdated', handleCustomEvent);
-    window.addEventListener('profileUpdated', handleCustomEvent);
-
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('notificationsUpdated', handleCustomEvent);
-      window.removeEventListener('profileUpdated', handleCustomEvent);
-    };
-  }, []);
 
   useEffect(() => {
     setUnreadCount(notifications.filter(n => !n.read).length);
