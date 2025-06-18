@@ -7,18 +7,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Lock, Bell, CreditCard, Save, Edit3, XCircle, Loader2, Check, UploadCloud } from "lucide-react";
+import { User, Lock, Bell, CreditCard, Save, Edit3, XCircle, Loader2, Check, UploadCloud, Trash2 } from "lucide-react";
 import { SignatureCanvas } from "@/components/auth/SignatureCanvas";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react"; // Added useCallback
 import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
-import { GradientBirdIcon } from "@/components/icons/Logo"; // Added GradientBirdIcon
+import { GradientBirdIcon } from "@/components/icons/Logo";
 import { cn } from "@/lib/utils";
+import { motion, useMotionValue, useSpring } from "framer-motion"; // Added motion imports
 
 type SaveStatus = "idle" | "saving" | "success" | "error";
+
+const MAX_ROTATION = 15; // Max rotation angle for the signature
 
 export default function SettingsPage() {
   const [userFullName, setUserFullName] = useState("User");
@@ -28,6 +31,7 @@ export default function SettingsPage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [showUpdateSignatureArea, setShowUpdateSignatureArea] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const signatureContainerRef = useRef<HTMLDivElement>(null); // Ref for signature container
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -38,6 +42,30 @@ export default function SettingsPage() {
   const [notificationSaveStatus, setNotificationSaveStatus] = useState<SaveStatus>("idle");
 
   const { toast } = useToast();
+
+  // Motion values for signature rotation
+  const rotateX = useMotionValue(0);
+  const rotateY = useMotionValue(0);
+  const springConfig = { stiffness: 200, damping: 25, mass: 1 };
+  const springRotateX = useSpring(rotateX, springConfig);
+  const springRotateY = useSpring(rotateY, springConfig);
+
+  const handleSignatureMouseMove = useCallback((event: globalThis.MouseEvent) => {
+    if (!signatureContainerRef.current) return;
+    const rect = signatureContainerRef.current.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left - rect.width / 2;
+    const mouseY = event.clientY - rect.top - rect.height / 2;
+    const newRotateY = (mouseX / (rect.width / 2)) * MAX_ROTATION;
+    const newRotateX = -(mouseY / (rect.height / 2)) * MAX_ROTATION;
+    rotateX.set(newRotateX);
+    rotateY.set(newRotateY);
+  }, [rotateX, rotateY]);
+
+  const handleSignatureMouseLeave = useCallback(() => {
+    rotateX.set(0);
+    rotateY.set(0);
+  }, [rotateX, rotateY]);
+
 
   useEffect(() => {
     const storedFullName = localStorage.getItem("userFullName");
@@ -61,6 +89,21 @@ export default function SettingsPage() {
     else setUserAvatarUrl(undefined);
 
   }, []);
+
+  useEffect(() => {
+    const currentSignatureContainer = signatureContainerRef.current;
+    if (currentSignatureContainer) {
+      currentSignatureContainer.addEventListener('mousemove', handleSignatureMouseMove);
+      currentSignatureContainer.addEventListener('mouseleave', handleSignatureMouseLeave);
+    }
+    return () => {
+      if (currentSignatureContainer) {
+        currentSignatureContainer.removeEventListener('mousemove', handleSignatureMouseMove);
+        currentSignatureContainer.removeEventListener('mouseleave', handleSignatureMouseLeave);
+      }
+    };
+  }, [handleSignatureMouseMove, handleSignatureMouseLeave]);
+
 
   const handleSignatureSave = (dataUrl: string) => {
     setUserSignature(dataUrl);
@@ -215,16 +258,12 @@ export default function SettingsPage() {
               <div className="flex items-center space-x-4">
                 <Avatar className="h-20 w-20">
                   {(avatarPreview || userAvatarUrl) ? (
-                    <AvatarImage src={avatarPreview || userAvatarUrl} alt={`${userFullName}'s avatar`} data-ai-hint="person avatar" />
-                  ) : null}
-                  <AvatarFallback className={!(avatarPreview || userAvatarUrl) ? "bg-card border border-border flex items-center justify-center" : "bg-muted flex items-center justify-center"}>
-                     <GradientBirdIcon 
-                        className={cn(
-                            "h-10 w-10", // Base size for settings avatar
-                            !(avatarPreview || userAvatarUrl) ? "text-primary" : "text-muted-foreground"
-                        )}
-                     />
-                  </AvatarFallback>
+                    <AvatarImage src={avatarPreview || userAvatarUrl!} alt={`${userFullName}'s avatar`} data-ai-hint="person avatar" />
+                  ) : (
+                    <AvatarFallback className="bg-card border border-border flex items-center justify-center">
+                      <GradientBirdIcon className="h-10 w-10 text-primary" />
+                    </AvatarFallback>
+                  )}
                 </Avatar>
                 <Button variant="outline" onClick={() => avatarInputRef.current?.click()}>
                   <UploadCloud className="mr-2 h-4 w-4"/>Change Avatar
@@ -234,8 +273,8 @@ export default function SettingsPage() {
                     <XCircle className="mr-1 h-4 w-4 text-destructive"/>Cancel Preview
                   </Button>
                 )}
-                 {userAvatarUrl && !avatarPreview && ( // Show remove button only if there's a saved avatar and no new preview
-                  <Button variant="ghost" size="sm" onClick={() => { setUserAvatarUrl(undefined); /* localStorage will be cleared on save */ }}>
+                 {userAvatarUrl && !avatarPreview && (
+                  <Button variant="ghost" size="sm" onClick={() => { setUserAvatarUrl(undefined); }}>
                     <Trash2 className="mr-1 h-4 w-4 text-destructive"/>Remove Avatar
                   </Button>
                 )}
@@ -252,10 +291,22 @@ export default function SettingsPage() {
               </div>
               <div>
                 <Label>Your Signature</Label>
-                <Card className="mt-1 p-4 bg-muted/30" id="signature">
+                <Card className="mt-1 p-4 bg-muted/30 perspective" id="signature" ref={signatureContainerRef}> {/* Added perspective and ref */}
                   {userSignature && !showUpdateSignatureArea && (
                      <div className="flex flex-col items-center">
-                        <Image src={userSignature} alt="Current signature" width={400} height={150} className="border rounded-md bg-card mx-auto mb-2 shadow-sm" data-ai-hint="signature image" />
+                        <motion.div
+                          className="relative transform-style-preserve-3d"
+                          style={{ rotateX: springRotateX, rotateY: springRotateY }}
+                        >
+                          <Image 
+                            src={userSignature} 
+                            alt="Current signature" 
+                            width={400} height={150} 
+                            className="border rounded-md bg-card mx-auto mb-2 shadow-sm backface-hidden" 
+                            data-ai-hint="signature image"
+                            priority 
+                          />
+                        </motion.div>
                         <Button variant="link" onClick={() => setShowUpdateSignatureArea(true)} className="mt-2">Update Signature</Button>
                      </div>
                   )}
@@ -405,3 +456,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
