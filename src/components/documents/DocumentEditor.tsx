@@ -3,7 +3,7 @@
 
 import { PdfViewer } from "./PdfViewer";
 import { Button } from "@/components/ui/button";
-import { Send, ArrowLeft, CheckCircle, Download, Loader2, Edit3, User, CalendarDays as CalendarDaysIcon, PenTool, FileText as FileTextIcon, ArrowRight, Users, Info, Type as TypeIcon } from "lucide-react";
+import { Send, ArrowLeft, CheckCircle, Download, Loader2, Edit3, User, CalendarDays as CalendarDaysIcon, PenTool, FileText as FileTextIcon, ArrowRight, Users, Info, Type as TypeIcon, Phone, Building } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { PublicLinkGenerator } from "@/components/shared/PublicLinkGenerator";
@@ -72,15 +72,20 @@ export function DocumentEditor({
   const [appendedSignatureUrl, setAppendedSignatureUrl] = useState<string | null>(null);
   const [appendedDate, setAppendedDate] = useState<Date | null>(null);
   const [appendedRole, setAppendedRole] = useState<SigningRole | null>(null);
+  const [appendedPhoneNumber, setAppendedPhoneNumber] = useState<string | null>(null);
+  const [appendedCompanyName, setAppendedCompanyName] = useState<string | null>(null);
 
   const [isSigningSheetOpen, setIsSigningSheetOpen] = useState(false);
   const [signingSheetStep, setSigningSheetStep] = useState(0); 
   
   const [tempSigningRole, setTempSigningRole] = useState<SigningRole | null>(null);
   const [tempFullName, setTempFullName] = useState("");
+  const [tempPhoneNumber, setTempPhoneNumber] = useState("");
+  const [tempCompanyName, setTempCompanyName] = useState("");
   const [tempSignatureDataUrl, setTempSignatureDataUrl] = useState<string | null>(null);
   const [tempDate, setTempDate] = useState<Date | undefined>(new Date());
   const [initialProfileSignatureUrl, setInitialProfileSignatureUrl] = useState<string | null>(null);
+  const [initialProfileFullName, setInitialProfileFullName] = useState<string | null>(null);
 
 
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
@@ -90,14 +95,17 @@ export function DocumentEditor({
       const profileFullName = typeof window !== "undefined" ? localStorage.getItem("userFullName") : null;
       const profileSignature = typeof window !== "undefined" ? localStorage.getItem("userSignature") : null;
       setInitialProfileSignatureUrl(profileSignature);
+      setInitialProfileFullName(profileFullName);
       
       setTempSigningRole(appendedRole || null); 
       setTempFullName(appendedFullName || profileFullName || ""); 
+      setTempPhoneNumber(appendedPhoneNumber || "");
+      setTempCompanyName(appendedCompanyName || "");
       setTempSignatureDataUrl(null); 
       setTempDate(appendedDate || new Date()); 
       setSigningSheetStep(0); 
     }
-  }, [isSigningSheetOpen, appendedRole, appendedFullName, appendedDate]);
+  }, [isSigningSheetOpen, appendedRole, appendedFullName, appendedPhoneNumber, appendedCompanyName, appendedDate]);
 
 
   const handleSheetNextStep = () => {
@@ -106,18 +114,18 @@ export function DocumentEditor({
       return;
     }
     
-    const profileFullName = typeof window !== "undefined" ? localStorage.getItem("userFullName") : null;
-    if (signingSheetStep === 1 && tempFullName.trim() === "" && !(profileFullName || appendedFullName)) {
+    if (signingSheetStep === 1 && tempFullName.trim() === "" && !(initialProfileFullName || appendedFullName)) {
       toast({ variant: "destructive", title: "Full Name Required", description: "Please enter your full name."});
       return;
     }
 
-    const profileSignature = typeof window !== "undefined" ? localStorage.getItem("userSignature") : null;
-    if (signingSheetStep === 2 && !tempSignatureDataUrl && !(profileSignature || appendedSignatureUrl)) {
+    // Phone number and Company Name are optional, so no validation needed here to proceed.
+
+    if (signingSheetStep === 4 && !tempSignatureDataUrl && !(initialProfileSignatureUrl || appendedSignatureUrl)) {
       toast({ variant: "destructive", title: "Signature Required", description: "Please provide your signature."});
       return;
     }
-     if (signingSheetStep === 3 && !tempDate) {
+     if (signingSheetStep === 5 && !tempDate) {
       toast({ variant: "destructive", title: "Date Required", description: "Please select a date."});
       return;
     }
@@ -129,13 +137,13 @@ export function DocumentEditor({
   };
 
   const handleApplySignatureDetailsFromSheet = () => {
-    const profileFullName = typeof window !== "undefined" ? localStorage.getItem("userFullName") : null;
-    const profileSignature = typeof window !== "undefined" ? localStorage.getItem("userSignature") : null;
-
-    const finalFullName = tempFullName.trim() !== "" ? tempFullName.trim() : (profileFullName || "");
-    const finalSignatureUrl = tempSignatureDataUrl || profileSignature;
+    const finalFullName = tempFullName.trim() !== "" ? tempFullName.trim() : (initialProfileFullName || "");
+    const finalSignatureUrl = tempSignatureDataUrl || initialProfileSignatureUrl;
     const finalDate = tempDate;
     const finalRole = tempSigningRole;
+    const finalPhoneNumber = tempPhoneNumber.trim() !== "" ? tempPhoneNumber.trim() : null;
+    const finalCompanyName = tempCompanyName.trim() !== "" ? tempCompanyName.trim() : null;
+
 
     if (!finalRole) {
         toast({ variant: "destructive", title: "Role Required", description: "Please select a signing role."});
@@ -156,15 +164,17 @@ export function DocumentEditor({
 
     setAppendedRole(finalRole);
     setAppendedFullName(finalFullName);
+    setAppendedPhoneNumber(finalPhoneNumber);
+    setAppendedCompanyName(finalCompanyName);
     setAppendedSignatureUrl(finalSignatureUrl);
     setAppendedDate(finalDate);
     setIsSigningSheetOpen(false);
 
     let description = "Your details have been applied.";
-    if (finalFullName === profileFullName && tempFullName.trim() === "") {
+    if (finalFullName === initialProfileFullName && tempFullName.trim() === "") {
         description += " Full name from profile used.";
     }
-    if (finalSignatureUrl === profileSignature && !tempSignatureDataUrl) {
+    if (finalSignatureUrl === initialProfileSignatureUrl && !tempSignatureDataUrl) {
         description += " Signature from profile used.";
     }
     toast({ title: "Details Applied", description: description.trim() });
@@ -214,7 +224,7 @@ export function DocumentEditor({
       
       const watermarkText = "DOCUSIGNER PREVIEW";
       const watermarkOpacity = 0.3; 
-      const watermarkColor = rgb(0.5, 0.5, 0.5); // Gray color
+      const watermarkColor = rgb(0.5, 0.5, 0.5); 
       const rotationAngle = -45;
 
       const pages = pdfDoc.getPages();
@@ -252,11 +262,11 @@ export function DocumentEditor({
       const { width: pageWidth, height: pageHeight } = lastPage.getSize();
   
       const generalMargin = 50; 
-      const boxHeight = 100;    
+      const boxHeight = 130; // Increased height for more fields   
       const boxWidth = (pageWidth - (generalMargin * 3)) / 2; 
       const boxBottomY = 50;    
       const labelOffsetY = 5;   
-      const textLineHeight = 12; 
+      const textLineHeight = 10; 
       const contentPadding = 10; 
 
       const senderBoxX = generalMargin;
@@ -285,16 +295,30 @@ export function DocumentEditor({
 
       if (appendedDate) {
         lastPage.drawText(`Date: ${format(appendedDate, 'yyyy-MM-dd')}`, {
-          x: targetBoxX + contentPadding, y: currentContentY, font: helveticaFont, size: 10, color: rgb(0, 0, 0), maxWidth: boxWidth - (2 * contentPadding),
+          x: targetBoxX + contentPadding, y: currentContentY, font: helveticaFont, size: 8, color: rgb(0, 0, 0), maxWidth: boxWidth - (2 * contentPadding),
         });
-        currentContentY -= (textLineHeight + 5); 
+        currentContentY -= (textLineHeight); 
       }
   
       if (appendedFullName) {
         lastPage.drawText(`Signed by: ${appendedFullName}`, {
-          x: targetBoxX + contentPadding, y: currentContentY, font: helveticaFont, size: 10, color: rgb(0, 0, 0), maxWidth: boxWidth - (2 * contentPadding),
+          x: targetBoxX + contentPadding, y: currentContentY, font: helveticaFont, size: 8, color: rgb(0, 0, 0), maxWidth: boxWidth - (2 * contentPadding),
         });
-        currentContentY -= (textLineHeight + 5); 
+        currentContentY -= (textLineHeight); 
+      }
+
+      if (appendedCompanyName) {
+        lastPage.drawText(`Company: ${appendedCompanyName}`, {
+          x: targetBoxX + contentPadding, y: currentContentY, font: helveticaFont, size: 8, color: rgb(0, 0, 0), maxWidth: boxWidth - (2 * contentPadding),
+        });
+        currentContentY -= (textLineHeight);
+      }
+
+      if (appendedPhoneNumber) {
+        lastPage.drawText(`Phone: ${appendedPhoneNumber}`, {
+          x: targetBoxX + contentPadding, y: currentContentY, font: helveticaFont, size: 8, color: rgb(0, 0, 0), maxWidth: boxWidth - (2 * contentPadding),
+        });
+        currentContentY -= (textLineHeight + 5); // Extra space before signature
       }
   
       if (appendedSignatureUrl) { 
@@ -304,7 +328,7 @@ export function DocumentEditor({
         const maxSigHeight = Math.max(remainingHeightForSig, 20); 
         const sigScaleByWidth = (boxWidth - 2 * contentPadding) / signatureImage.width;
         const sigScaleByHeight = maxSigHeight / signatureImage.height;
-        const sigScale = Math.min(sigScaleByWidth, sigScaleByHeight, 0.35); 
+        const sigScale = Math.min(sigScaleByWidth, sigScaleByHeight, 0.30); // Adjusted scale if needed
         const signatureDims = signatureImage.scale(sigScale);
         const sigX = targetBoxX + (boxWidth - signatureDims.width) / 2; 
         const sigY = targetBoxY + contentPadding + Math.max(0, (remainingHeightForSig - signatureDims.height) / 2);
@@ -340,6 +364,18 @@ export function DocumentEditor({
             x: certMargin, y: currentCertY, font: helveticaFont, size: 10, color: rgb(0.2, 0.2, 0.2)
         });
         currentCertY -= certLineHeight;
+        if(appendedCompanyName) {
+            certificatePage.drawText(`Company: ${appendedCompanyName}`, {
+                x: certMargin, y: currentCertY, font: helveticaFont, size: 10, color: rgb(0.2, 0.2, 0.2)
+            });
+            currentCertY -= certLineHeight;
+        }
+        if(appendedPhoneNumber) {
+            certificatePage.drawText(`Phone: ${appendedPhoneNumber}`, {
+                x: certMargin, y: currentCertY, font: helveticaFont, size: 10, color: rgb(0.2, 0.2, 0.2)
+            });
+            currentCertY -= certLineHeight;
+        }
         certificatePage.drawText(`Authentication Level: Email`, {
             x: certMargin, y: currentCertY, font: helveticaFont, size: 10, color: rgb(0.2, 0.2, 0.2)
         });
@@ -468,7 +504,9 @@ export function DocumentEditor({
       localStorage.setItem('finalizedDocumentData', JSON.stringify({
         finalizedPdfDataUri: finalizedPdfDataUri,
         signatureUrl: appendedSignatureUrl, 
-        documentName: documentName
+        documentName: documentName,
+        phoneNumber: appendedPhoneNumber,
+        companyName: appendedCompanyName,
       }));
 
       router.push(`/documents/${documentId}/signed`);
@@ -534,7 +572,7 @@ export function DocumentEditor({
           <PdfViewer fileUrl={documentDataUrl} />
         </motion.div>
 
-        {(appendedFullName || appendedSignatureUrl || appendedDate || appendedRole) && (
+        {(appendedFullName || appendedSignatureUrl || appendedDate || appendedRole || appendedPhoneNumber || appendedCompanyName) && (
           <motion.div 
             initial={{ opacity: 0, width: 0 }} 
             animate={{ opacity: 1, width: '24rem' }}
@@ -565,6 +603,18 @@ export function DocumentEditor({
                   <p className="text-foreground mt-1 pl-6">{appendedFullName}</p>
                 </div>
               )}
+              {appendedPhoneNumber && (
+                <div className="p-3 border rounded-md bg-muted/50">
+                  <Label className="font-medium text-muted-foreground flex items-center"><Phone className="mr-2 h-4 w-4"/>Phone Number:</Label>
+                  <p className="text-foreground mt-1 pl-6">{appendedPhoneNumber}</p>
+                </div>
+              )}
+              {appendedCompanyName && (
+                <div className="p-3 border rounded-md bg-muted/50">
+                  <Label className="font-medium text-muted-foreground flex items-center"><Building className="mr-2 h-4 w-4"/>Company Name:</Label>
+                  <p className="text-foreground mt-1 pl-6">{appendedCompanyName}</p>
+                </div>
+              )}
               {appendedDate && (
                 <div className="p-3 border rounded-md bg-muted/50">
                   <Label className="font-medium text-muted-foreground flex items-center"><CalendarDaysIcon className="mr-2 h-4 w-4"/>Date:</Label>
@@ -582,15 +632,20 @@ export function DocumentEditor({
             <SheetTitle className="text-2xl font-headline flex items-center">
                 {signingSheetStep === 0 && <Users className="mr-3 h-6 w-6 text-primary" />}
                 {signingSheetStep === 1 && <TypeIcon className="mr-3 h-6 w-6 text-primary" />}
-                {signingSheetStep === 2 && <PenTool className="mr-3 h-6 w-6 text-primary" />}
-                {signingSheetStep === 3 && <CalendarDaysIcon className="mr-3 h-6 w-6 text-primary" />}
+                {signingSheetStep === 2 && <Phone className="mr-3 h-6 w-6 text-primary" />}
+                {signingSheetStep === 3 && <Building className="mr-3 h-6 w-6 text-primary" />}
+                {signingSheetStep === 4 && <PenTool className="mr-3 h-6 w-6 text-primary" />}
+                {signingSheetStep === 5 && <CalendarDaysIcon className="mr-3 h-6 w-6 text-primary" />}
+
                 {signingSheetStep === 0 && "Select Your Role"}
                 {signingSheetStep === 1 && "Enter Your Full Name"}
-                {signingSheetStep === 2 && "Provide Your Signature"}
-                {signingSheetStep === 3 && "Select Signing Date"}
+                {signingSheetStep === 2 && "Enter Phone Number (Optional)"}
+                {signingSheetStep === 3 && "Enter Company Name (Optional)"}
+                {signingSheetStep === 4 && "Provide Your Signature"}
+                {signingSheetStep === 5 && "Select Signing Date"}
             </SheetTitle>
             <SheetDescription>
-                Step {signingSheetStep + 1} of 4. Complete the details to be added to the document.
+                Step {signingSheetStep + 1} of 6. Complete the details to be added to the document.
             </SheetDescription>
           </SheetHeader>
           
@@ -630,6 +685,33 @@ export function DocumentEditor({
               </div>
             )}
             {signingSheetStep === 2 && (
+              <div>
+                <Label htmlFor="sheetPhoneNumberInput">Phone Number (Optional)</Label>
+                <Input 
+                    id="sheetPhoneNumberInput" 
+                    type="tel"
+                    value={tempPhoneNumber} 
+                    onChange={(e) => setTempPhoneNumber(e.target.value)} 
+                    placeholder="e.g., +1 (555) 123-4567"
+                    className="mt-1"
+                    autoFocus
+                />
+              </div>
+            )}
+            {signingSheetStep === 3 && (
+              <div>
+                <Label htmlFor="sheetCompanyNameInput">Company Name (Optional)</Label>
+                <Input 
+                    id="sheetCompanyNameInput" 
+                    value={tempCompanyName} 
+                    onChange={(e) => setTempCompanyName(e.target.value)} 
+                    placeholder="e.g., Acme Corp"
+                    className="mt-1"
+                    autoFocus
+                />
+              </div>
+            )}
+            {signingSheetStep === 4 && (
                <div className="flex flex-col items-center">
                  <Label className="self-start mb-2">Your Signature</Label>
                 <SignatureCanvas 
@@ -656,7 +738,7 @@ export function DocumentEditor({
                 )}
               </div>
             )}
-            {signingSheetStep === 3 && (
+            {signingSheetStep === 5 && (
               <div className="flex flex-col items-center">
                  <Label className="self-start mb-2">Date of Signing</Label>
                 <Calendar
@@ -676,7 +758,7 @@ export function DocumentEditor({
                 <ArrowLeft className="mr-2 h-4 w-4" /> Previous
               </Button>
               
-              {signingSheetStep < 3 ? (
+              {signingSheetStep < 5 ? (
                 <Button onClick={handleSheetNextStep} className="btn-gradient-hover">
                   Next <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>

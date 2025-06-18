@@ -7,13 +7,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Download, CheckCircle, Home, Share2, AlertTriangle, Terminal } from 'lucide-react';
+import { Download, CheckCircle, Home, Share2, AlertTriangle, Terminal, Phone, Building } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface FinalizedDocumentData {
   finalizedPdfDataUri: string; 
   signatureUrl: string | null;
   documentName: string;
+  phoneNumber?: string | null; // Added
+  companyName?: string | null; // Added
 }
 
 export default function DocumentSignedPage() {
@@ -67,7 +69,6 @@ export default function DocumentSignedPage() {
     }
   };
 
-  // Simulated commands for different OS
   const exampleCommands = {
     windows: "echo 'Conceptual device verification command for Windows.'\nrem Example: verify-docusigner-device.exe --token YOUR_SECURE_TOKEN",
     macos: "echo 'Conceptual device verification command for macOS.'\n# Example: ./verify-docusigner-device-mac --token YOUR_SECURE_TOKEN",
@@ -155,6 +156,27 @@ export default function DocumentSignedPage() {
         >
           <CheckCircle className="mr-2 h-5 w-5" /> Your details have been added.
         </motion.p>
+
+        {(finalizedData.companyName || finalizedData.phoneNumber) && (
+          <motion.div
+            className="text-gray-400 mb-4 text-sm space-y-1"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.55 }}
+          >
+            {finalizedData.companyName && (
+              <p className="flex items-center justify-center">
+                <Building className="mr-2 h-4 w-4" /> Company: {finalizedData.companyName}
+              </p>
+            )}
+            {finalizedData.phoneNumber && (
+              <p className="flex items-center justify-center">
+                <Phone className="mr-2 h-4 w-4" /> Phone: {finalizedData.phoneNumber}
+              </p>
+            )}
+          </motion.div>
+        )}
+
         <motion.p 
             className="text-gray-400 mb-8"
             initial={{ opacity: 0, y: 10 }}
@@ -163,6 +185,7 @@ export default function DocumentSignedPage() {
         >
           You can now download the finalized document.
         </motion.p>
+
 
         <motion.div 
             className="flex flex-col sm:flex-row justify-center gap-4 mb-8"
