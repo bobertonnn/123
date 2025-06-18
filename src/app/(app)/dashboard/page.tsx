@@ -7,7 +7,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { PlusCircle, FileText, Settings, UploadCloud, FileSignature, Info, CheckCircle, Loader2 } from 'lucide-react'; 
 import Link from 'next/link';
-import { useState, useEffect } from 'react'; 
+import { useState, useEffect, useMemo } from 'react'; 
 import { motion, AnimatePresence } from 'framer-motion'; 
 import { Progress } from "@/components/ui/progress"; 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; 
@@ -79,7 +79,6 @@ export default function DashboardPage() {
     if (typeof window !== 'undefined') {
         const loadedDocs = getStoredDocuments();
         setAllLoadedDocuments(loadedDocs);
-        // setDisplayedDocuments(loadedDocs); // Filter logic will handle this
 
         const onboardingDismissed = localStorage.getItem('onboardingPromptDismissed');
         if (!onboardingDismissed) {
@@ -109,10 +108,11 @@ export default function DashboardPage() {
     let filtered = allLoadedDocuments;
 
     if (searchTerm) {
+      const lowerSearchTerm = searchTerm.toLowerCase();
       filtered = filtered.filter(doc => 
-        doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (doc.summary && doc.summary.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        doc.participants.some(p => p.toLowerCase().includes(searchTerm.toLowerCase()))
+        doc.name.toLowerCase().includes(lowerSearchTerm) ||
+        (doc.summary && doc.summary.toLowerCase().includes(lowerSearchTerm)) ||
+        doc.participants.some(p => p.toLowerCase().includes(lowerSearchTerm))
       );
     }
 
@@ -162,12 +162,19 @@ export default function DashboardPage() {
     const updatedDocuments = allLoadedDocuments.filter(doc => doc.id !== documentId);
     saveStoredDocuments(updatedDocuments);
     setAllLoadedDocuments(updatedDocuments);
-    // displayedDocuments will update via useEffect
     toast({
       title: "Document Deleted",
       description: "The document has been successfully removed.",
     });
   };
+
+  const uniqueParticipants = useMemo(() => {
+    const participantsSet = new Set<string>();
+    allLoadedDocuments.forEach(doc => {
+      doc.participants.forEach(p => participantsSet.add(p));
+    });
+    return Array.from(participantsSet).sort();
+  }, [allLoadedDocuments]);
 
 
   return (
@@ -241,7 +248,17 @@ export default function DashboardPage() {
       )}
 
       <div id="document-filters">
-        <DocumentFilters /> 
+        <DocumentFilters
+          searchTerm={searchTerm}
+          onSearchTermChange={setSearchTerm}
+          selectedStatus={selectedStatus}
+          onStatusChange={setSelectedStatus}
+          selectedDate={selectedDate}
+          onDateChange={setSelectedDate}
+          selectedParticipant={selectedParticipant}
+          onParticipantChange={setSelectedParticipant}
+          allParticipants={uniqueParticipants}
+        />
       </div>
       
       {isLoadingDocuments ? (
@@ -274,7 +291,7 @@ export default function DashboardPage() {
               : "It looks a bit empty here. Upload your first document to get started."
             }
           </p>
-          {allLoadedDocuments.length === 0 && !searchTerm && (
+          {allLoadedDocuments.length === 0 && !searchTerm && !selectedStatus && !selectedDate && !selectedParticipant && (
              <Button className="mt-6 btn-gradient-hover px-6 py-3 text-base group" asChild>
                 <Link href="/documents/upload">
                     <UploadCloud className="mr-2 h-5 w-5 transition-transform group-hover:animate-pulse" /> <span>Upload Your First Document</span>
