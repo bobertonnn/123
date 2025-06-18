@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Users, CalendarDays, CheckCircle, Clock, Edit, Share2, Trash2, AlertCircle, UploadCloudIcon, MessageSquare } from "lucide-react"; // Added MessageSquare
+import { FileText, Users, CalendarDays, CheckCircle, Clock, Edit, Share2, Trash2, AlertCircle, UploadCloudIcon, MessageSquare } from "lucide-react";
 import Image from "next/image";
 import {
   DropdownMenu,
@@ -15,8 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical } from "lucide-react";
-import { useState, useEffect } from "react"; // Added for AI summary
-// import { summarizeDocument } from "@/ai/flows/summarize-document-flow"; // Placeholder for actual import
+// Removed useState, useEffect as summary is now passed via props
 
 export interface Document {
   id: string;
@@ -27,7 +26,7 @@ export interface Document {
   thumbnailUrl?: string; 
   dataUrl?: string; 
   stampedSignatureUrl?: string | null;
-  summary?: string; // Added for AI summary
+  summary?: string;
 }
 
 interface DocumentCardProps {
@@ -47,26 +46,6 @@ export function DocumentCard({ document }: DocumentCardProps) {
   const StatusIcon = currentStatusStyle.icon;
   const statusTextColor = currentStatusStyle.text;
   const statusBorderColor = currentStatusStyle.border;
-
-  // AI Summary state - using mock for now
-  const [aiSummary, setAiSummary] = useState<string | null>(document.summary || null);
-  const [isLoadingSummary, setIsLoadingSummary] = useState<boolean>(!document.summary);
-
-  useEffect(() => {
-    // This is where you would call the Genkit flow if not using mock summary
-    // For now, if no mock summary, we just simulate loading and then show a placeholder
-    if (!document.summary) {
-      const timer = setTimeout(() => {
-        // setAiSummary("AI summary would appear here after processing..."); // Example if API call was made
-        setAiSummary(null); // Or keep it null if no summary can be generated
-        setIsLoadingSummary(false);
-      }, 1500); // Simulate API call delay
-      return () => clearTimeout(timer);
-    } else {
-        setIsLoadingSummary(false);
-    }
-  }, [document.summary, document.name]); // document.name could be part of API call input
-
 
   return (
     <motion.div
@@ -128,20 +107,19 @@ export function DocumentCard({ document }: DocumentCardProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex-grow space-y-2 text-sm text-muted-foreground">
-          {isLoadingSummary && (
-            <div className="flex items-center text-xs text-muted-foreground">
-                <MessageSquare className="mr-1.5 h-3.5 w-3.5 animate-pulse text-primary/70" />
-                <span className="italic">Generating summary...</span>
-            </div>
-          )}
-          {aiSummary && !isLoadingSummary && (
+          {document.summary ? (
             <div className="flex items-start text-xs text-muted-foreground border-l-2 border-primary/50 pl-2 py-1 bg-primary/5 rounded-r-sm">
                 <MessageSquare className="mr-1.5 h-3.5 w-3.5 text-primary/90 flex-shrink-0 mt-0.5" />
-                <span className="italic">{aiSummary}</span>
+                <span className="italic">{document.summary}</span>
+            </div>
+          ) : (
+             <div className="flex items-center text-xs text-muted-foreground/70">
+                <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
+                <span className="italic">No summary available.</span>
             </div>
           )}
 
-          <div className="flex items-center pt-1"> {/* Added pt-1 for spacing if summary is present */}
+          <div className="flex items-center pt-1">
             <Users className="mr-2 h-4 w-4 flex-shrink-0" />
             <span className="truncate">{document.participants.join(", ")}</span>
           </div>

@@ -5,7 +5,7 @@ import { DocumentCard, type Document } from '@/components/documents/DocumentCard
 import { DocumentFilters } from '@/components/documents/DocumentFilters';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
-import { PlusCircle, FileText, Settings, UploadCloud, FileSignature, Info, CheckCircle } from 'lucide-react'; 
+import { PlusCircle, FileText, Settings, UploadCloud, FileSignature, Info, CheckCircle, Loader2 } from 'lucide-react'; 
 import Link from 'next/link';
 import { useState, useEffect } from 'react'; 
 import { motion, AnimatePresence } from 'framer-motion'; 
@@ -13,15 +13,6 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; 
 import { useToast } from "@/hooks/use-toast"; 
 import { ProductTour, type TourStep } from '@/components/shared/ProductTour';
-
-const mockDocuments: Document[] = [
-  { id: '1', name: 'Q3 Sales Agreement Long Name That Might Overflow', status: 'Pending', participants: ['Alice', 'Bob'], lastModified: '2023-10-26', thumbnailUrl: 'https://placehold.co/300x150.png?text=Doc1', summary: "Agreement detailing sales terms for Q3 activities with client Bob." },
-  { id: '2', name: 'NDA for Project Phoenix', status: 'Signed', participants: ['Charlie', 'Diana'], lastModified: '2023-10-25', thumbnailUrl: 'https://placehold.co/300x150.png?text=Doc2', summary: "Non-disclosure agreement for confidential Project Phoenix details." },
-  { id: '3', name: 'Employee Handbook v2.1', status: 'Completed', participants: ['HR Dept'], lastModified: '2023-10-20', thumbnailUrl: 'https://placehold.co/300x150.png?text=Doc3', summary: "Updated company policies and guidelines for all employees." },
-  { id: '4', name: 'Service Level Agreement', status: 'Pending', participants: ['Eve', 'Frank'], lastModified: '2023-10-28', summary: "Defines service standards for the upcoming client project." },
-  { id: '5', name: 'Partnership Proposal', status: 'Rejected', participants: ['Grace', 'Heidi'], lastModified: '2023-10-15', thumbnailUrl: 'https://placehold.co/300x150.png?text=Doc5', summary: "Proposal for a strategic partnership, currently rejected." },
-  { id: '6', name: 'Website Terms of Service Update', status: 'Completed', participants: ['Legal Team'], lastModified: '2023-09-30', summary: "Revised terms and conditions for website users." },
-];
 
 const initialOnboardingSteps = [
   { id: 'profile', label: 'Complete Your Profile', check: () => typeof window !== 'undefined' && !!(localStorage.getItem('userFullName') && localStorage.getItem('userSignature')), icon: Settings, href: '/profile' },
@@ -47,47 +38,58 @@ export default function DashboardPage() {
   const [isTourOpen, setIsTourOpen] = useState(false);
   const [currentTourStep, setCurrentTourStep] = useState(0);
 
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string | undefined>(undefined);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedParticipant, setSelectedParticipant] = useState<string | undefined>(undefined);
-  const [displayedDocuments, setDisplayedDocuments] = useState<Document[]>(mockDocuments);
+  const [displayedDocuments, setDisplayedDocuments] = useState<Document[]>([]);
+  const [allLoadedDocuments, setAllLoadedDocuments] = useState<Document[]>([]);
+
 
   const [clientOnboardingSteps, setClientOnboardingSteps] = useState(
     initialOnboardingSteps.map(step => ({ ...step, isDoneClient: false }))
   );
 
   useEffect(() => {
-    const onboardingDismissed = typeof window !== 'undefined' ? localStorage.getItem('onboardingPromptDismissed') : null;
-    if (!onboardingDismissed) {
-      const docs = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('uploadedDocuments') || '[]') as Document[] : [];
-      const profileName = typeof window !== 'undefined' ? localStorage.getItem('userFullName') : null;
-      if (docs.length === 0 && !profileName) {
-        setShowOnboardingPrompt(true);
-      }
-    }
+    setIsLoadingDocuments(true);
+    if (typeof window !== 'undefined') {
+        const storedDocumentsRaw = localStorage.getItem('uploadedDocuments');
+        const loadedDocs = storedDocumentsRaw ? JSON.parse(storedDocumentsRaw) : [];
+        setAllLoadedDocuments(loadedDocs);
+        setDisplayedDocuments(loadedDocs); // Initially display all loaded documents
 
-    let doneSteps = 0;
-    const updatedClientSteps = initialOnboardingSteps.map(step => {
-        const isStepDone = step.check();
-        if (isStepDone) {
-            doneSteps++;
+        const onboardingDismissed = localStorage.getItem('onboardingPromptDismissed');
+        if (!onboardingDismissed) {
+            const profileName = localStorage.getItem('userFullName');
+            if (loadedDocs.length === 0 && !profileName) {
+            setShowOnboardingPrompt(true);
+            }
         }
-        return { ...step, isDoneClient: isStepDone };
-    });
-    
-    setClientOnboardingSteps(updatedClientSteps);
-    setCompletedSteps(doneSteps);
-    setSetupProgress(Math.round((doneSteps / initialOnboardingSteps.length) * 100));
 
+        let doneSteps = 0;
+        const updatedClientSteps = initialOnboardingSteps.map(step => {
+            const isStepDone = step.check();
+            if (isStepDone) {
+                doneSteps++;
+            }
+            return { ...step, isDoneClient: isStepDone };
+        });
+        
+        setClientOnboardingSteps(updatedClientSteps);
+        setCompletedSteps(doneSteps);
+        setSetupProgress(Math.round((doneSteps / initialOnboardingSteps.length) * 100));
+    }
+    setIsLoadingDocuments(false);
   }, []);
 
   useEffect(() => {
-    let filtered = mockDocuments;
+    let filtered = allLoadedDocuments;
 
     if (searchTerm) {
       filtered = filtered.filter(doc => 
         doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (doc.summary && doc.summary.toLowerCase().includes(searchTerm.toLowerCase())) ||
         doc.participants.some(p => p.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
@@ -101,14 +103,12 @@ export default function DashboardPage() {
       filtered = filtered.filter(doc => doc.lastModified === dateString);
     }
     
-    // Note: Participant filtering is simplified as mockContacts is not directly available here
-    // In a real app, you'd compare against a list of participant IDs or full names
     if (selectedParticipant) {
        filtered = filtered.filter(doc => doc.participants.includes(selectedParticipant));
     }
 
     setDisplayedDocuments(filtered);
-  }, [searchTerm, selectedStatus, selectedDate, selectedParticipant]);
+  }, [searchTerm, selectedStatus, selectedDate, selectedParticipant, allLoadedDocuments]);
 
 
   const dismissOnboardingPrompt = () => {
@@ -187,7 +187,7 @@ export default function DashboardPage() {
           <CardContent className="space-y-3">
             <Progress value={setupProgress} className="w-full h-2 mb-3" />
             <p className="text-sm text-muted-foreground">{completedSteps} of {clientOnboardingSteps.length} steps completed.</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3"> {/* Changed from grid-cols-3 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {clientOnboardingSteps.map(step => {
                 const Icon = step.icon;
                 const isDone = step.isDoneClient;
@@ -208,19 +208,15 @@ export default function DashboardPage() {
       )}
 
       <div id="document-filters">
-        <DocumentFilters 
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            selectedStatus={selectedStatus}
-            setSelectedStatus={setSelectedStatus}
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
-            selectedParticipant={selectedParticipant}
-            setSelectedParticipant={setSelectedParticipant}
-        />
+        <DocumentFilters /> 
       </div>
-
-      {displayedDocuments.length > 0 ? (
+      
+      {isLoadingDocuments ? (
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="ml-4 text-lg">Loading documents...</p>
+        </div>
+      ) : displayedDocuments.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {displayedDocuments.map((doc, index) => (
             <div key={doc.id} id={index === 0 ? "document-card-example" : undefined}>
@@ -236,15 +232,22 @@ export default function DashboardPage() {
             className="text-center py-10 bg-card rounded-lg shadow"
         >
           <FileText className="mx-auto h-16 w-16 text-primary/50 mb-3" />
-          <h3 className="mt-2 text-2xl font-semibold font-headline">No Documents Yet</h3>
+          <h3 className="mt-2 text-2xl font-semibold font-headline">
+            {allLoadedDocuments.length > 0 ? "No Documents Match Filters" : "No Documents Yet"}
+          </h3>
           <p className="mt-1 text-md text-muted-foreground">
-            It looks a bit empty here. Upload your first document to get started.
+            {allLoadedDocuments.length > 0 
+              ? "Try adjusting your search or filter criteria."
+              : "It looks a bit empty here. Upload your first document to get started."
+            }
           </p>
-          <Button className="mt-6 btn-gradient-hover px-6 py-3 text-base group" asChild>
-             <Link href="/documents/upload">
-                <UploadCloud className="mr-2 h-5 w-5 transition-transform group-hover:animate-pulse" /> <span>Upload Your First Document</span>
-             </Link>
-          </Button>
+          {allLoadedDocuments.length === 0 && !searchTerm && (
+             <Button className="mt-6 btn-gradient-hover px-6 py-3 text-base group" asChild>
+                <Link href="/documents/upload">
+                    <UploadCloud className="mr-2 h-5 w-5 transition-transform group-hover:animate-pulse" /> <span>Upload Your First Document</span>
+                </Link>
+             </Button>
+          )}
         </motion.div>
       )}
       {isTourOpen && (

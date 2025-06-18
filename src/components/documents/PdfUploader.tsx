@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,32 +9,35 @@ import { UploadCloud, FileText, XCircle, CheckCircle, Loader2, ArrowRight } from
 import { motion, AnimatePresence } from 'framer-motion';
 import { Progress } from "@/components/ui/progress";
 import Link from 'next/link';
-import type { Document } from '@/components/documents/DocumentCard'; // Assuming Document type is exported
+import type { Document } from '@/components/documents/DocumentCard';
+import { summarizeDocument } from "@/ai/flows/summarize-document-flow"; // Import the AI flow
+import { useToast } from "@/hooks/use-toast";
+
 
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
-// Helper to get documents from localStorage
 const getStoredDocuments = (): Document[] => {
   if (typeof window === 'undefined') return [];
   const stored = localStorage.getItem('uploadedDocuments');
   return stored ? JSON.parse(stored) : [];
 };
 
-// Helper to save documents to localStorage
 const saveStoredDocuments = (documents: Document[]) => {
   if (typeof window === 'undefined') return;
   localStorage.setItem('uploadedDocuments', JSON.stringify(documents));
+  window.dispatchEvent(new CustomEvent('storage')); // Dispatch event for dashboard to potentially update
 };
 
 
 export function PdfUploader() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
+  const [isProcessing, setIsProcessing] = useState(false); // Combined state for uploading and AI summary
+  const [uploadStatus, setUploadStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lastUploadedDocumentId, setLastUploadedDocumentId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const onDrop = useCallback((acceptedFiles: File[], fileRejections: any[]) => {
     setErrorMessage(null);
@@ -69,60 +72,72 @@ export function PdfUploader() {
     maxSize: MAX_FILE_SIZE_BYTES,
   });
 
-  const handleUpload = async () => {
+  const handleUploadAndProcess = async () => {
     if (!uploadedFile) return;
 
-    setIsUploading(true);
-    setUploadStatus("uploading");
+    setIsProcessing(true);
+    setUploadStatus("processing");
     setUploadProgress(0);
     setErrorMessage(null);
     setLastUploadedDocumentId(null);
 
     const reader = new FileReader();
+    
     reader.onprogress = (event) => {
       if (event.lengthComputable) {
-        const progress = Math.round((event.loaded * 100) / event.total);
+        const progress = Math.round((event.loaded * 100) / event.total * 0.5); // Reading is 50%
         setUploadProgress(progress);
       }
     };
-    reader.onloadend = () => {
-      // Simulate network delay for upload
-      setTimeout(() => {
-        try {
-          const dataUrl = reader.result as string;
-          const newDocumentId = Date.now().toString();
-          const newDocument: Document = {
-            id: newDocumentId,
-            name: uploadedFile.name,
-            status: "Uploaded", // Or 'Pending' if it needs processing
-            participants: ["Me"], // Example participant
-            lastModified: new Date().toISOString().split('T')[0],
-            thumbnailUrl: '', // We don't generate thumbnails client-side
-            // Add actual file data if needed for viewing, e.g., dataUrl for client-side storage
-            // fileSize: uploadedFile.size, // You might want to store size
-            dataUrl: dataUrl, // Storing the data URL
-          };
 
-          const documents = getStoredDocuments();
-          documents.push(newDocument);
-          saveStoredDocuments(documents);
-          
-          setUploadStatus("success");
-          setLastUploadedDocumentId(newDocumentId);
-          setIsUploading(false);
-          setUploadProgress(100);
-        } catch (e) {
-          console.error("Error processing file or saving to localStorage:", e);
-          setErrorMessage("Failed to process the file after upload.");
-          setUploadStatus("error");
-          setIsUploading(false);
+    reader.onloadend = async () => {
+      try {
+        setUploadProgress(50); // File reading complete
+        const dataUrl = reader.result as string;
+        const newDocumentId = Date.now().toString();
+        
+        let summary = "Could not generate summary.";
+        try {
+          toast({ title: "Generating AI Summary...", description: "Please wait."});
+          const summaryResponse = await summarizeDocument({ documentName: uploadedFile.name });
+          summary = summaryResponse.summary;
+          setUploadProgress(75); // AI summary is another 25%
+          toast({ title: "AI Summary Generated!", description: "Document processing complete."});
+        } catch (aiError) {
+          console.error("AI Summary Error:", aiError);
+          toast({ variant: "destructive", title: "AI Summary Failed", description: "Could not generate document summary. Proceeding without it." });
         }
-      }, 1500); // Simulate 1.5s upload
+
+        const newDocument: Document = {
+          id: newDocumentId,
+          name: uploadedFile.name,
+          status: "Uploaded",
+          participants: ["Me"],
+          lastModified: new Date().toISOString().split('T')[0],
+          thumbnailUrl: '', 
+          dataUrl: dataUrl,
+          summary: summary, // Add the generated summary
+        };
+
+        const documents = getStoredDocuments();
+        documents.unshift(newDocument); // Add to the beginning of the array
+        saveStoredDocuments(documents);
+        
+        setUploadStatus("success");
+        setLastUploadedDocumentId(newDocumentId);
+        setUploadProgress(100); // Final 25% for saving
+      } catch (e) {
+        console.error("Error processing file or saving to localStorage:", e);
+        setErrorMessage("Failed to process the file after upload.");
+        setUploadStatus("error");
+      } finally {
+        setIsProcessing(false);
+      }
     };
     reader.onerror = () => {
       setErrorMessage("Could not read the file.");
       setUploadStatus("error");
-      setIsUploading(false);
+      setIsProcessing(false);
     };
     reader.readAsDataURL(uploadedFile);
   };
@@ -141,7 +156,7 @@ export function PdfUploader() {
       <CardHeader className="text-center">
         <UploadCloud className="mx-auto h-16 w-16 text-primary mb-4" />
         <CardTitle className="text-3xl font-headline">Upload Your PDF Document</CardTitle>
-        <CardDescription>Drag and drop your PDF file here or click to browse.</CardDescription>
+        <CardDescription>Drag and drop your PDF file here or click to browse. An AI summary will be generated.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {!uploadedFile ? (
@@ -175,18 +190,17 @@ export function PdfUploader() {
                   </p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={removeFile} disabled={isUploading}>
+              <Button variant="ghost" size="icon" onClick={removeFile} disabled={isProcessing}>
                 <XCircle className="h-5 w-5 text-red-500 hover:text-red-700" />
               </Button>
             </div>
             
-            {(uploadStatus === "uploading" || (uploadStatus === "success" && uploadProgress < 100)) && (
+            {(uploadStatus === "processing" || (uploadStatus === "success" && uploadProgress < 100)) && (
                <Progress value={uploadProgress} className="w-full h-2" />
             )}
              {uploadStatus === "success" && uploadProgress === 100 && !errorMessage && (
                  <Progress value={100} className="w-full h-2 [&>div]:bg-green-500" />
              )}
-
 
             <AnimatePresence>
             {uploadStatus === "success" && !errorMessage && (
@@ -195,7 +209,7 @@ export function PdfUploader() {
                     className="flex items-center text-green-600 p-3 bg-green-50 border border-green-200 rounded-md"
                 >
                     <CheckCircle className="h-5 w-5 mr-2" />
-                    <p>File uploaded successfully!</p>
+                    <p>File uploaded and processed successfully!</p>
                 </motion.div>
             )}
             {(uploadStatus === "error" || errorMessage) && (
@@ -210,11 +224,11 @@ export function PdfUploader() {
             </AnimatePresence>
 
             {uploadStatus !== "success" && !errorMessage && (
-              <Button onClick={handleUpload} className="w-full btn-gradient-hover" disabled={isUploading}>
-                {isUploading ? (
+              <Button onClick={handleUploadAndProcess} className="w-full btn-gradient-hover" disabled={isProcessing}>
+                {isProcessing ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    <span>Uploading... ({uploadProgress}%)</span>
+                    <span>{uploadProgress < 50 ? `Reading File... (${uploadProgress * 2}%)` : uploadProgress < 75 ? `Generating Summary... (${(uploadProgress - 50) * 4}%)` : `Saving... (${(uploadProgress-75)*4}%)` }</span>
                   </>
                 ) : (
                   <span>Upload and Process</span>
@@ -236,15 +250,3 @@ export function PdfUploader() {
     </motion.div>
   );
 }
-
-interface Document {
-  id: string;
-  name: string;
-  status: "Pending" | "Signed" | "Completed" | "Rejected" | "Uploaded";
-  participants: string[];
-  lastModified: string;
-  thumbnailUrl?: string;
-  dataUrl?: string; // Added to store PDF data
-}
-
-    
