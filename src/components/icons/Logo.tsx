@@ -2,7 +2,7 @@
 import type { SVGProps } from 'react';
 
 // New Line Art Bird Icon with Gradient Stroke
-const GradientBirdIcon = (props: SVGProps<SVGSVGElement>) => (
+export const GradientBirdIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 100 100" // Standard viewBox for easier coordinate management
@@ -24,7 +24,6 @@ const GradientBirdIcon = (props: SVGProps<SVGSVGElement>) => (
          To keep it one path with gradient:
          The original path description: M20 35 Q50 10 80 35 M20 35 L50 65 L80 35 M50 65 L50 85 M40 80 L60 80
          This creates separate segments. The gradient might restart on each M.
-         Let's try to make it a more continuous-looking path if possible or accept segmented gradient.
 
          A new path focusing on a stylized bird shape:
          - Upper arc for wings: M15 45 C 30 20, 70 20, 85 45
