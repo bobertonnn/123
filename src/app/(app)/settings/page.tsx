@@ -28,7 +28,7 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
-import { Button as AlertDialogButton, buttonVariants } from "@/components/ui/button"; 
+import { Button as AlertDialogButton } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,14 +43,15 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format, addMonths, parseISO, isValid } from "date-fns";
+import { buttonVariants } from "@/components/ui/button";
 
 type SaveStatus = "idle" | "saving" | "success" | "error";
 
 const SIGNATURE_MAX_ROTATION_HOVER = 15;
-const SIGNATURE_DRAG_SENSITIVITY = 0.2; 
+const SIGNATURE_DRAG_SENSITIVITY = 0.2;
 const signatureSpringConfig = { stiffness: 150, damping: 30, mass: 0.8 };
 
-export interface UserSubscription { 
+export interface UserSubscription {
   planName: string;
   planPrice: string;
   renewsOn?: string | null;
@@ -85,7 +86,7 @@ export default function SettingsPage() {
   const [showUpdateSignatureArea, setShowUpdateSignatureArea] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const signatureContainerRef = useRef<HTMLDivElement>(null);
-  const signatureImageRef = useRef<HTMLImageElement>(null); 
+  const signatureImageRef = useRef<HTMLImageElement>(null);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -97,7 +98,7 @@ export default function SettingsPage() {
   const [profileSaveStatus, setProfileSaveStatus] = useState<SaveStatus>("idle");
   const [securitySaveStatus, setSecuritySaveStatus] = useState<SaveStatus>("idle");
   const [notificationSaveStatus, setNotificationSaveStatus] = useState<SaveStatus>("idle");
-  
+
 
   const [currentSubscription, setCurrentSubscription] = useState<UserSubscription>({
     planName: "Free Trial",
@@ -188,14 +189,14 @@ export default function SettingsPage() {
           event.clientX <= rect.right &&
           event.clientY >= rect.top &&
           event.clientY <= rect.bottom;
-        
+
         if (!isMouseOverContainer) {
-          handleSignatureHoverMouseLeave(); 
+          handleSignatureHoverMouseLeave();
         } else {
            handleSignatureHoverMouseMove(event as unknown as globalThis.MouseEvent);
         }
       } else {
-         handleSignatureHoverMouseLeave(); 
+         handleSignatureHoverMouseLeave();
       }
     };
 
@@ -229,14 +230,14 @@ export default function SettingsPage() {
           if (planExists) {
             loadedSubscription = {
               ...parsedSubscription,
-              planPrice: planExists.price, 
+              planPrice: planExists.price,
             };
           }
         } catch (e) {
           console.error("Failed to parse subscription from localStorage", e);
         }
       }
-      
+
       if (!loadedSubscription) {
         loadedSubscription = { planName: defaultFreePlan.name, planPrice: defaultFreePlan.price, renewsOn: null, paymentMethod: null };
         localStorage.setItem("userSubscription", JSON.stringify(loadedSubscription));
@@ -254,19 +255,20 @@ export default function SettingsPage() {
             newBillingHistory = [];
         }
       }
-      
-      // Ensure "Activated Free Trial" entry exists if no history or if it's missing
+
       const hasFreeTrialEntry = newBillingHistory.some(entry => entry.description === "Activated Free Trial");
       if (newBillingHistory.length === 0 || !hasFreeTrialEntry) {
-        const joinDate = localStorage.getItem("userJoinDate") || new Date().toISOString();
+        const joinDateStr = localStorage.getItem("userJoinDate") || new Date().toISOString();
+        let joinDate = new Date(joinDateStr);
+        if (!isValid(joinDate)) joinDate = new Date(); // Fallback if stored date is invalid
+
         const freeTrialEntry: BillingHistoryEntry = {
             id: Date.now().toString(),
-            date: format(parseISO(joinDate), "yyyy-MM-dd"), // Use join date
+            date: format(joinDate, "yyyy-MM-dd"),
             description: "Activated Free Trial",
-            amount: defaultFreePlan.price.replace("/month", ""), 
+            amount: defaultFreePlan.price.replace("/month", ""),
             status: "Active",
         };
-        // Add to the beginning if history is empty, or if it's missing and history exists ensure it's first or appropriate place
         newBillingHistory = !hasFreeTrialEntry ? [freeTrialEntry, ...newBillingHistory.filter(e => e.description !== "Activated Free Trial")] : newBillingHistory;
         localStorage.setItem("userBillingHistory", JSON.stringify(newBillingHistory));
       }
@@ -299,13 +301,24 @@ export default function SettingsPage() {
       setUserAvatarUrl(undefined);
     }
     if (storedJoinDate) {
-        setUserJoinDate(new Date(storedJoinDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
+        let parsedJoinDate = new Date(storedJoinDate);
+        if (!isValid(parsedJoinDate)) parsedJoinDate = new Date(); // Fallback for invalid date
+        setUserJoinDate(parsedJoinDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
     } else {
         const newJoinDate = new Date();
         localStorage.setItem("userJoinDate", newJoinDate.toISOString());
         setUserJoinDate(newJoinDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
     }
     if (storedUserTag) setUserTag(storedUserTag);
+    else {
+      const uid = localStorage.getItem("userUID");
+      const namePart = (storedFullName && storedFullName.trim() !== "") ? storedFullName.split(" ")[0] : "User";
+      const tagPart = uid ? uid.substring(0, 4) : Math.random().toString(36).substring(2,6); // fallback tag part
+      const generatedTag = `${namePart}#${tagPart}`;
+      setUserTag(generatedTag);
+      localStorage.setItem("userTag", generatedTag);
+    }
+
 
     loadSubscriptionData();
 
@@ -386,6 +399,18 @@ export default function SettingsPage() {
             localStorage.removeItem("userAvatarUrl");
             setUserAvatarUrl(undefined);
         }
+        // User Tag: regenerate if full name changed and was part of old tag
+        const oldTag = localStorage.getItem("userTag");
+        const namePartFromOldTag = oldTag ? oldTag.split("#")[0] : "";
+        const currentNamePart = userFullName.split(" ")[0];
+        if (oldTag && namePartFromOldTag !== currentNamePart) {
+            const uid = localStorage.getItem("userUID");
+            const tagPart = uid ? uid.substring(0,4) : oldTag.split("#")[1] || Math.random().toString(36).substring(2,6);
+            const newTag = `${currentNamePart}#${tagPart}`;
+            localStorage.setItem("userTag", newTag);
+            setUserTag(newTag);
+        }
+
 
         if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('profileUpdated'));
@@ -453,29 +478,29 @@ export default function SettingsPage() {
       setIsChangePlanDialogOpen(false);
       return;
     }
-    
+
     const newSubscription: UserSubscription = {
         planName: newPlanDetails.name,
         planPrice: newPlanDetails.price,
         renewsOn: newPlanDetails.id !== "free" ? addMonths(new Date(), 1).toISOString() : null,
         paymentMethod: newPlanDetails.id !== "free" ? (currentSubscription.paymentMethod || { type: "Visa", last4: "••••", expiry: "MM/YY" }) : null
     };
-    
+
     if (newPlanDetails.id !== "free" && (!newSubscription.paymentMethod || newSubscription.paymentMethod.last4 === "••••")) {
-        setIsChangePlanDialogOpen(false); 
+        setIsChangePlanDialogOpen(false);
         toast({
             variant: "destructive",
             title: "Payment Method Required",
             description: `Please contact support to add a payment method for the ${newPlanDetails.name}.`,
             duration: 7000,
         });
-        return; 
+        return;
     }
 
     setCurrentSubscription(newSubscription);
     localStorage.setItem("userSubscription", JSON.stringify(newSubscription));
 
-    if (newPlanDetails.id !== "free" && newPlanDetails.priceNumeric > 0) { 
+    if (newPlanDetails.id !== "free" && newPlanDetails.priceNumeric > 0) {
       const newHistoryEntry: BillingHistoryEntry = {
         id: Date.now().toString(),
         date: format(new Date(), "yyyy-MM-dd"),
@@ -492,7 +517,7 @@ export default function SettingsPage() {
             id: Date.now().toString(),
             date: format(new Date(), "yyyy-MM-dd"),
             description: "Reverted to Free Trial",
-            amount: "$0", 
+            amount: "$0",
             status: "Active",
         };
         const updatedHistory = [freeTrialEntry, ...billingHistory];
@@ -503,6 +528,7 @@ export default function SettingsPage() {
 
     toast({ title: "Plan Updated!", description: `You are now on the ${newPlanDetails.name}.` });
     setIsChangePlanDialogOpen(false);
+    window.dispatchEvent(new CustomEvent('subscriptionUpdated')); // Dispatch event
   };
 
   const handlePaymentMethodSave = () => {
@@ -514,7 +540,7 @@ export default function SettingsPage() {
         toast({ variant: "destructive", title: "Invalid Card Number", description: "Please enter a valid card number."});
         return;
     }
-    if (!/^(0[1-9]|1[0-2])\/?([0-9]{2})$/.test(tempCardExpiry)) { 
+    if (!/^(0[1-9]|1[0-2])\/?([0-9]{2})$/.test(tempCardExpiry)) {
         toast({ variant: "destructive", title: "Invalid Expiry Date", description: "Please use MM/YY format."});
         return;
     }
@@ -551,8 +577,8 @@ export default function SettingsPage() {
         id: Date.now().toString(),
         date: format(new Date(), "yyyy-MM-dd"),
         description: `Subscription cancelled. Reverted to ${freeTrialPlan.name}.`,
-        amount: "$0", 
-        status: "Active", 
+        amount: "$0",
+        status: "Active",
     };
     const updatedHistory = [cancellationEntry, ...billingHistory.filter(entry => entry.description !== "Activated Free Trial")];
     setBillingHistory(updatedHistory);
@@ -561,6 +587,7 @@ export default function SettingsPage() {
 
     toast({ title: "Subscription Cancelled", description: `You have been moved to the ${freeTrialPlan.name}.`});
     setIsCancelSubscriptionAlertOpen(false);
+    window.dispatchEvent(new CustomEvent('subscriptionUpdated')); // Dispatch event
   };
 
 
@@ -573,6 +600,17 @@ export default function SettingsPage() {
 
   const currentPlanDetails = availablePlans.find(p => p.name === currentSubscription.planName) || availablePlans[0];
   const PlanIcon = currentPlanDetails.icon;
+
+  const handleCopyTag = () => {
+    if (userTag) {
+      navigator.clipboard.writeText(userTag);
+      toast({
+        title: "User Tag Copied!",
+        description: `${userTag} has been copied to your clipboard.`,
+      });
+    }
+  };
+
 
   return (
     <div className="container mx-auto">
@@ -636,15 +674,10 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div>
-                 <Label>Your User Tag</Label>
+                 <Label htmlFor="userTagDisplay">Your User Tag</Label>
                 <div className="mt-1 flex items-center space-x-2">
-                    <Input id="userTag" value={userTag || "N/A"} readOnly className="bg-muted/50"/>
-                    <Button variant="outline" size="sm" onClick={() => {
-                        if(userTag) {
-                            navigator.clipboard.writeText(userTag);
-                            toast({title: "User Tag Copied!", description: "Your user tag has been copied to the clipboard."});
-                        }
-                    }} disabled={!userTag}>
+                    <Input id="userTagDisplay" value={userTag || "N/A"} readOnly className="bg-muted/50"/>
+                    <Button variant="outline" size="sm" onClick={handleCopyTag} disabled={!userTag}>
                        <Tag className="mr-2 h-4 w-4" /> Copy Tag
                     </Button>
                 </div>
@@ -674,7 +707,7 @@ export default function SettingsPage() {
                             className="border rounded-md bg-card mx-auto mb-2 backface-hidden"
                             data-ai-hint="signature image"
                             priority
-                            draggable="false" 
+                            draggable="false"
                           />
                         </motion.div>
                         <Button variant="link" onClick={() => setShowUpdateSignatureArea(true)} className="mt-2">Update Signature</Button>
@@ -820,8 +853,8 @@ export default function SettingsPage() {
                                 {availablePlans.map((plan) => {
                                     const CurrentPlanIcon = plan.icon;
                                     return(
-                                    <Label 
-                                        key={plan.id} 
+                                    <Label
+                                        key={plan.id}
                                         htmlFor={`plan-${plan.id}`}
                                         className={cn(
                                             "flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 p-4 border rounded-lg cursor-pointer transition-all",
@@ -986,9 +1019,17 @@ export default function SettingsPage() {
                         <CardTitle className="text-lg font-semibold">Account Details</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2 text-sm">
-                        <p><strong className="font-medium text-foreground">User Tag:</strong> {userTag || "Not set"}</p>
+                        <div className="flex items-center">
+                            <strong className="font-medium text-foreground w-32">User Tag:</strong>
+                            <span className="text-muted-foreground flex-grow">{userTag || "Not set"}</span>
+                            {userTag && (
+                                <Button variant="outline" size="xs" onClick={handleCopyTag} className="ml-2 h-auto px-2 py-1">
+                                    Copy
+                                </Button>
+                            )}
+                        </div>
                         <p><strong className="font-medium text-foreground">Joined DocuSigner:</strong> {userJoinDate || "N/A"}</p>
-                        <p><strong className="font-medium text-foreground">User Role:</strong> User</p> 
+                        <p><strong className="font-medium text-foreground">User Role:</strong> User</p>
                     </CardContent>
                 </Card>
                 {currentSubscription.planName !== "Free Trial" && (

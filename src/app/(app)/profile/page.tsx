@@ -8,30 +8,32 @@ import { User, Edit3, Mail, Phone, Building, CalendarDays, Briefcase, Tag } from
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { GradientBirdIcon } from "@/components/icons/Logo"; 
+import { GradientBirdIcon } from "@/components/icons/Logo";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast"; // Added for copy feedback
 
 interface UserProfileData {
   name: string;
   email: string;
-  avatarUrl: string | undefined; 
+  avatarUrl: string | undefined;
   title: string;
   department: string;
   phone: string;
-  joinDate: string; 
+  joinDate: string;
   signatureUrl: string | null;
   userTag: string | null;
 }
 
 export default function ProfilePage() {
+  const { toast } = useToast(); // Added for copy feedback
   const [profileData, setProfileData] = useState<UserProfileData>({
-    name: "User", 
-    email: "user@example.com", 
-    avatarUrl: undefined, 
-    title: "Document Signer", 
-    department: "N/A", 
-    phone: "N/A", 
-    joinDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), 
+    name: "User",
+    email: "user@example.com",
+    avatarUrl: undefined,
+    title: "Document Signer",
+    department: "N/A",
+    phone: "N/A",
+    joinDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     signatureUrl: null,
     userTag: null,
   });
@@ -55,7 +57,7 @@ export default function ProfilePage() {
         userTag: storedUserTag || null,
         }));
     };
-    
+
     loadProfileData();
     window.addEventListener('profileUpdated', loadProfileData);
     return () => {
@@ -63,6 +65,16 @@ export default function ProfilePage() {
     }
 
   }, []);
+
+  const handleCopyTag = () => {
+    if (profileData.userTag) {
+      navigator.clipboard.writeText(profileData.userTag);
+      toast({
+        title: "User Tag Copied!",
+        description: `${profileData.userTag} has been copied to your clipboard.`,
+      });
+    }
+  };
 
   return (
     <div className="container mx-auto">
@@ -85,9 +97,9 @@ export default function ProfilePage() {
                 <AvatarImage src={profileData.avatarUrl} alt={profileData.name} data-ai-hint="person face" />
               ) : null}
               <AvatarFallback className={!profileData.avatarUrl ? "bg-card border border-border flex items-center justify-center" : "bg-muted flex items-center justify-center"}>
-                <GradientBirdIcon 
+                <GradientBirdIcon
                   className={cn(
-                    "h-16 w-16", 
+                    "h-16 w-16",
                     !profileData.avatarUrl ? "text-primary" : "text-muted-foreground"
                   )}
                 />
@@ -96,15 +108,24 @@ export default function ProfilePage() {
             <div>
               <h2 className="text-3xl md:text-4xl font-bold font-headline">{profileData.name}</h2>
               <p className="text-lg text-muted-foreground">{profileData.title}</p>
-              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground items-center">
                 {profileData.email !== "user@example.com" && <span className="flex items-center"><Mail className="mr-1.5 h-4 w-4"/> {profileData.email}</span>}
                 {profileData.phone !== "N/A" && <span className="flex items-center"><Phone className="mr-1.5 h-4 w-4"/> {profileData.phone}</span>}
-                {profileData.userTag && <span className="flex items-center bg-primary/10 text-primary px-2 py-0.5 rounded-full"><Tag className="mr-1.5 h-3 w-3"/> {profileData.userTag}</span>}
+                {profileData.userTag && (
+                  <div className="flex items-center space-x-2">
+                    <span className="flex items-center bg-primary/10 text-primary px-2 py-1 rounded-full text-xs sm:text-sm">
+                        <Tag className="mr-1.5 h-3 w-3 sm:h-4 sm:w-4"/> {profileData.userTag}
+                    </span>
+                    <Button variant="outline" size="xs" onClick={handleCopyTag} className="h-auto px-2 py-1">
+                        Copy Tag
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
-        
+
         <CardContent className="p-6 md:p-8 grid md:grid-cols-2 gap-8">
           <div className="space-y-6">
             <Card>
@@ -117,7 +138,7 @@ export default function ProfilePage() {
                 <p><strong className="font-medium text-foreground">Department:</strong> {profileData.department}</p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg font-semibold">Account Details</CardTitle>
@@ -125,7 +146,7 @@ export default function ProfilePage() {
               <CardContent className="space-y-2 text-sm">
                 <p><strong className="font-medium text-foreground">User Tag:</strong> {profileData.userTag || "Not set"}</p>
                 <p><strong className="font-medium text-foreground">Joined DocuSigner:</strong> {profileData.joinDate}</p>
-                <p><strong className="font-medium text-foreground">User Role:</strong> User</p> 
+                <p><strong className="font-medium text-foreground">User Role:</strong> User</p>
               </CardContent>
             </Card>
           </div>

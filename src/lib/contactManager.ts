@@ -5,17 +5,16 @@ import type { Contact } from "@/types/contact";
 
 const CONTACTS_STORAGE_KEY = "userContacts";
 
-// No longer initialize with mock contacts by default
 export const getContacts = (): Contact[] => {
   if (typeof window === 'undefined') return [];
   const storedContacts = localStorage.getItem(CONTACTS_STORAGE_KEY);
   if (storedContacts) {
     try {
       const parsedContacts = JSON.parse(storedContacts);
-      return Array.isArray(parsedContacts) ? parsedContacts : []; // Return empty if not array
+      return Array.isArray(parsedContacts) ? parsedContacts : [];
     } catch (e) {
       console.error("Error parsing contacts from localStorage:", e);
-      return []; // Fallback to empty array if parsing fails
+      return [];
     }
   }
   return []; // No contacts in storage, return empty array
@@ -29,7 +28,7 @@ export const saveContacts = (contacts: Contact[]): void => {
 export const addContact = (newContactData: Omit<Contact, 'id'>): Contact => {
   const contacts = getContacts();
   const newContact: Contact = {
-    id: Date.now().toString(), // Simple unique ID generation
+    id: Date.now().toString(), 
     ...newContactData,
     avatar: newContactData.avatar || `https://placehold.co/40x40.png?text=${newContactData.name.substring(0,2).toUpperCase()}`
   };
