@@ -1,0 +1,261 @@
+
+"use client"; 
+
+import { DocumentCard, type Document } from '@/components/documents/DocumentCard';
+import { DocumentFilters } from '@/components/documents/DocumentFilters';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
+import { PlusCircle, FileText, Settings, UploadCloud, FileSignature, Info, CheckCircle } from 'lucide-react'; 
+import Link from 'next/link';
+import { useState, useEffect } from 'react'; 
+import { motion, AnimatePresence } from 'framer-motion'; 
+import { Progress } from "@/components/ui/progress"; 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; 
+import { useToast } from "@/hooks/use-toast"; 
+import { ProductTour, type TourStep } from '@/components/shared/ProductTour';
+
+const mockDocuments: Document[] = [
+  { id: '1', name: 'Q3 Sales Agreement Long Name That Might Overflow', status: 'Pending', participants: ['Alice', 'Bob'], lastModified: '2023-10-26', thumbnailUrl: 'https://placehold.co/300x150.png?text=Doc1', summary: "Agreement detailing sales terms for Q3 activities with client Bob." },
+  { id: '2', name: 'NDA for Project Phoenix', status: 'Signed', participants: ['Charlie', 'Diana'], lastModified: '2023-10-25', thumbnailUrl: 'https://placehold.co/300x150.png?text=Doc2', summary: "Non-disclosure agreement for confidential Project Phoenix details." },
+  { id: '3', name: 'Employee Handbook v2.1', status: 'Completed', participants: ['HR Dept'], lastModified: '2023-10-20', thumbnailUrl: 'https://placehold.co/300x150.png?text=Doc3', summary: "Updated company policies and guidelines for all employees." },
+  { id: '4', name: 'Service Level Agreement', status: 'Pending', participants: ['Eve', 'Frank'], lastModified: '2023-10-28', summary: "Defines service standards for the upcoming client project." },
+  { id: '5', name: 'Partnership Proposal', status: 'Rejected', participants: ['Grace', 'Heidi'], lastModified: '2023-10-15', thumbnailUrl: 'https://placehold.co/300x150.png?text=Doc5', summary: "Proposal for a strategic partnership, currently rejected." },
+  { id: '6', name: 'Website Terms of Service Update', status: 'Completed', participants: ['Legal Team'], lastModified: '2023-09-30', summary: "Revised terms and conditions for website users." },
+];
+
+const initialOnboardingSteps = [
+  { id: 'profile', label: 'Complete Your Profile', check: () => typeof window !== 'undefined' && !!(localStorage.getItem('userFullName') && localStorage.getItem('userSignature')), icon: Settings, href: '/profile' },
+  { id: 'upload', label: 'Upload Your First Document', check: () => typeof window !== 'undefined' && (JSON.parse(localStorage.getItem('uploadedDocuments') || '[]') as Document[]).length > 0, icon: UploadCloud, href: '/documents/upload' },
+];
+
+const tourSteps: TourStep[] = [
+  { title: "Welcome to DocuSigner!", description: "Let's quickly go over the main features.", targetId: null },
+  { title: "Dashboard Overview", description: "This is your main dashboard where you'll see all your documents.", targetId: "dashboard-title"  },
+  { title: "Uploading Documents", description: "Click here to upload a new PDF document to sign or send.", targetId: "upload-button"  },
+  { title: "Document Cards", description: "Each card represents a document. You can see its status and quick actions.", targetId: "document-card-example"  },
+  { title: "Filtering", description: "Use these filters to find specific documents quickly.", targetId: "document-filters"  },
+  { title: "Navigation Sidebar", description: "Use the sidebar (on larger screens) to navigate to different sections like Templates or Settings.", targetId: null  },
+  { title: "You're All Set!", description: "Explore and enjoy streamlining your document workflows!", targetId: null },
+];
+
+
+export default function DashboardPage() {
+  const [setupProgress, setSetupProgress] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState(0);
+  const [showOnboardingPrompt, setShowOnboardingPrompt] = useState(false);
+  const { toast } = useToast();
+  const [isTourOpen, setIsTourOpen] = useState(false);
+  const [currentTourStep, setCurrentTourStep] = useState(0);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<string | undefined>(undefined);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedParticipant, setSelectedParticipant] = useState<string | undefined>(undefined);
+  const [displayedDocuments, setDisplayedDocuments] = useState<Document[]>(mockDocuments);
+
+  const [clientOnboardingSteps, setClientOnboardingSteps] = useState(
+    initialOnboardingSteps.map(step => ({ ...step, isDoneClient: false }))
+  );
+
+  useEffect(() => {
+    const onboardingDismissed = typeof window !== 'undefined' ? localStorage.getItem('onboardingPromptDismissed') : null;
+    if (!onboardingDismissed) {
+      const docs = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('uploadedDocuments') || '[]') as Document[] : [];
+      const profileName = typeof window !== 'undefined' ? localStorage.getItem('userFullName') : null;
+      if (docs.length === 0 && !profileName) {
+        setShowOnboardingPrompt(true);
+      }
+    }
+
+    let doneSteps = 0;
+    const updatedClientSteps = initialOnboardingSteps.map(step => {
+        const isStepDone = step.check();
+        if (isStepDone) {
+            doneSteps++;
+        }
+        return { ...step, isDoneClient: isStepDone };
+    });
+    
+    setClientOnboardingSteps(updatedClientSteps);
+    setCompletedSteps(doneSteps);
+    setSetupProgress(Math.round((doneSteps / initialOnboardingSteps.length) * 100));
+
+  }, []);
+
+  useEffect(() => {
+    let filtered = mockDocuments;
+
+    if (searchTerm) {
+      filtered = filtered.filter(doc => 
+        doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        doc.participants.some(p => p.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    if (selectedStatus && selectedStatus !== "all") {
+      filtered = filtered.filter(doc => doc.status === selectedStatus);
+    }
+
+    if (selectedDate) {
+      const dateString = selectedDate.toISOString().split('T')[0];
+      filtered = filtered.filter(doc => doc.lastModified === dateString);
+    }
+    
+    // Note: Participant filtering is simplified as mockContacts is not directly available here
+    // In a real app, you'd compare against a list of participant IDs or full names
+    if (selectedParticipant) {
+       filtered = filtered.filter(doc => doc.participants.includes(selectedParticipant));
+    }
+
+    setDisplayedDocuments(filtered);
+  }, [searchTerm, selectedStatus, selectedDate, selectedParticipant]);
+
+
+  const dismissOnboardingPrompt = () => {
+    setShowOnboardingPrompt(false);
+    if (typeof window !== 'undefined') {
+        localStorage.setItem('onboardingPromptDismissed', 'true');
+    }
+  };
+
+  const startTour = () => {
+    dismissOnboardingPrompt();
+    setIsTourOpen(true);
+    setCurrentTourStep(0);
+  };
+  
+  const handleTourNext = () => {
+    setCurrentTourStep(prev => Math.min(prev + 1, tourSteps.length - 1));
+  };
+
+  const handleTourPrev = () => {
+    setCurrentTourStep(prev => Math.max(prev - 1, 0));
+  };
+
+  const handleTourFinish = () => {
+    setIsTourOpen(false);
+  };
+
+
+  return (
+    <div className="container mx-auto">
+      <AnimatePresence>
+        {showOnboardingPrompt && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20, transition: { duration: 0.2 }}}
+            className="mb-4"
+          >
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertTitle>Welcome to DocuSigner!</AlertTitle>
+              <AlertDescription className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                <span>New here? Take a quick tour to learn the basics.</span>
+                <div className="mt-2 sm:mt-0 flex gap-2">
+                   <Button onClick={startTour} size="sm">Start Tour</Button>
+                   <Button onClick={dismissOnboardingPrompt} variant="ghost" size="sm">Dismiss</Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+        <h1 className="text-3xl font-bold font-headline" id="dashboard-title">Document Dashboard</h1>
+        <Button asChild className="btn-gradient-hover" id="upload-button">
+          <Link href="/documents/upload">
+            <PlusCircle className="mr-2 h-5 w-5" />
+            <span>Upload New Document</span>
+          </Link>
+        </Button>
+      </div>
+
+      {completedSteps < clientOnboardingSteps.length && (
+         <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            className="mb-6"
+        >
+        <Card className="shadow-lg rounded-xl">
+          <CardHeader>
+            <CardTitle className="text-lg font-headline">Setup Progress</CardTitle>
+            <CardDescription>Complete these steps to get the most out of DocuSigner.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Progress value={setupProgress} className="w-full h-2 mb-3" />
+            <p className="text-sm text-muted-foreground">{completedSteps} of {clientOnboardingSteps.length} steps completed.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3"> {/* Changed from grid-cols-3 */}
+              {clientOnboardingSteps.map(step => {
+                const Icon = step.icon;
+                const isDone = step.isDoneClient;
+                return (
+                  <Link href={step.href} key={step.id}>
+                    <div className={`p-3 border rounded-md flex items-center space-x-2 transition-all ${isDone ? 'bg-primary/10 border-primary/50 text-primary' : 'bg-muted/30 hover:bg-muted/60'}`}>
+                      <Icon className={`w-5 h-5 ${isDone ? '' : 'text-muted-foreground'}`} />
+                      <span className="text-sm font-medium">{step.label}</span>
+                      {isDone && <CheckCircle className="w-4 h-4 ml-auto text-primary" />}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+        </motion.div>
+      )}
+
+      <div id="document-filters">
+        <DocumentFilters 
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            selectedStatus={selectedStatus}
+            setSelectedStatus={setSelectedStatus}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            selectedParticipant={selectedParticipant}
+            setSelectedParticipant={setSelectedParticipant}
+        />
+      </div>
+
+      {displayedDocuments.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {displayedDocuments.map((doc, index) => (
+            <div key={doc.id} id={index === 0 ? "document-card-example" : undefined}>
+              <DocumentCard document={doc} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-center py-10 bg-card rounded-lg shadow"
+        >
+          <FileText className="mx-auto h-16 w-16 text-primary/50 mb-3" />
+          <h3 className="mt-2 text-2xl font-semibold font-headline">No Documents Yet</h3>
+          <p className="mt-1 text-md text-muted-foreground">
+            It looks a bit empty here. Upload your first document to get started.
+          </p>
+          <Button className="mt-6 btn-gradient-hover px-6 py-3 text-base group" asChild>
+             <Link href="/documents/upload">
+                <UploadCloud className="mr-2 h-5 w-5 transition-transform group-hover:animate-pulse" /> <span>Upload Your First Document</span>
+             </Link>
+          </Button>
+        </motion.div>
+      )}
+      {isTourOpen && (
+        <ProductTour
+          steps={tourSteps}
+          currentStepIndex={currentTourStep}
+          onNext={handleTourNext}
+          onPrev={handleTourPrev}
+          onFinish={handleTourFinish}
+        />
+      )}
+    </div>
+  );
+}
