@@ -28,6 +28,7 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
+import { Button as AlertDialogButton, buttonVariants } from "@/components/ui/button"; // Renamed to avoid conflict and imported buttonVariants
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,14 +40,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { buttonVariants } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format, addMonths, parseISO, isValid } from "date-fns";
 
 type SaveStatus = "idle" | "saving" | "success" | "error";
 
-const SIGNATURE_MAX_ROTATION = 15;
+const SIGNATURE_MAX_ROTATION_HOVER = 15;
+const SIGNATURE_DRAG_SENSITIVITY = 0.2; // Adjust for stronger/weaker drag rotation
 const signatureSpringConfig = { stiffness: 150, damping: 30, mass: 0.8 };
 
 interface UserSubscription {
@@ -84,6 +85,7 @@ export default function SettingsPage() {
   const [showUpdateSignatureArea, setShowUpdateSignatureArea] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const signatureContainerRef = useRef<HTMLDivElement>(null);
+  const signatureImageRef = useRef<HTMLImageElement>(null); // Ref for the signature image itself for drag interaction
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -92,7 +94,7 @@ export default function SettingsPage() {
   const [profileSaveStatus, setProfileSaveStatus] = useState<SaveStatus>("idle");
   const [securitySaveStatus, setSecuritySaveStatus] = useState<SaveStatus>("idle");
   const [notificationSaveStatus, setNotificationSaveStatus] = useState<SaveStatus>("idle");
-  const [subscriptionSaveStatus, setSubscriptionSaveStatus] = useState<SaveStatus>("idle");
+  // const [subscriptionSaveStatus, setSubscriptionSaveStatus] = useState<SaveStatus>("idle"); // Removed as individual actions have toasts
 
   // Billing State
   const [currentSubscription, setCurrentSubscription] = useState<UserSubscription>({
@@ -110,6 +112,9 @@ export default function SettingsPage() {
   const [tempCardCvc, setTempCardCvc] = useState("");
   const [isCancelSubscriptionAlertOpen, setIsCancelSubscriptionAlertOpen] = useState(false);
 
+  const [isDraggingSignature, setIsDraggingSignature] = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0, initialRotateX: 0, initialRotateY: 0 });
+
 
   const { toast } = useToast();
 
@@ -118,21 +123,96 @@ export default function SettingsPage() {
   const springSigRotateX = useSpring(sigRotateX, signatureSpringConfig);
   const springSigRotateY = useSpring(sigRotateY, signatureSpringConfig);
 
-  const handleSignatureMouseMove = useCallback((event: globalThis.MouseEvent) => {
-    if (!signatureContainerRef.current) return;
+  const handleSignatureHoverMouseMove = useCallback((event: globalThis.MouseEvent) => {
+    if (isDraggingSignature || !signatureContainerRef.current) return;
     const rect = signatureContainerRef.current.getBoundingClientRect();
     const mouseX = event.clientX - rect.left - rect.width / 2;
     const mouseY = event.clientY - rect.top - rect.height / 2;
-    const newRotateY = (mouseX / (rect.width / 2)) * SIGNATURE_MAX_ROTATION;
-    const newRotateX = -(mouseY / (rect.height / 2)) * SIGNATURE_MAX_ROTATION;
+    const newRotateY = (mouseX / (rect.width / 2)) * SIGNATURE_MAX_ROTATION_HOVER;
+    const newRotateX = -(mouseY / (rect.height / 2)) * SIGNATURE_MAX_ROTATION_HOVER;
     sigRotateX.set(newRotateX);
     sigRotateY.set(newRotateY);
-  }, [sigRotateX, sigRotateY]);
+  }, [isDraggingSignature, sigRotateX, sigRotateY]);
 
-  const handleSignatureMouseLeave = useCallback(() => {
+  const handleSignatureHoverMouseLeave = useCallback(() => {
+    if (isDraggingSignature) return;
     sigRotateX.set(0);
     sigRotateY.set(0);
+  }, [isDraggingSignature, sigRotateX, sigRotateY]);
+
+  const handleSignaturePointerDown = useCallback((event: React.PointerEvent) => {
+    if (!signatureImageRef.current || !signatureImageRef.current.contains(event.target as Node)) return;
+    event.preventDefault();
+    setIsDraggingSignature(true);
+    dragStartRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      initialRotateX: sigRotateX.get(),
+      initialRotateY: sigRotateY.get(),
+    };
+    if (signatureImageRef.current) {
+        signatureImageRef.current.style.cursor = 'grabbing';
+    }
   }, [sigRotateX, sigRotateY]);
+
+  useEffect(() => {
+    const currentSignatureContainer = signatureContainerRef.current;
+    if (currentSignatureContainer && userSignature && !showUpdateSignatureArea) {
+      currentSignatureContainer.addEventListener('mousemove', handleSignatureHoverMouseMove);
+      currentSignatureContainer.addEventListener('mouseleave', handleSignatureHoverMouseLeave);
+    }
+
+    const handleGlobalPointerMove = (event: PointerEvent) => {
+      if (!isDraggingSignature) return;
+      const dx = event.clientX - dragStartRef.current.x;
+      const dy = event.clientY - dragStartRef.current.y;
+      const newRotateX = dragStartRef.current.initialRotateX - dy * SIGNATURE_DRAG_SENSITIVITY;
+      const newRotateY = dragStartRef.current.initialRotateY + dx * SIGNATURE_DRAG_SENSITIVITY;
+      sigRotateX.set(newRotateX);
+      sigRotateY.set(newRotateY);
+    };
+
+    const handleGlobalPointerUp = (event: PointerEvent) => {
+      if (!isDraggingSignature) return;
+      setIsDraggingSignature(false);
+      if (signatureImageRef.current) {
+        signatureImageRef.current.style.cursor = 'grab';
+      }
+
+      if (signatureContainerRef.current) {
+        const rect = signatureContainerRef.current.getBoundingClientRect();
+        const isMouseOverContainer =
+          event.clientX >= rect.left &&
+          event.clientX <= rect.right &&
+          event.clientY >= rect.top &&
+          event.clientY <= rect.bottom;
+        
+        if (!isMouseOverContainer) {
+          handleSignatureHoverMouseLeave(); // Spring back to center
+        } else {
+          // Let the hover effect take over via the next mousemove on the container
+           handleSignatureHoverMouseMove(event as unknown as globalThis.MouseEvent);
+        }
+      } else {
+         handleSignatureHoverMouseLeave(); // Fallback to reset if container ref is lost
+      }
+    };
+
+    if (isDraggingSignature) {
+      window.addEventListener('pointermove', handleGlobalPointerMove);
+      window.addEventListener('pointerup', handleGlobalPointerUp);
+    }
+
+    return () => {
+      if (currentSignatureContainer) {
+        currentSignatureContainer.removeEventListener('mousemove', handleSignatureHoverMouseMove);
+        currentSignatureContainer.removeEventListener('mouseleave', handleSignatureHoverMouseLeave);
+      }
+      window.removeEventListener('pointermove', handleGlobalPointerMove);
+      window.removeEventListener('pointerup', handleGlobalPointerUp);
+    };
+  }, [isDraggingSignature, userSignature, showUpdateSignatureArea, handleSignatureHoverMouseMove, handleSignatureHoverMouseLeave, sigRotateX, sigRotateY]);
+
 
   const loadSubscriptionData = () => {
     const defaultFreePlan = availablePlans.find(p => p.id === 'free')!;
@@ -208,25 +288,13 @@ export default function SettingsPage() {
         setShowUpdateSignatureArea(true);
     }
     if (storedAvatar && storedAvatar.trim() !== "") setUserAvatarUrl(storedAvatar);
-    else setUserAvatarUrl(undefined);
-
+    else {
+      setUserAvatarUrl(undefined);
+    }
     loadSubscriptionData();
 
   }, []);
 
-  useEffect(() => {
-    const currentSignatureContainer = signatureContainerRef.current;
-    if (currentSignatureContainer && userSignature && !showUpdateSignatureArea) {
-      currentSignatureContainer.addEventListener('mousemove', handleSignatureMouseMove);
-      currentSignatureContainer.addEventListener('mouseleave', handleSignatureMouseLeave);
-    }
-    return () => {
-      if (currentSignatureContainer) {
-        currentSignatureContainer.removeEventListener('mousemove', handleSignatureMouseMove);
-        currentSignatureContainer.removeEventListener('mouseleave', handleSignatureMouseLeave);
-      }
-    };
-  }, [handleSignatureMouseMove, handleSignatureMouseLeave, userSignature, showUpdateSignatureArea]);
 
   const handleSignatureSave = (dataUrl: string) => {
     setUserSignature(dataUrl);
@@ -359,6 +427,7 @@ export default function SettingsPage() {
     const newPlanDetails = availablePlans.find(p => p.id === selectedPlanInModal);
     if (!newPlanDetails) return;
 
+    // Enforce error if changing from Free Trial to any other plan
     if (currentSubscription.planName === "Free Trial" && newPlanDetails.id !== "free") {
       toast({
         variant: "destructive",
@@ -370,6 +439,12 @@ export default function SettingsPage() {
       return;
     }
     
+    // Logic for other plan changes (e.g., Pro to Business) if needed, or also make them error out
+    // For now, only Free Trial to Paid is explicitly errored.
+    // To make ALL changes error out (except to Free Trial):
+    // if (newPlanDetails.id !== 'free' && currentSubscription.planName !== newPlanDetails.name) { ... error toast ... return; }
+
+
     const newSubscription: UserSubscription = {
         planName: newPlanDetails.name,
         planPrice: newPlanDetails.price,
@@ -452,7 +527,7 @@ export default function SettingsPage() {
         id: Date.now().toString(),
         date: format(new Date(), "yyyy-MM-dd"),
         description: `Subscription cancelled. Reverted to ${freeTrialPlan.name}.`,
-        amount: "$0",
+        amount: "$0", // Corrected from freeTrialPlan.price
         status: "Active", 
     };
     const updatedHistory = [cancellationEntry, ...billingHistory.filter(entry => entry.description !== "Activated Free Trial")];
@@ -546,6 +621,8 @@ export default function SettingsPage() {
                   {userSignature && !showUpdateSignatureArea && (
                      <div className="flex flex-col items-center">
                         <motion.div
+                          ref={signatureImageRef as React.RefObject<HTMLDivElement>}
+                          onPointerDown={handleSignaturePointerDown}
                           className="relative transform-style-preserve-3d cursor-grab"
                           style={{ rotateX: springSigRotateX, rotateY: springSigRotateY }}
                           whileHover={{ scale: 1.03, filter: 'drop-shadow(0 0 10px hsl(var(--primary)/0.4))' }}
@@ -558,6 +635,7 @@ export default function SettingsPage() {
                             className="border rounded-md bg-card mx-auto mb-2 backface-hidden"
                             data-ai-hint="signature image"
                             priority
+                            draggable="false" 
                           />
                         </motion.div>
                         <Button variant="link" onClick={() => setShowUpdateSignatureArea(true)} className="mt-2">Update Signature</Button>
@@ -727,9 +805,9 @@ export default function SettingsPage() {
                                 </RadioGroup>
                                 <DialogFooter>
                                 <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                                <Button onClick={handlePlanChange} className="btn-gradient-hover" disabled={currentSubscription.planName === availablePlans.find(p=>p.id === selectedPlanInModal)?.name}>
+                                <AlertDialogButton onClick={handlePlanChange} className="btn-gradient-hover" disabled={currentSubscription.planName === availablePlans.find(p=>p.id === selectedPlanInModal)?.name}>
                                     Confirm Change
-                                </Button>
+                                </AlertDialogButton>
                                 </DialogFooter>
                             </DialogContent>
                         </Dialog>
@@ -773,7 +851,7 @@ export default function SettingsPage() {
                                         </div>
                                         <DialogFooter>
                                             <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                                            <Button onClick={handlePaymentMethodSave} className="btn-gradient-hover">Save Card</Button>
+                                            <AlertDialogButton onClick={handlePaymentMethodSave} className="btn-gradient-hover">Save Card</AlertDialogButton>
                                         </DialogFooter>
                                     </DialogContent>
                                 </Dialog>
@@ -810,7 +888,7 @@ export default function SettingsPage() {
                                         </div>
                                         <DialogFooter>
                                             <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                                            <Button onClick={handlePaymentMethodSave} className="btn-gradient-hover">Save Card</Button>
+                                            <AlertDialogButton onClick={handlePaymentMethodSave} className="btn-gradient-hover">Save Card</AlertDialogButton>
                                         </DialogFooter>
                                     </DialogContent>
                                 </Dialog>
@@ -848,7 +926,7 @@ export default function SettingsPage() {
                                             )}>{item.status}</span>
                                         </TableCell>
                                         <TableCell>
-                                            {item.invoiceUrl && <Button variant="link" size="sm" className="p-0 h-auto" asChild><a href={item.invoiceUrl} target="_blank" rel="noopener noreferrer">View</a></Button>}
+                                            {item.invoiceUrl && <AlertDialogButton variant="link" size="sm" className="p-0 h-auto" asChild><a href={item.invoiceUrl} target="_blank" rel="noopener noreferrer">View</a></AlertDialogButton>}
                                         </TableCell>
                                     </TableRow>
                                     ))}
