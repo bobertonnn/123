@@ -25,7 +25,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { auth } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile, onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
-import { addNotification } from "@/lib/notificationManager"; // Added import
+import { addNotification } from "@/lib/notificationManager";
 
 const accountDetailsSchema = z.object({
   fullName: z.string()
@@ -45,7 +45,7 @@ type AccountDetailsFormValues = z.infer<typeof accountDetailsSchema>;
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
-export function SignUpForm() {
+export default function SignUpPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [accountDetails, setAccountDetails] = useState<Partial<AccountDetailsFormValues>>({});
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
@@ -423,12 +423,13 @@ export function SignUpForm() {
 
     setIsLoading(true);
     console.log("Saving signature for user:", userToSave.email);
+    const registrationTimestamp = new Date().toISOString();
     try {
       localStorage.setItem("userUID", userToSave.uid);
       localStorage.setItem("userFullName", accountDetails.fullName); 
       localStorage.setItem("userEmail", userToSave.email);
       localStorage.setItem("userSignature", dataUrl);
-      localStorage.setItem("userJoinDate", new Date().toISOString());
+      localStorage.setItem("userJoinDate", registrationTimestamp);
       localStorage.setItem("userAvatarUrl", userToSave.photoURL || ""); 
 
       console.log("Signature and user data saved to localStorage.");
@@ -439,7 +440,7 @@ export function SignUpForm() {
         iconName: "Bell",
         link: "/dashboard",
         category: "system",
-        timestamp: new Date().toISOString(),
+        timestamp: registrationTimestamp,
       });
       
       toast({

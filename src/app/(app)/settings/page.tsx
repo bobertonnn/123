@@ -28,7 +28,7 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
-import { Button as AlertDialogButton, buttonVariants } from "@/components/ui/button"; // Renamed to avoid conflict and imported buttonVariants
+import { Button as AlertDialogButton, buttonVariants } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,7 +47,7 @@ import { format, addMonths, parseISO, isValid } from "date-fns";
 type SaveStatus = "idle" | "saving" | "success" | "error";
 
 const SIGNATURE_MAX_ROTATION_HOVER = 15;
-const SIGNATURE_DRAG_SENSITIVITY = 0.2; // Adjust for stronger/weaker drag rotation
+const SIGNATURE_DRAG_SENSITIVITY = 0.2; 
 const signatureSpringConfig = { stiffness: 150, damping: 30, mass: 0.8 };
 
 interface UserSubscription {
@@ -85,18 +85,19 @@ export default function SettingsPage() {
   const [showUpdateSignatureArea, setShowUpdateSignatureArea] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const signatureContainerRef = useRef<HTMLDivElement>(null);
-  const signatureImageRef = useRef<HTMLImageElement>(null); // Ref for the signature image itself for drag interaction
+  const signatureImageRef = useRef<HTMLImageElement>(null); 
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [userJoinDate, setUserJoinDate] = useState<string | null>(null);
+
 
   const [profileSaveStatus, setProfileSaveStatus] = useState<SaveStatus>("idle");
   const [securitySaveStatus, setSecuritySaveStatus] = useState<SaveStatus>("idle");
   const [notificationSaveStatus, setNotificationSaveStatus] = useState<SaveStatus>("idle");
-  // const [subscriptionSaveStatus, setSubscriptionSaveStatus] = useState<SaveStatus>("idle"); // Removed as individual actions have toasts
+  
 
-  // Billing State
   const [currentSubscription, setCurrentSubscription] = useState<UserSubscription>({
     planName: "Free Trial",
     planPrice: "$0/month",
@@ -188,13 +189,12 @@ export default function SettingsPage() {
           event.clientY <= rect.bottom;
         
         if (!isMouseOverContainer) {
-          handleSignatureHoverMouseLeave(); // Spring back to center
+          handleSignatureHoverMouseLeave(); 
         } else {
-          // Let the hover effect take over via the next mousemove on the container
            handleSignatureHoverMouseMove(event as unknown as globalThis.MouseEvent);
         }
       } else {
-         handleSignatureHoverMouseLeave(); // Fallback to reset if container ref is lost
+         handleSignatureHoverMouseLeave(); 
       }
     };
 
@@ -274,6 +274,7 @@ export default function SettingsPage() {
     const storedEmail = localStorage.getItem("userEmail");
     const storedSignature = localStorage.getItem("userSignature");
     const storedAvatar = localStorage.getItem("userAvatarUrl");
+    const storedJoinDate = localStorage.getItem("userJoinDate");
 
     if (storedFullName && storedFullName.trim() !== "") setUserFullName(storedFullName.trim());
     else setUserFullName("User");
@@ -290,6 +291,11 @@ export default function SettingsPage() {
     if (storedAvatar && storedAvatar.trim() !== "") setUserAvatarUrl(storedAvatar);
     else {
       setUserAvatarUrl(undefined);
+    }
+    if (storedJoinDate) {
+        setUserJoinDate(new Date(storedJoinDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
+    } else {
+        setUserJoinDate(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
     }
     loadSubscriptionData();
 
@@ -427,7 +433,6 @@ export default function SettingsPage() {
     const newPlanDetails = availablePlans.find(p => p.id === selectedPlanInModal);
     if (!newPlanDetails) return;
 
-    // Enforce error if changing from Free Trial to any other plan
     if (currentSubscription.planName === "Free Trial" && newPlanDetails.id !== "free") {
       toast({
         variant: "destructive",
@@ -439,12 +444,6 @@ export default function SettingsPage() {
       return;
     }
     
-    // Logic for other plan changes (e.g., Pro to Business) if needed, or also make them error out
-    // For now, only Free Trial to Paid is explicitly errored.
-    // To make ALL changes error out (except to Free Trial):
-    // if (newPlanDetails.id !== 'free' && currentSubscription.planName !== newPlanDetails.name) { ... error toast ... return; }
-
-
     const newSubscription: UserSubscription = {
         planName: newPlanDetails.name,
         planPrice: newPlanDetails.price,
@@ -489,7 +488,7 @@ export default function SettingsPage() {
         toast({ variant: "destructive", title: "Invalid Card Number", description: "Please enter a valid card number."});
         return;
     }
-    if (!/^(0[1-9]|1[0-2])\/?([0-9]{2})$/.test(tempCardExpiry)) { // Supports MM/YY and MMYY
+    if (!/^(0[1-9]|1[0-2])\/?([0-9]{2})$/.test(tempCardExpiry)) { 
         toast({ variant: "destructive", title: "Invalid Expiry Date", description: "Please use MM/YY format."});
         return;
     }
@@ -505,7 +504,6 @@ export default function SettingsPage() {
       duration: 7000,
     });
     setIsUpdatePaymentDialogOpen(false);
-    // Clear temp fields after attempting save
     setTempCardNumber("");
     setTempCardExpiry("");
     setTempCardCvc("");
@@ -527,7 +525,7 @@ export default function SettingsPage() {
         id: Date.now().toString(),
         date: format(new Date(), "yyyy-MM-dd"),
         description: `Subscription cancelled. Reverted to ${freeTrialPlan.name}.`,
-        amount: "$0", // Corrected from freeTrialPlan.price
+        amount: "$0", 
         status: "Active", 
     };
     const updatedHistory = [cancellationEntry, ...billingHistory.filter(entry => entry.description !== "Activated Free Trial")];
@@ -942,6 +940,15 @@ export default function SettingsPage() {
                         </Card>
                     )}
                  </div>
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg font-semibold">Account Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                        <p><strong className="font-medium text-foreground">Joined DocuSigner:</strong> {userJoinDate || "N/A"}</p>
+                        <p><strong className="font-medium text-foreground">User Role:</strong> User</p> 
+                    </CardContent>
+                </Card>
                 {currentSubscription.planName !== "Free Trial" && (
                     <div className="flex justify-end pt-4">
                         <AlertDialog open={isCancelSubscriptionAlertOpen} onOpenChange={setIsCancelSubscriptionAlertOpen}>
@@ -975,5 +982,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    
