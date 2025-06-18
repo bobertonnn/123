@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
+import { getInitials } from "@/lib/utils";
 
 type SaveStatus = "idle" | "saving" | "success" | "error";
 
@@ -53,14 +54,6 @@ export default function SettingsPage() {
     }
     if (storedAvatar) setUserAvatarUrl(storedAvatar);
   }, []);
-
-  const getInitials = (name: string) => {
-    if (!name) return "??";
-    const names = name.trim().split(' ');
-    if (names.length === 0 || names[0] === "") return "??";
-    if (names.length === 1) return names[0].substring(0, 2).toUpperCase();
-    return (names[0][0] + (names[names.length - 1][0] || '')).toUpperCase();
-  };
 
   const handleSignatureSave = (dataUrl: string) => {
     setUserSignature(dataUrl);
@@ -384,5 +377,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    

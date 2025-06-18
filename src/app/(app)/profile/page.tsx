@@ -8,6 +8,7 @@ import { User, Edit3, Mail, Phone, Building, CalendarDays, Briefcase } from "luc
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
+import { getInitials } from "@/lib/utils";
 
 interface UserProfileData {
   name: string;
@@ -49,14 +50,6 @@ export default function ProfilePage() {
       joinDate: new Date(storedJoinDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     }));
   }, []);
-
-  const getInitials = (name: string) => {
-    if (!name || name === "Loading...") return "..";
-    const names = name.trim().split(' ');
-    if (names.length === 0 || names[0] === "") return "..";
-    if (names.length === 1) return names[0].substring(0, 2).toUpperCase();
-    return (names[0][0] + (names[names.length - 1][0] || '')).toUpperCase();
-  };
 
   return (
     <div className="container mx-auto">

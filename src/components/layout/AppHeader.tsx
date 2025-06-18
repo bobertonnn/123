@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { cn } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils"; // Added getInitials
 import React, { useState, useEffect } from "react";
 import { type Notification, type NotificationIconName } from "@/types/notification";
 import { getNotifications, addMockNotifications, markNotificationAsRead, markAllNotificationsAsRead, clearAllNotifications, deleteNotificationById } from "@/lib/notificationManager";
@@ -75,6 +75,15 @@ export function AppHeader() {
   const currentPathname = usePathname();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [userName, setUserName] = useState("User"); // Added for avatar
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | undefined>(undefined); // Added for avatar
+
+  useEffect(() => {
+    const storedName = localStorage.getItem("userFullName");
+    const storedAvatar = localStorage.getItem("userAvatarUrl");
+    if (storedName) setUserName(storedName);
+    if (storedAvatar) setUserAvatarUrl(storedAvatar);
+  }, []);
 
   const refreshNotifications = () => {
     let currentNotifications = getNotifications();
@@ -90,18 +99,33 @@ export function AppHeader() {
     refreshNotifications(); 
 
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'userSiteNotifications') {
+      if (event.key === 'userSiteNotifications' || event.key === 'userFullName' || event.key === 'userAvatarUrl') {
         refreshNotifications();
+        const storedName = localStorage.getItem("userFullName");
+        const storedAvatar = localStorage.getItem("userAvatarUrl");
+        if (storedName) setUserName(storedName);
+        if (storedAvatar) setUserAvatarUrl(storedAvatar);
       }
     };
-    const handleCustomEvent = () => refreshNotifications();
+    const handleCustomEvent = () => {
+      refreshNotifications();
+      const storedName = localStorage.getItem("userFullName");
+      const storedAvatar = localStorage.getItem("userAvatarUrl");
+      if (storedName) setUserName(storedName);
+      if (storedAvatar) setUserAvatarUrl(storedAvatar);
+    };
+
 
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('notificationsUpdated', handleCustomEvent);
+    // Listen for profile updates that might affect avatar/name
+    window.addEventListener('profileUpdated', handleCustomEvent);
+
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('notificationsUpdated', handleCustomEvent);
+      window.removeEventListener('profileUpdated', handleCustomEvent);
     };
   }, []);
 
@@ -272,8 +296,8 @@ export function AppHeader() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="overflow-hidden rounded-full w-9 h-9 md:w-10 md:h-10">
               <Avatar className="h-full w-full">
-                  <AvatarImage src="https://placehold.co/40x40.png" alt="User Avatar" data-ai-hint="user avatar" />
-                  <AvatarFallback>JD</AvatarFallback>
+                  <AvatarImage src={userAvatarUrl || "https://placehold.co/40x40.png"} alt={userName} data-ai-hint="user avatar" />
+                  <AvatarFallback>{getInitials(userName)}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>

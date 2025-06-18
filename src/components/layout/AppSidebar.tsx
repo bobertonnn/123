@@ -33,6 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState, useEffect } from "react";
+import { getInitials } from "@/lib/utils";
 
 const mainNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
@@ -61,14 +62,6 @@ export function AppSidebar() {
     if (storedEmail) setUserEmail(storedEmail);
     if (storedAvatar) setUserAvatarUrl(storedAvatar);
   }, []);
-
-  const getInitials = (name: string) => {
-    if (!name) return "U";
-    const names = name.trim().split(' ');
-    if (names.length === 0 || names[0] === "") return "U";
-    if (names.length === 1) return names[0].substring(0, 2).toUpperCase();
-    return (names[0][0] + (names[names.length - 1][0] || '')).toUpperCase();
-  };
 
   const NavLink = ({ href, label, icon: Icon }: { href: string; label: string; icon: React.ElementType }) => (
     <Button

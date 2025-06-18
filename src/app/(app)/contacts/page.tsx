@@ -29,6 +29,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { getInitials } from "@/lib/utils";
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -65,15 +66,6 @@ export default function ContactsPage() {
     contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (contact.company && contact.company.toLowerCase().includes(searchTerm.toLowerCase()))
   );
-
-  const getInitials = (name: string) => {
-    if (!name) return "..";
-    const names = name.split(' ');
-    if (names.length === 0 || names[0] === "") return "..";
-    if (names.length === 1) return names[0].substring(0, 2).toUpperCase();
-    return (names[0][0] + (names[names.length - 1][0] || '')).toUpperCase();
-  };
-
 
   if (isLoading) {
     return (
