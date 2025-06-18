@@ -70,9 +70,9 @@ interface BillingHistoryEntry {
 }
 
 const availablePlans = [
-    { id: "free", name: "Free Trial", price: "$0/мес", priceNumeric: 0, features: ["Basic document signing", "Limited uploads", "Community support"], icon: Package },
-    { id: "pro", name: "Pro Tier", price: "$15/мес", priceNumeric: 15, features: ["Unlimited documents", "Advanced templates", "Priority support", "Team features (up to 5 users)"], icon: Star },
-    { id: "business", name: "Business Tier", price: "$45/мес", priceNumeric: 45, features: ["All Pro features", "Custom branding", "API access", "Dedicated account manager", "Unlimited users"], icon: Zap },
+    { id: "free", name: "Free Trial", price: "$0/month", priceNumeric: 0, features: ["Basic document signing", "Limited uploads", "Community support"], icon: Package },
+    { id: "pro", name: "Pro Tier", price: "$15/month", priceNumeric: 15, features: ["Unlimited documents", "Advanced templates", "Priority support", "Team features (up to 5 users)"], icon: Star },
+    { id: "business", name: "Business Tier", price: "$45/month", priceNumeric: 45, features: ["All Pro features", "Custom branding", "API access", "Dedicated account manager", "Unlimited users"], icon: Zap },
 ];
 
 export default function SettingsPage() {
@@ -97,7 +97,7 @@ export default function SettingsPage() {
   // Billing State
   const [currentSubscription, setCurrentSubscription] = useState<UserSubscription>({
     planName: "Free Trial",
-    planPrice: "$0/мес",
+    planPrice: "$0/month",
     renewsOn: null,
     paymentMethod: null,
   });
@@ -136,8 +136,8 @@ export default function SettingsPage() {
 
   const loadSubscriptionData = () => {
     const defaultFreePlan = availablePlans.find(p => p.id === 'free')!;
-    let newBillingHistory = [...billingHistory];
-    let subscriptionChanged = false;
+    let newBillingHistory: BillingHistoryEntry[] = [];
+    let loadedSubscription: UserSubscription | null = null;
 
     if (typeof window !== 'undefined') {
       const storedSubscription = localStorage.getItem("userSubscription");
@@ -146,52 +146,46 @@ export default function SettingsPage() {
           const parsedSubscription = JSON.parse(storedSubscription) as UserSubscription;
           const planExists = availablePlans.find(p => p.name === parsedSubscription.planName);
           if (planExists) {
-             setCurrentSubscription({
-                ...parsedSubscription,
-                planPrice: planExists.price,
-             });
-          } else {
-             setCurrentSubscription({ planName: defaultFreePlan.name, planPrice: defaultFreePlan.price, renewsOn: null, paymentMethod: null });
-             localStorage.setItem("userSubscription", JSON.stringify({ planName: defaultFreePlan.name, planPrice: defaultFreePlan.price, renewsOn: null, paymentMethod: null }));
-             subscriptionChanged = true;
+            loadedSubscription = {
+              ...parsedSubscription,
+              planPrice: planExists.price, // Ensure price comes from definition
+            };
           }
         } catch (e) {
           console.error("Failed to parse subscription from localStorage", e);
-          setCurrentSubscription({ planName: defaultFreePlan.name, planPrice: defaultFreePlan.price, renewsOn: null, paymentMethod: null });
-          localStorage.setItem("userSubscription", JSON.stringify({ planName: defaultFreePlan.name, planPrice: defaultFreePlan.price, renewsOn: null, paymentMethod: null }));
-          subscriptionChanged = true;
         }
-      } else {
-         setCurrentSubscription({ planName: defaultFreePlan.name, planPrice: defaultFreePlan.price, renewsOn: null, paymentMethod: null });
-         localStorage.setItem("userSubscription", JSON.stringify({ planName: defaultFreePlan.name, planPrice: defaultFreePlan.price, renewsOn: null, paymentMethod: null }));
-         subscriptionChanged = true;
       }
+      
+      // If no valid subscription loaded, default to Free Trial
+      if (!loadedSubscription) {
+        loadedSubscription = { planName: defaultFreePlan.name, planPrice: defaultFreePlan.price, renewsOn: null, paymentMethod: null };
+        localStorage.setItem("userSubscription", JSON.stringify(loadedSubscription));
+      }
+      setCurrentSubscription(loadedSubscription);
 
       const storedHistory = localStorage.getItem("userBillingHistory");
       if (storedHistory) {
         try {
           newBillingHistory = JSON.parse(storedHistory);
-          setBillingHistory(newBillingHistory);
         } catch (e) {
             console.error("Failed to parse billing history", e);
             newBillingHistory = [];
-            setBillingHistory([]);
         }
       }
       
-      // Add default "Free Trial" entry if history is empty and plan is Free Trial (or just set to it)
-      if (newBillingHistory.length === 0 && (currentSubscription.planName === "Free Trial" || subscriptionChanged)) {
+      // Add default "Free Trial" entry if history is empty
+      if (newBillingHistory.length === 0) {
         const freeTrialEntry: BillingHistoryEntry = {
             id: Date.now().toString(),
             date: format(new Date(), "yyyy-MM-dd"),
             description: "Activated Free Trial",
-            amount: "$0",
+            amount: defaultFreePlan.price.replace("/month", ""), // Use numeric price or format price string
             status: "Active",
         };
         newBillingHistory = [freeTrialEntry];
-        setBillingHistory(newBillingHistory);
         localStorage.setItem("userBillingHistory", JSON.stringify(newBillingHistory));
       }
+      setBillingHistory(newBillingHistory);
     }
   };
 
@@ -364,8 +358,11 @@ export default function SettingsPage() {
       setIsChangePlanDialogOpen(false);
       return;
     }
+    
+    // If already on a paid plan, allow change to another paid plan (or free, though cancel is better for that)
+    // This specific error logic only applies if upgrading from free.
+    // Other plan changes proceed as before.
 
-    // Existing logic for successful plan change (e.g., paid to paid, or paid to free if cancel not used)
     const newSubscription: UserSubscription = {
         planName: newPlanDetails.name,
         planPrice: newPlanDetails.price,
@@ -373,7 +370,6 @@ export default function SettingsPage() {
         paymentMethod: newPlanDetails.id !== "free" ? (currentSubscription.paymentMethod || { type: "Visa", last4: "••••", expiry: "MM/YY" }) : null
     };
     
-    // This part might be redundant if all plan changes are now blocked by "contact support" for upgrades
     if (newPlanDetails.id !== "free" && !newSubscription.paymentMethod?.last4.match(/\d{4}/)) {
         setIsChangePlanDialogOpen(false); 
         setIsUpdatePaymentDialogOpen(true); 
@@ -384,12 +380,12 @@ export default function SettingsPage() {
     setCurrentSubscription(newSubscription);
     localStorage.setItem("userSubscription", JSON.stringify(newSubscription));
 
-    if (newPlanDetails.id !== "free") {
+    if (newPlanDetails.id !== "free") { // Only add history for actual paid subscriptions
       const newHistoryEntry: BillingHistoryEntry = {
         id: Date.now().toString(),
         date: format(new Date(), "yyyy-MM-dd"),
         description: `Subscribed to ${newPlanDetails.name}`,
-        amount: newPlanDetails.price.replace("/мес", ""),
+        amount: newPlanDetails.price.replace("/month", ""),
         status: "Paid",
         invoiceUrl: "#mockInvoice"
       };
@@ -427,8 +423,6 @@ export default function SettingsPage() {
       duration: 7000,
     });
     setIsUpdatePaymentDialogOpen(false);
-    // Do NOT save the card details or update localStorage
-    // setTempCardNumber(""); setTempCardExpiry(""); setTempCardCvc(""); // Optionally clear fields or keep them for user to see
   };
 
   const handleCancelSubscription = () => {
@@ -442,13 +436,12 @@ export default function SettingsPage() {
     setCurrentSubscription(newSubscription);
     localStorage.setItem("userSubscription", JSON.stringify(newSubscription));
 
-    // Add a history entry for cancellation if needed, or simply revert
     const cancellationEntry: BillingHistoryEntry = {
         id: Date.now().toString(),
         date: format(new Date(), "yyyy-MM-dd"),
         description: `Subscription cancelled. Reverted to ${freeTrialPlan.name}.`,
-        amount: "$0", // Or indicate change, not a charge
-        status: "Active", // Or "Cancelled"
+        amount: "$0",
+        status: "Active", 
     };
     const updatedHistory = [cancellationEntry, ...billingHistory];
     setBillingHistory(updatedHistory);
@@ -668,7 +661,7 @@ export default function SettingsPage() {
         <TabsContent value="billing">
           <Card className="shadow-xl rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-xl font-headline">Billing & Subscription</CardTitle>
+              <CardTitle className="text-xl font-headline">Billing &amp; Subscription</CardTitle>
               <CardDescription>Manage your subscription plan and payment methods.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-8">
@@ -788,7 +781,7 @@ export default function SettingsPage() {
                                             <CreditCard className="mr-2 h-4 w-4"/> Add Payment Method
                                         </Button>
                                     </DialogTrigger>
-                                    <DialogContent className="sm:max-w-md"> {}
+                                    <DialogContent className="sm:max-w-md">
                                         <DialogHeader>
                                             <DialogTitle className="font-headline">Add Payment Method</DialogTitle>
                                             <DialogDescription>Enter your card details below.</DialogDescription>
@@ -896,3 +889,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
