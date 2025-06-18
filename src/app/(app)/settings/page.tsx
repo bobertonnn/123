@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Lock, Bell, CreditCard, Save, Edit3, XCircle, Loader2, Check, UploadCloud, Trash2 } from "lucide-react";
 import { SignatureCanvas } from "@/components/auth/SignatureCanvas";
-import { useState, useEffect, useRef, useCallback } from "react"; // Added useCallback
+import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
@@ -17,11 +17,12 @@ import { auth } from "@/lib/firebase";
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
 import { GradientBirdIcon } from "@/components/icons/Logo";
 import { cn } from "@/lib/utils";
-import { motion, useMotionValue, useSpring } from "framer-motion"; // Added motion imports
+import { motion, useMotionValue, useSpring } from "framer-motion";
 
 type SaveStatus = "idle" | "saving" | "success" | "error";
 
-const MAX_ROTATION = 15; // Max rotation angle for the signature
+const SIGNATURE_MAX_ROTATION = 15; // Reduced for a subtler effect
+const signatureSpringConfig = { stiffness: 150, damping: 30, mass: 0.8 }; // Adjusted for smoother animation
 
 export default function SettingsPage() {
   const [userFullName, setUserFullName] = useState("User");
@@ -31,7 +32,7 @@ export default function SettingsPage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [showUpdateSignatureArea, setShowUpdateSignatureArea] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
-  const signatureContainerRef = useRef<HTMLDivElement>(null); // Ref for signature container
+  const signatureContainerRef = useRef<HTMLDivElement>(null);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -43,28 +44,26 @@ export default function SettingsPage() {
 
   const { toast } = useToast();
 
-  // Motion values for signature rotation
-  const rotateX = useMotionValue(0);
-  const rotateY = useMotionValue(0);
-  const springConfig = { stiffness: 200, damping: 25, mass: 1 };
-  const springRotateX = useSpring(rotateX, springConfig);
-  const springRotateY = useSpring(rotateY, springConfig);
+  const sigRotateX = useMotionValue(0);
+  const sigRotateY = useMotionValue(0);
+  const springSigRotateX = useSpring(sigRotateX, signatureSpringConfig);
+  const springSigRotateY = useSpring(sigRotateY, signatureSpringConfig);
 
   const handleSignatureMouseMove = useCallback((event: globalThis.MouseEvent) => {
     if (!signatureContainerRef.current) return;
     const rect = signatureContainerRef.current.getBoundingClientRect();
     const mouseX = event.clientX - rect.left - rect.width / 2;
     const mouseY = event.clientY - rect.top - rect.height / 2;
-    const newRotateY = (mouseX / (rect.width / 2)) * MAX_ROTATION;
-    const newRotateX = -(mouseY / (rect.height / 2)) * MAX_ROTATION;
-    rotateX.set(newRotateX);
-    rotateY.set(newRotateY);
-  }, [rotateX, rotateY]);
+    const newRotateY = (mouseX / (rect.width / 2)) * SIGNATURE_MAX_ROTATION;
+    const newRotateX = -(mouseY / (rect.height / 2)) * SIGNATURE_MAX_ROTATION;
+    sigRotateX.set(newRotateX);
+    sigRotateY.set(newRotateY);
+  }, [sigRotateX, sigRotateY]);
 
   const handleSignatureMouseLeave = useCallback(() => {
-    rotateX.set(0);
-    rotateY.set(0);
-  }, [rotateX, rotateY]);
+    sigRotateX.set(0);
+    sigRotateY.set(0);
+  }, [sigRotateX, sigRotateY]);
 
 
   useEffect(() => {
@@ -92,7 +91,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const currentSignatureContainer = signatureContainerRef.current;
-    if (currentSignatureContainer) {
+    if (currentSignatureContainer && userSignature && !showUpdateSignatureArea) { // Only add listeners if signature is shown
       currentSignatureContainer.addEventListener('mousemove', handleSignatureMouseMove);
       currentSignatureContainer.addEventListener('mouseleave', handleSignatureMouseLeave);
     }
@@ -102,7 +101,7 @@ export default function SettingsPage() {
         currentSignatureContainer.removeEventListener('mouseleave', handleSignatureMouseLeave);
       }
     };
-  }, [handleSignatureMouseMove, handleSignatureMouseLeave]);
+  }, [handleSignatureMouseMove, handleSignatureMouseLeave, userSignature, showUpdateSignatureArea]);
 
 
   const handleSignatureSave = (dataUrl: string) => {
@@ -152,7 +151,7 @@ export default function SettingsPage() {
 
   const handleProfileSave = async () => {
     const fullNameRegex = new RegExp("^\\p{L}+(?:['\\-\\s]+\\p{L}+)+$", "u");
-    if (!fullNameRegex.test(userFullName) && userFullName !== "User") { // Allow "User" as default
+    if (!fullNameRegex.test(userFullName) && userFullName !== "User") { 
       toast({
         variant: "destructive",
         title: "Invalid Full Name",
@@ -173,9 +172,9 @@ export default function SettingsPage() {
         }
         if (avatarPreview) {
         localStorage.setItem("userAvatarUrl", avatarPreview);
-        setUserAvatarUrl(avatarPreview); // Update state to reflect saved avatar
-        setAvatarPreview(null); // Clear preview
-        } else if (!userAvatarUrl && !avatarPreview) { // If user removes avatar (sets to null/empty)
+        setUserAvatarUrl(avatarPreview); 
+        setAvatarPreview(null); 
+        } else if (!userAvatarUrl && !avatarPreview) { 
             localStorage.removeItem("userAvatarUrl");
             setUserAvatarUrl(undefined);
         }
@@ -257,11 +256,11 @@ export default function SettingsPage() {
             <CardContent className="space-y-6">
               <div className="flex items-center space-x-4">
                 <Avatar className="h-20 w-20">
-                  {(avatarPreview || userAvatarUrl) ? (
+                   {avatarPreview || userAvatarUrl ? (
                     <AvatarImage src={avatarPreview || userAvatarUrl!} alt={`${userFullName}'s avatar`} data-ai-hint="person avatar" />
                   ) : (
                     <AvatarFallback className="bg-card border border-border flex items-center justify-center">
-                      <GradientBirdIcon className="h-10 w-10 text-primary" />
+                        <GradientBirdIcon className="h-10 w-10 text-primary" />
                     </AvatarFallback>
                   )}
                 </Avatar>
@@ -291,12 +290,18 @@ export default function SettingsPage() {
               </div>
               <div>
                 <Label>Your Signature</Label>
-                <Card className="mt-1 p-4 bg-muted/30 perspective" id="signature" ref={signatureContainerRef}> {/* Added perspective and ref */}
+                <Card 
+                    className="mt-1 p-4 bg-muted/30 perspective" 
+                    id="signature" 
+                    ref={signatureContainerRef}
+                >
                   {userSignature && !showUpdateSignatureArea && (
                      <div className="flex flex-col items-center">
                         <motion.div
-                          className="relative transform-style-preserve-3d"
-                          style={{ rotateX: springRotateX, rotateY: springRotateY }}
+                          className="relative transform-style-preserve-3d cursor-grab"
+                          style={{ rotateX: springSigRotateX, rotateY: springSigRotateY }}
+                          whileHover={{ scale: 1.03, filter: 'drop-shadow(0 0 10px hsl(var(--primary)/0.4))' }}
+                          transition={{ type: "spring", stiffness: 300, damping: 20 }}
                         >
                           <Image 
                             src={userSignature} 
