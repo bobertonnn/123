@@ -38,8 +38,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-  buttonVariants
 } from "@/components/ui/alert-dialog";
+import { buttonVariants } from "@/components/ui/button"; // Corrected import path
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format, addMonths, parseISO, isValid } from "date-fns";
@@ -138,11 +138,9 @@ export default function SettingsPage() {
       if (storedSubscription) {
         try {
           const parsedSubscription = JSON.parse(storedSubscription);
-          // Basic validation
           if (parsedSubscription.planName && availablePlans.find(p => p.name === parsedSubscription.planName)) {
              setCurrentSubscription(parsedSubscription);
           } else {
-            // Invalid plan name found, reset to Free Trial
              setCurrentSubscription({ planName: "Free Trial", renewsOn: null, paymentMethod: null });
              localStorage.setItem("userSubscription", JSON.stringify({ planName: "Free Trial", renewsOn: null, paymentMethod: null }));
           }
@@ -151,7 +149,6 @@ export default function SettingsPage() {
           setCurrentSubscription({ planName: "Free Trial", renewsOn: null, paymentMethod: null });
         }
       } else {
-         // No subscription data, default to Free Trial
          localStorage.setItem("userSubscription", JSON.stringify({ planName: "Free Trial", renewsOn: null, paymentMethod: null }));
       }
 
@@ -184,7 +181,7 @@ export default function SettingsPage() {
         setShowUpdateSignatureArea(false);
     } else {
         setShowUpdateSignatureArea(true);
-    } // Corrected: Added closing brace for else block
+    }
     if (storedAvatar && storedAvatar.trim() !== "") setUserAvatarUrl(storedAvatar);
     else setUserAvatarUrl(undefined);
 
@@ -848,5 +845,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    
