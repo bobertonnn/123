@@ -3,14 +3,13 @@
 
 import { DocumentEditor } from '@/components/documents/DocumentEditor';
 import type { Document } from '@/components/documents/DocumentCard';
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
 export default function EditDocumentPage({ params }: { params: { id: string } }) {
-  const resolvedParams = use(params);
-  const documentId = resolvedParams.id;
+  const documentId = params.id;
   const router = useRouter();
 
   const [document, setDocument] = useState<Document | null>(null);
