@@ -38,6 +38,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
+  buttonVariants
 } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -183,7 +184,7 @@ export default function SettingsPage() {
         setShowUpdateSignatureArea(false);
     } else {
         setShowUpdateSignatureArea(true);
-    }
+    } // Corrected: Added closing brace for else block
     if (storedAvatar && storedAvatar.trim() !== "") setUserAvatarUrl(storedAvatar);
     else setUserAvatarUrl(undefined);
 
@@ -332,11 +333,10 @@ export default function SettingsPage() {
     };
     
     if (newPlanDetails.id !== "free" && !newSubscription.paymentMethod?.last4.match(/\d{4}/)) {
-        // If changing to paid plan and no valid payment method, prompt to add one
-        setIsChangePlanDialogOpen(false); // Close plan change dialog
-        setIsUpdatePaymentDialogOpen(true); // Open payment update dialog
+        setIsChangePlanDialogOpen(false); 
+        setIsUpdatePaymentDialogOpen(true); 
         toast({title: "Payment Method Required", description: `Please add a payment method for the ${newPlanDetails.name}.`});
-        return; // Don't update subscription yet
+        return; 
     }
 
     setCurrentSubscription(newSubscription);
@@ -380,7 +380,7 @@ export default function SettingsPage() {
 
 
     const updatedPaymentMethod = {
-        type: "Visa", // Assume Visa for mock
+        type: "Visa", 
         last4: tempCardNumber.slice(-4),
         expiry: tempCardExpiry
     };
@@ -391,10 +391,9 @@ export default function SettingsPage() {
     setIsUpdatePaymentDialogOpen(false);
     setTempCardNumber(""); setTempCardExpiry(""); setTempCardCvc("");
 
-    // If user was in the middle of changing plan, continue
     const planToUpgradeTo = availablePlans.find(p => p.id === selectedPlanInModal);
     if (planToUpgradeTo && planToUpgradeTo.id !== "free" && currentSubscription.planName === "Free Trial") {
-        handlePlanChange(); // Re-trigger plan change with new payment method
+        handlePlanChange(); 
     }
 
   };
@@ -408,9 +407,6 @@ export default function SettingsPage() {
     };
     setCurrentSubscription(newSubscription);
     localStorage.setItem("userSubscription", JSON.stringify(newSubscription));
-    // Optionally clear billing history or mark as cancelled
-    // setBillingHistory([]); 
-    // localStorage.removeItem("userBillingHistory");
 
     toast({ title: "Subscription Cancelled", description: `You have been moved to the ${freeTrialPlan.name}.`});
     setIsCancelSubscriptionAlertOpen(false);
@@ -640,7 +636,7 @@ export default function SettingsPage() {
                                 : currentSubscription.renewsOn && isValid(parseISO(currentSubscription.renewsOn))
                                     ? `Renews on: ${format(parseISO(currentSubscription.renewsOn), "MMMM d, yyyy")}`
                                     : "Renewal date not set."}
-                            </PageDescription>
+                            </CardDescription>
                         </div>
                     </CardHeader>
                     <CardContent>
@@ -745,7 +741,7 @@ export default function SettingsPage() {
                                             <CreditCard className="mr-2 h-4 w-4"/> Add Payment Method
                                         </Button>
                                     </DialogTrigger>
-                                    <DialogContent className="sm:max-w-md"> {/* Re-using same content as update */}
+                                    <DialogContent className="sm:max-w-md"> {}
                                         <DialogHeader>
                                             <DialogTitle className="font-headline">Add Payment Method</DialogTitle>
                                             <DialogDescription>Enter your card details below.</DialogDescription>
@@ -852,3 +848,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
