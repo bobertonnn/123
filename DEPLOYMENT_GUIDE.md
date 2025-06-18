@@ -47,9 +47,10 @@
     mysql -u your_mysql_user -p your_database_name < db_schema/mysql/01_users.sql
     mysql -u your_mysql_user -p your_database_name < db_schema/mysql/02_contacts.sql
     mysql -u your_mysql_user -p your_database_name < db_schema/mysql/03_notifications.sql
-    # ... и так далее для других SQL файлов
+    mysql -u your_mysql_user -p your_database_name < db_schema/mysql/04_documents.sql
+    # ... и так далее для других SQL файлов, если появятся
     ```
-4.  **Разработайте API эндпоинты** в вашем Next.js приложении для взаимодействия с этой базой данных и **обновите клиентскую логику** (например, в `src/lib/contactManager.ts`) для использования этих API вместо `localStorage`. (См. комментарии-заглушки в этих файлах).
+4.  **Разработайте API эндпоинты** в вашем Next.js приложении для взаимодействия с этой базой данных и **обновите клиентскую логику** (например, в `src/lib/contactManager.ts`, `src/lib/notificationManager.ts`, `src/app/(app)/dashboard/page.tsx` и `src/components/documents/PdfUploader.tsx`) для использования этих API вместо `localStorage`. (См. комментарии-заглушки в этих файлах).
 
 ## 5. Сборка приложения
 
