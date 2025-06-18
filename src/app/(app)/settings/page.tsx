@@ -39,7 +39,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { buttonVariants } from "@/components/ui/button"; // Corrected import path
+import { buttonVariants } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format, addMonths, parseISO, isValid } from "date-fns";
@@ -51,6 +51,7 @@ const signatureSpringConfig = { stiffness: 150, damping: 30, mass: 0.8 };
 
 interface UserSubscription {
   planName: string;
+  planPrice: string; // Added planPrice
   renewsOn?: string | null;
   paymentMethod?: {
     type: string;
@@ -69,9 +70,9 @@ interface BillingHistoryEntry {
 }
 
 const availablePlans = [
-    { id: "free", name: "Free Trial", price: "$0/mo", features: ["Basic document signing", "Limited uploads", "Community support"], icon: Package },
-    { id: "pro", name: "Pro Tier", price: "$15/mo", features: ["Unlimited documents", "Advanced templates", "Priority support", "Team features (up to 5 users)"], icon: Star },
-    { id: "business", name: "Business Tier", price: "$45/mo", features: ["All Pro features", "Custom branding", "API access", "Dedicated account manager", "Unlimited users"], icon: Zap },
+    { id: "free", name: "Free Trial", price: "$0/мес", priceNumeric: 0, features: ["Basic document signing", "Limited uploads", "Community support"], icon: Package },
+    { id: "pro", name: "Pro Tier", price: "$15/мес", priceNumeric: 15, features: ["Unlimited documents", "Advanced templates", "Priority support", "Team features (up to 5 users)"], icon: Star },
+    { id: "business", name: "Business Tier", price: "$45/мес", priceNumeric: 45, features: ["All Pro features", "Custom branding", "API access", "Dedicated account manager", "Unlimited users"], icon: Zap },
 ];
 
 export default function SettingsPage() {
@@ -96,6 +97,7 @@ export default function SettingsPage() {
   // Billing State
   const [currentSubscription, setCurrentSubscription] = useState<UserSubscription>({
     planName: "Free Trial",
+    planPrice: "$0/мес",
     renewsOn: null,
     paymentMethod: null,
   });
@@ -133,23 +135,28 @@ export default function SettingsPage() {
   }, [sigRotateX, sigRotateY]);
 
   const loadSubscriptionData = () => {
+    const defaultFreePlan = availablePlans.find(p => p.id === 'free')!;
     if (typeof window !== 'undefined') {
       const storedSubscription = localStorage.getItem("userSubscription");
       if (storedSubscription) {
         try {
-          const parsedSubscription = JSON.parse(storedSubscription);
-          if (parsedSubscription.planName && availablePlans.find(p => p.name === parsedSubscription.planName)) {
-             setCurrentSubscription(parsedSubscription);
+          const parsedSubscription = JSON.parse(storedSubscription) as UserSubscription;
+          const planExists = availablePlans.find(p => p.name === parsedSubscription.planName);
+          if (planExists) {
+             setCurrentSubscription({
+                ...parsedSubscription,
+                planPrice: planExists.price, // Ensure price is updated from availablePlans
+             });
           } else {
-             setCurrentSubscription({ planName: "Free Trial", renewsOn: null, paymentMethod: null });
-             localStorage.setItem("userSubscription", JSON.stringify({ planName: "Free Trial", renewsOn: null, paymentMethod: null }));
+             setCurrentSubscription({ planName: defaultFreePlan.name, planPrice: defaultFreePlan.price, renewsOn: null, paymentMethod: null });
+             localStorage.setItem("userSubscription", JSON.stringify({ planName: defaultFreePlan.name, planPrice: defaultFreePlan.price, renewsOn: null, paymentMethod: null }));
           }
         } catch (e) {
           console.error("Failed to parse subscription from localStorage", e);
-          setCurrentSubscription({ planName: "Free Trial", renewsOn: null, paymentMethod: null });
+          setCurrentSubscription({ planName: defaultFreePlan.name, planPrice: defaultFreePlan.price, renewsOn: null, paymentMethod: null });
         }
       } else {
-         localStorage.setItem("userSubscription", JSON.stringify({ planName: "Free Trial", renewsOn: null, paymentMethod: null }));
+         localStorage.setItem("userSubscription", JSON.stringify({ planName: defaultFreePlan.name, planPrice: defaultFreePlan.price, renewsOn: null, paymentMethod: null }));
       }
 
       const storedHistory = localStorage.getItem("userBillingHistory");
@@ -323,8 +330,21 @@ export default function SettingsPage() {
     const newPlanDetails = availablePlans.find(p => p.id === selectedPlanInModal);
     if (!newPlanDetails) return;
 
+    // Simulate an error if trying to upgrade to Business Tier
+    if (newPlanDetails.id === "business" && currentSubscription.planName === "Free Trial") {
+      toast({
+        variant: "destructive",
+        title: "Plan Change Failed",
+        description: "Simulated Error: We encountered an issue processing your upgrade to the Business Tier. Please try again later or contact support.",
+        duration: 7000,
+      });
+      setIsChangePlanDialogOpen(false);
+      return;
+    }
+
     const newSubscription: UserSubscription = {
         planName: newPlanDetails.name,
+        planPrice: newPlanDetails.price,
         renewsOn: newPlanDetails.id !== "free" ? addMonths(new Date(), 1).toISOString() : null,
         paymentMethod: newPlanDetails.id !== "free" ? (currentSubscription.paymentMethod || { type: "Visa", last4: "••••", expiry: "MM/YY" }) : null
     };
@@ -344,7 +364,7 @@ export default function SettingsPage() {
         id: Date.now().toString(),
         date: format(new Date(), "yyyy-MM-dd"),
         description: `Subscribed to ${newPlanDetails.name}`,
-        amount: newPlanDetails.price.replace("/mo", ""),
+        amount: newPlanDetails.price.replace("/мес", ""), // Adjusted for Russian month
         status: "Paid",
         invoiceUrl: "#mockInvoice"
       };
@@ -399,6 +419,7 @@ export default function SettingsPage() {
     const freeTrialPlan = availablePlans.find(p => p.id === 'free')!;
     const newSubscription: UserSubscription = {
         planName: freeTrialPlan.name,
+        planPrice: freeTrialPlan.price,
         renewsOn: null,
         paymentMethod: null,
     };
@@ -626,7 +647,7 @@ export default function SettingsPage() {
                     <CardHeader className="flex flex-row items-start space-x-4 pb-3">
                         <PlanIcon className="h-10 w-10 text-primary mt-1" />
                         <div>
-                            <CardTitle className="text-lg font-semibold">Current Plan: {currentSubscription.planName}</CardTitle>
+                            <CardTitle className="text-lg font-semibold">Current Plan: {currentSubscription.planName} ({currentSubscription.planPrice})</CardTitle>
                             <CardDescription className="text-xs">
                                 {currentSubscription.planName === "Free Trial"
                                 ? "Enjoy basic features. Upgrade for more."
@@ -785,7 +806,7 @@ export default function SettingsPage() {
                                 <TableBody>
                                     {billingHistory.map((item) => (
                                     <TableRow key={item.id}>
-                                        <TableCell>{format(parseISO(item.date), "MMM d, yyyy")}</TableCell>
+                                        <TableCell>{isValid(parseISO(item.date)) ? format(parseISO(item.date), "MMM d, yyyy") : "Invalid Date"}</TableCell>
                                         <TableCell>{item.description}</TableCell>
                                         <TableCell>{item.amount}</TableCell>
                                         <TableCell>
@@ -845,3 +866,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
