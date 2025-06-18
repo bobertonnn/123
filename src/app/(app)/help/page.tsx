@@ -3,6 +3,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { HelpCircle, Search, LifeBuoy, MessageSquare, BookOpen } from "lucide-react";
+import Link from "next/link"; // Added Link import
 
 const faqItems = [
   {
@@ -90,8 +91,10 @@ export default function HelpPage() {
             <p className="text-muted-foreground">
               Our support team is available to help you with any issues or questions you might have.
             </p>
-            <Button className="w-full btn-gradient-hover">
-              <LifeBuoy className="mr-2 h-4 w-4" /> <span>Open a Support Ticket</span>
+            <Button asChild className="w-full btn-gradient-hover">
+              <Link href="mailto:support@docusigner.com?subject=DocuSigner%20Support%20Request">
+                <LifeBuoy className="mr-2 h-4 w-4" /> <span>Open a Support Ticket</span>
+              </Link>
             </Button>
             <p className="text-xs text-muted-foreground text-center">
               We typically respond within 24 business hours.
