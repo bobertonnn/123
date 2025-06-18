@@ -79,14 +79,18 @@ export function AppHeader() {
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | undefined>(undefined);
 
   const loadProfileData = () => {
-    const storedName = localStorage.getItem("userFullName");
+    let storedName = localStorage.getItem("userFullName");
+    // Explicitly check for null, undefined, or empty string after trimming
+    if (storedName === null || storedName === undefined || storedName.trim() === "") {
+      storedName = "User";
+    }
     const storedAvatar = localStorage.getItem("userAvatarUrl");
-    setUserName(storedName || "User"); // Fallback to "User"
+    setUserName(storedName); // Use the potentially defaulted name
     setUserAvatarUrl(storedAvatar || undefined);
   };
 
   useEffect(() => {
-    loadProfileData(); // Initial load
+    loadProfileData(); 
     refreshNotifications(); 
 
     const handleStorageChange = (event: StorageEvent) => {
@@ -318,3 +322,5 @@ export function AppHeader() {
     </header>
   );
 }
+
+    

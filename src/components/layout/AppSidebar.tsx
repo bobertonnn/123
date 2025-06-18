@@ -55,11 +55,16 @@ export function AppSidebar() {
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | undefined>(undefined);
 
   const loadProfileData = () => {
-    const storedName = localStorage.getItem("userFullName");
+    let storedName = localStorage.getItem("userFullName");
+    // Explicitly check for null, undefined, or empty string after trimming
+    if (storedName === null || storedName === undefined || storedName.trim() === "") {
+      storedName = "User";
+    }
     const storedEmail = localStorage.getItem("userEmail");
     const storedAvatar = localStorage.getItem("userAvatarUrl");
-    setUserName(storedName || "User"); // Fallback to "User"
-    setUserEmail(storedEmail || "user@example.com"); // Fallback
+    
+    setUserName(storedName); // Use the potentially defaulted name
+    setUserEmail(storedEmail || "user@example.com"); // Fallback for email
     setUserAvatarUrl(storedAvatar || undefined);
   };
 
@@ -176,3 +181,5 @@ export function AppSidebar() {
     </div>
   );
 }
+
+    
