@@ -8,7 +8,8 @@ import { User, Edit3, Mail, Phone, Building, CalendarDays, Briefcase } from "luc
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { getInitials } from "@/lib/utils"; // Ensured getInitials is imported
+import { GradientBirdIcon } from "@/components/icons/Logo"; // Added GradientBirdIcon
+import { cn } from "@/lib/utils";
 
 interface UserProfileData {
   name: string;
@@ -23,8 +24,8 @@ interface UserProfileData {
 
 export default function ProfilePage() {
   const [profileData, setProfileData] = useState<UserProfileData>({
-    name: "Loading...",
-    email: "loading...",
+    name: "User", // Defaulted to "User"
+    email: "user@example.com", // Defaulted
     avatarUrl: undefined, 
     title: "Document Signer", 
     department: "N/A", 
@@ -35,18 +36,18 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const loadProfileData = () => {
-        const storedFullName = localStorage.getItem("userFullName");
-        const storedEmail = localStorage.getItem("userEmail");
+        let storedFullName = localStorage.getItem("userFullName");
+        let storedEmail = localStorage.getItem("userEmail");
         const storedSignature = localStorage.getItem("userSignature");
         const storedAvatar = localStorage.getItem("userAvatarUrl");
         const storedJoinDate = localStorage.getItem("userJoinDate") || new Date().toISOString();
 
         setProfileData(prev => ({
         ...prev,
-        name: storedFullName || "User Name",
-        email: storedEmail || "user@example.com",
+        name: (storedFullName && storedFullName.trim() !== "") ? storedFullName.trim() : "User",
+        email: (storedEmail && storedEmail.trim() !== "") ? storedEmail.trim() : "user@example.com",
         signatureUrl: storedSignature || null,
-        avatarUrl: storedAvatar || undefined,
+        avatarUrl: (storedAvatar && storedAvatar.trim() !== "") ? storedAvatar : undefined,
         joinDate: new Date(storedJoinDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
         }));
     };
@@ -76,14 +77,23 @@ export default function ProfilePage() {
         <div className="bg-muted/30 p-8 md:p-12">
           <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
             <Avatar className="h-32 w-32 border-4 border-background shadow-lg">
-              <AvatarImage src={profileData.avatarUrl || "https://placehold.co/128x128.png"} alt={profileData.name} data-ai-hint="person face" />
-              <AvatarFallback className="text-4xl">{getInitials(profileData.name)}</AvatarFallback>
+              {profileData.avatarUrl ? (
+                <AvatarImage src={profileData.avatarUrl} alt={profileData.name} data-ai-hint="person face" />
+              ) : null}
+              <AvatarFallback className={!profileData.avatarUrl ? "bg-card border border-border flex items-center justify-center" : "bg-muted flex items-center justify-center"}>
+                <GradientBirdIcon 
+                  className={cn(
+                    "h-16 w-16", // Base size for profile page avatar
+                    !profileData.avatarUrl ? "text-primary" : "text-muted-foreground"
+                  )}
+                />
+              </AvatarFallback>
             </Avatar>
             <div>
               <h2 className="text-3xl md:text-4xl font-bold font-headline">{profileData.name}</h2>
               <p className="text-lg text-muted-foreground">{profileData.title}</p>
               <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                {profileData.email !== "loading..." && <span className="flex items-center"><Mail className="mr-1.5 h-4 w-4"/> {profileData.email}</span>}
+                {profileData.email !== "user@example.com" && <span className="flex items-center"><Mail className="mr-1.5 h-4 w-4"/> {profileData.email}</span>}
                 {profileData.phone !== "N/A" && <span className="flex items-center"><Phone className="mr-1.5 h-4 w-4"/> {profileData.phone}</span>}
               </div>
             </div>

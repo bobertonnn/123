@@ -11,25 +11,21 @@ import {
     Users, Settings2, HelpCircle, ChevronDown, CheckCheck, MailWarning, Trash2,
     AlertCircle
 } from "lucide-react";
-import { Logo } from "@/components/icons/Logo";
+import { Logo, GradientBirdIcon } from "@/components/icons/Logo"; // Added GradientBirdIcon
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuPortal,
-  DropdownMenuSubContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { cn, getInitials } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import React, { useState, useEffect } from "react";
 import { type Notification, type NotificationIconName } from "@/types/notification";
-import { getNotifications, addMockNotifications, markNotificationAsRead, markAllNotificationsAsRead, clearAllNotifications, deleteNotificationById } from "@/lib/notificationManager";
+import { getNotifications, addMockNotifications, markNotificationAsRead, markAllNotificationsAsRead, clearAllNotifications } from "@/lib/notificationManager"; // Removed deleteNotificationById for now
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -75,7 +71,7 @@ export function AppHeader() {
   const currentPathname = usePathname();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [userName, setUserName] = useState("User"); // Initialize with default
+  const [userName, setUserName] = useState("User");
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | undefined>(undefined);
 
   const loadProfileData = () => {
@@ -83,10 +79,10 @@ export function AppHeader() {
     if (storedName && storedName.trim() !== "") {
       setUserName(storedName.trim());
     } else {
-      setUserName("User"); // Fallback to default if stored name is null, empty, or whitespace
+      setUserName("User"); 
     }
     const storedAvatar = localStorage.getItem("userAvatarUrl");
-    setUserAvatarUrl(storedAvatar || undefined);
+    setUserAvatarUrl(storedAvatar && storedAvatar.trim() !== "" ? storedAvatar : undefined);
   };
 
   useEffect(() => {
@@ -300,8 +296,17 @@ export function AppHeader() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="overflow-hidden rounded-full w-9 h-9 md:w-10 md:h-10">
               <Avatar className="h-full w-full">
-                  <AvatarImage src={userAvatarUrl || "https://placehold.co/40x40.png"} alt={userName} data-ai-hint="user avatar" />
-                  <AvatarFallback>{getInitials(userName)}</AvatarFallback>
+                {userAvatarUrl ? (
+                  <AvatarImage src={userAvatarUrl} alt={userName} data-ai-hint="user avatar" />
+                ) : null}
+                <AvatarFallback className={!userAvatarUrl ? "bg-card border border-border flex items-center justify-center" : "bg-muted flex items-center justify-center"}>
+                  <GradientBirdIcon
+                    className={cn(
+                      "h-5 w-5", // Base size for header avatar
+                      !userAvatarUrl ? "text-primary" : "text-muted-foreground"
+                    )}
+                  />
+                </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>

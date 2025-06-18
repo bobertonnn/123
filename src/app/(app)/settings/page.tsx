@@ -15,13 +15,14 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
-import { getInitials } from "@/lib/utils"; // Ensured getInitials is imported
+import { GradientBirdIcon } from "@/components/icons/Logo"; // Added GradientBirdIcon
+import { cn } from "@/lib/utils";
 
 type SaveStatus = "idle" | "saving" | "success" | "error";
 
 export default function SettingsPage() {
-  const [userFullName, setUserFullName] = useState("John Doe");
-  const [userEmail, setUserEmail] = useState("john.doe@example.com");
+  const [userFullName, setUserFullName] = useState("User");
+  const [userEmail, setUserEmail] = useState("user@example.com");
   const [userSignature, setUserSignature] = useState<string | null>(null);
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | undefined>(undefined);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -44,15 +45,21 @@ export default function SettingsPage() {
     const storedSignature = localStorage.getItem("userSignature");
     const storedAvatar = localStorage.getItem("userAvatarUrl");
 
-    if (storedFullName) setUserFullName(storedFullName);
-    if (storedEmail) setUserEmail(storedEmail);
+    if (storedFullName && storedFullName.trim() !== "") setUserFullName(storedFullName.trim());
+    else setUserFullName("User");
+
+    if (storedEmail && storedEmail.trim() !== "") setUserEmail(storedEmail.trim());
+    else setUserEmail("user@example.com");
+
     if (storedSignature) {
         setUserSignature(storedSignature);
         setShowUpdateSignatureArea(false);
     } else {
         setShowUpdateSignatureArea(true);
     }
-    if (storedAvatar) setUserAvatarUrl(storedAvatar);
+    if (storedAvatar && storedAvatar.trim() !== "") setUserAvatarUrl(storedAvatar);
+    else setUserAvatarUrl(undefined);
+
   }, []);
 
   const handleSignatureSave = (dataUrl: string) => {
@@ -102,7 +109,7 @@ export default function SettingsPage() {
 
   const handleProfileSave = async () => {
     const fullNameRegex = new RegExp("^\\p{L}+(?:['\\-\\s]+\\p{L}+)+$", "u");
-    if (!fullNameRegex.test(userFullName)) {
+    if (!fullNameRegex.test(userFullName) && userFullName !== "User") { // Allow "User" as default
       toast({
         variant: "destructive",
         title: "Invalid Full Name",
@@ -123,10 +130,13 @@ export default function SettingsPage() {
         }
         if (avatarPreview) {
         localStorage.setItem("userAvatarUrl", avatarPreview);
-        setUserAvatarUrl(avatarPreview);
-        setAvatarPreview(null);
+        setUserAvatarUrl(avatarPreview); // Update state to reflect saved avatar
+        setAvatarPreview(null); // Clear preview
+        } else if (!userAvatarUrl && !avatarPreview) { // If user removes avatar (sets to null/empty)
+            localStorage.removeItem("userAvatarUrl");
+            setUserAvatarUrl(undefined);
         }
-        // Dispatch a custom event to notify other components (like AppSidebar/Header)
+        
         if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('profileUpdated'));
         }
@@ -204,8 +214,17 @@ export default function SettingsPage() {
             <CardContent className="space-y-6">
               <div className="flex items-center space-x-4">
                 <Avatar className="h-20 w-20">
-                  <AvatarImage src={avatarPreview || userAvatarUrl || "https://placehold.co/80x80.png"} alt={`${userFullName}'s avatar`} data-ai-hint="person avatar" />
-                  <AvatarFallback>{getInitials(userFullName)}</AvatarFallback>
+                  {(avatarPreview || userAvatarUrl) ? (
+                    <AvatarImage src={avatarPreview || userAvatarUrl} alt={`${userFullName}'s avatar`} data-ai-hint="person avatar" />
+                  ) : null}
+                  <AvatarFallback className={!(avatarPreview || userAvatarUrl) ? "bg-card border border-border flex items-center justify-center" : "bg-muted flex items-center justify-center"}>
+                     <GradientBirdIcon 
+                        className={cn(
+                            "h-10 w-10", // Base size for settings avatar
+                            !(avatarPreview || userAvatarUrl) ? "text-primary" : "text-muted-foreground"
+                        )}
+                     />
+                  </AvatarFallback>
                 </Avatar>
                 <Button variant="outline" onClick={() => avatarInputRef.current?.click()}>
                   <UploadCloud className="mr-2 h-4 w-4"/>Change Avatar
@@ -213,6 +232,11 @@ export default function SettingsPage() {
                  {avatarPreview && (
                   <Button variant="ghost" size="sm" onClick={() => setAvatarPreview(null)}>
                     <XCircle className="mr-1 h-4 w-4 text-destructive"/>Cancel Preview
+                  </Button>
+                )}
+                 {userAvatarUrl && !avatarPreview && ( // Show remove button only if there's a saved avatar and no new preview
+                  <Button variant="ghost" size="sm" onClick={() => { setUserAvatarUrl(undefined); /* localStorage will be cleared on save */ }}>
+                    <Trash2 className="mr-1 h-4 w-4 text-destructive"/>Remove Avatar
                   </Button>
                 )}
               </div>

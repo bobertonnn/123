@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Logo } from "@/components/icons/Logo";
+import { Logo, GradientBirdIcon } from "@/components/icons/Logo"; // Added GradientBirdIcon
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -33,7 +33,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState, useEffect } from "react";
-import { getInitials } from "@/lib/utils";
 
 const mainNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
@@ -50,8 +49,8 @@ const helpNavItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const [userName, setUserName] = useState("User"); // Initialize with default
-  const [userEmail, setUserEmail] = useState("user@example.com"); // Initialize with default
+  const [userName, setUserName] = useState("User");
+  const [userEmail, setUserEmail] = useState("user@example.com");
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | undefined>(undefined);
 
   const loadProfileData = () => {
@@ -59,22 +58,22 @@ export function AppSidebar() {
     if (storedName && storedName.trim() !== "") {
       setUserName(storedName.trim());
     } else {
-      setUserName("User"); // Fallback to default
+      setUserName("User"); 
     }
 
     const storedEmail = localStorage.getItem("userEmail");
     if (storedEmail && storedEmail.trim() !== "") {
       setUserEmail(storedEmail.trim());
     } else {
-      setUserEmail("user@example.com"); // Fallback to default
+      setUserEmail("user@example.com");
     }
     
     const storedAvatar = localStorage.getItem("userAvatarUrl");
-    setUserAvatarUrl(storedAvatar || undefined);
+    setUserAvatarUrl(storedAvatar && storedAvatar.trim() !== "" ? storedAvatar : undefined);
   };
 
   useEffect(() => {
-    loadProfileData(); // Initial load
+    loadProfileData(); 
 
     const handleProfileUpdate = () => {
       loadProfileData();
@@ -139,8 +138,17 @@ export function AppSidebar() {
               <Button variant="ghost" className="w-full justify-between h-auto py-2 px-3">
                 <div className="flex items-center space-x-2">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={userAvatarUrl || "https://placehold.co/40x40.png"} alt={userName} data-ai-hint="user avatar" />
-                    <AvatarFallback>{getInitials(userName)}</AvatarFallback>
+                    {userAvatarUrl ? (
+                        <AvatarImage src={userAvatarUrl} alt={userName} data-ai-hint="user avatar" />
+                    ) : null}
+                    <AvatarFallback className={!userAvatarUrl ? "bg-card border border-border flex items-center justify-center" : "bg-muted flex items-center justify-center"}>
+                        <GradientBirdIcon 
+                            className={cn(
+                                "h-5 w-5", // Base size for sidebar avatar
+                                !userAvatarUrl ? "text-primary" : "text-muted-foreground"
+                            )}
+                        />
+                    </AvatarFallback>
                   </Avatar>
                   <div className="text-left">
                     <p className="text-sm font-medium leading-none truncate max-w-[120px]">{userName}</p>
