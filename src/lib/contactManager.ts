@@ -5,10 +5,33 @@ import type { Contact } from "@/types/contact";
 
 const CONTACTS_STORAGE_KEY = "userContacts";
 
+// Initialize with a few mock contacts if storage is empty
+const initializeMockContacts = (): Contact[] => {
+  return [
+    { id: '1', name: 'Alice Wonderland', email: 'alice@example.com', company: 'Wonderland Inc.', phone: '123-456-7890', avatar: 'https://placehold.co/40x40.png?text=AW' },
+    { id: '2', name: 'Bob The Builder', email: 'bob@example.com', company: 'Builders Co.', phone: '234-567-8901', avatar: 'https://placehold.co/40x40.png?text=BB' },
+    { id: '3', name: 'Charlie Chaplin', email: 'charlie@example.com', company: 'Comedy Films', phone: '345-678-9012', avatar: 'https://placehold.co/40x40.png?text=CC' },
+  ];
+};
+
 export const getContacts = (): Contact[] => {
   if (typeof window === 'undefined') return [];
   const storedContacts = localStorage.getItem(CONTACTS_STORAGE_KEY);
-  return storedContacts ? JSON.parse(storedContacts) : [];
+  if (storedContacts) {
+    try {
+      const parsedContacts = JSON.parse(storedContacts);
+      // Basic validation: check if it's an array
+      return Array.isArray(parsedContacts) ? parsedContacts : initializeMockContacts();
+    } catch (e) {
+      console.error("Error parsing contacts from localStorage, initializing with mocks:", e);
+      return initializeMockContacts(); // Fallback to mocks if parsing fails
+    }
+  } else {
+    // No contacts in storage, initialize with mocks and save
+    const mockContacts = initializeMockContacts();
+    saveContacts(mockContacts);
+    return mockContacts;
+  }
 };
 
 export const saveContacts = (contacts: Contact[]): void => {

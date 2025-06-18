@@ -17,15 +17,19 @@ export const getInitials = (name?: string | null): string => {
     return "..";
   }
 
+  // Prioritize first letter of first two words if available
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase(); // "John Doe" -> "JD"
+  }
+  
+  // If only one word, take up to two letters
   if (words.length === 1) {
     const firstWord = words[0];
     if (firstWord.length === 1) {
       return (firstWord[0] + firstWord[0]).toUpperCase(); // "A" -> "AA"
     }
     return firstWord.substring(0, 2).toUpperCase(); // "User" -> "US", "Alex" -> "AL"
-  } else if (words.length === 2) {
-    return (words[0][0] + words[1][0]).toUpperCase(); // "John Doe" -> "JD"
-  } else { // 3 or more words
-    return (words[0][0] + words[1][0] + words[2][0]).toUpperCase(); // "First Middle Last" -> "FML"
   }
+  
+  return ".."; // Default fallback if somehow conditions above aren't met
 };
