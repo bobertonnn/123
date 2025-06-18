@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Edit3, Mail, Phone, Building, CalendarDays, Briefcase, Tag } from "lucide-react";
+import { User, Edit3, Mail, Phone, Tag } from "lucide-react"; // Removed unused icons
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
@@ -17,11 +17,11 @@ interface UserProfileData {
   email: string;
   avatarUrl: string | undefined;
   title: string;
-  department: string;
-  phone: string;
+  department: string; // Keep for structure, though not editable in settings
+  phone: string;     // Keep for structure, though not editable in settings
   joinDate: string;
   signatureUrl: string | null;
-  userTag: string | null;
+  userTag: string | null; // Added userTag
 }
 
 export default function ProfilePage() {
@@ -31,39 +31,39 @@ export default function ProfilePage() {
     email: "user@example.com",
     avatarUrl: undefined,
     title: "Document Signer",
-    department: "N/A",
-    phone: "N/A",
+    department: "N/A", // Default
+    phone: "N/A",       // Default
     joinDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     signatureUrl: null,
-    userTag: null,
+    userTag: null, // Initialize userTag
   });
 
+  const loadProfileData = () => {
+      let storedFullName = localStorage.getItem("userFullName");
+      let storedEmail = localStorage.getItem("userEmail");
+      const storedSignature = localStorage.getItem("userSignature");
+      const storedAvatar = localStorage.getItem("userAvatarUrl");
+      const storedJoinDate = localStorage.getItem("userJoinDate") || new Date().toISOString();
+      const storedUserTag = localStorage.getItem("userTag"); // Load userTag
+
+      setProfileData(prev => ({
+      ...prev,
+      name: (storedFullName && storedFullName.trim() !== "") ? storedFullName.trim() : "User",
+      email: (storedEmail && storedEmail.trim() !== "") ? storedEmail.trim() : "user@example.com",
+      signatureUrl: storedSignature || null,
+      avatarUrl: (storedAvatar && storedAvatar.trim() !== "") ? storedAvatar : undefined,
+      joinDate: new Date(storedJoinDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+      userTag: storedUserTag || null, // Set userTag
+      }));
+  };
+
   useEffect(() => {
-    const loadProfileData = () => {
-        let storedFullName = localStorage.getItem("userFullName");
-        let storedEmail = localStorage.getItem("userEmail");
-        const storedSignature = localStorage.getItem("userSignature");
-        const storedAvatar = localStorage.getItem("userAvatarUrl");
-        const storedJoinDate = localStorage.getItem("userJoinDate") || new Date().toISOString();
-        const storedUserTag = localStorage.getItem("userTag");
-
-        setProfileData(prev => ({
-        ...prev,
-        name: (storedFullName && storedFullName.trim() !== "") ? storedFullName.trim() : "User",
-        email: (storedEmail && storedEmail.trim() !== "") ? storedEmail.trim() : "user@example.com",
-        signatureUrl: storedSignature || null,
-        avatarUrl: (storedAvatar && storedAvatar.trim() !== "") ? storedAvatar : undefined,
-        joinDate: new Date(storedJoinDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-        userTag: storedUserTag || null,
-        }));
-    };
-
     loadProfileData();
+    // Listen for custom event if profile is updated elsewhere (e.g. settings page)
     window.addEventListener('profileUpdated', loadProfileData);
     return () => {
         window.removeEventListener('profileUpdated', loadProfileData);
     }
-
   }, []);
 
   const handleCopyTag = () => {
@@ -144,7 +144,7 @@ export default function ProfilePage() {
                 <CardTitle className="text-lg font-semibold">Account Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
-                <p><strong className="font-medium text-foreground">User Tag:</strong> {profileData.userTag || "Not set"}</p>
+                 <p><strong className="font-medium text-foreground">User Tag:</strong> {profileData.userTag || "Not set"}</p>
                 <p><strong className="font-medium text-foreground">Joined DocuSigner:</strong> {profileData.joinDate}</p>
                 <p><strong className="font-medium text-foreground">User Role:</strong> User</p>
               </CardContent>

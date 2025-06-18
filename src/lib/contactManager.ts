@@ -11,10 +11,11 @@ export const getContacts = (): Contact[] => {
   if (storedContacts) {
     try {
       const parsedContacts = JSON.parse(storedContacts);
+      // Ensure it's an array before returning
       return Array.isArray(parsedContacts) ? parsedContacts : [];
     } catch (e) {
       console.error("Error parsing contacts from localStorage:", e);
-      return [];
+      return []; // Return empty array on error
     }
   }
   return []; // No contacts in storage, return empty array
@@ -30,6 +31,7 @@ export const addContact = (newContactData: Omit<Contact, 'id'>): Contact => {
   const newContact: Contact = {
     id: Date.now().toString(), 
     ...newContactData,
+    // Ensure avatar has a default if not provided
     avatar: newContactData.avatar || `https://placehold.co/40x40.png?text=${newContactData.name.substring(0,2).toUpperCase()}`
   };
   contacts.push(newContact);
@@ -46,6 +48,7 @@ export const updateContact = (updatedContact: Contact): Contact | null => {
   let contacts = getContacts();
   const contactIndex = contacts.findIndex(contact => contact.id === updatedContact.id);
   if (contactIndex > -1) {
+    // Ensure avatar has a default if not provided during update
     contacts[contactIndex] = {
         ...updatedContact,
         avatar: updatedContact.avatar || `https://placehold.co/40x40.png?text=${updatedContact.name.substring(0,2).toUpperCase()}`
