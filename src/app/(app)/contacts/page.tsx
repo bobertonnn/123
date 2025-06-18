@@ -29,7 +29,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"; // Removed AlertDialogTrigger as it's used with DropdownMenuItem
+  AlertDialogTrigger, // Added AlertDialogTrigger back
+} from "@/components/ui/alert-dialog";
 import { getInitials } from "@/lib/utils";
 
 const simulatedOtherUsers = [
