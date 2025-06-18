@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Lock, Bell, CreditCard, Save, Edit3, XCircle, Loader2, Check, UploadCloud, Trash2 } from "lucide-react";
+import { User, Lock, Bell, CreditCard, Save, Edit3, XCircle, Loader2, Check, UploadCloud, Trash2, LogOut, DollarSign, ShoppingBag, FileClock, AlertTriangle, Package, Star, Zap } from "lucide-react";
 import { SignatureCanvas } from "@/components/auth/SignatureCanvas";
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
@@ -18,11 +18,60 @@ import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 
 import { GradientBirdIcon } from "@/components/icons/Logo";
 import { cn } from "@/lib/utils";
 import { motion, useMotionValue, useSpring } from "framer-motion";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { format, addMonths, parseISO, isValid } from "date-fns";
 
 type SaveStatus = "idle" | "saving" | "success" | "error";
 
-const SIGNATURE_MAX_ROTATION = 15; 
-const signatureSpringConfig = { stiffness: 150, damping: 30, mass: 0.8 }; 
+const SIGNATURE_MAX_ROTATION = 15;
+const signatureSpringConfig = { stiffness: 150, damping: 30, mass: 0.8 };
+
+interface UserSubscription {
+  planName: string;
+  renewsOn?: string | null;
+  paymentMethod?: {
+    type: string;
+    last4: string;
+    expiry: string;
+  } | null;
+}
+
+interface BillingHistoryEntry {
+    id: string;
+    date: string;
+    description: string;
+    amount: string;
+    status: "Paid" | "Pending" | "Failed";
+    invoiceUrl?: string;
+}
+
+const availablePlans = [
+    { id: "free", name: "Free Trial", price: "$0/mo", features: ["Basic document signing", "Limited uploads", "Community support"], icon: Package },
+    { id: "pro", name: "Pro Tier", price: "$15/mo", features: ["Unlimited documents", "Advanced templates", "Priority support", "Team features (up to 5 users)"], icon: Star },
+    { id: "business", name: "Business Tier", price: "$45/mo", features: ["All Pro features", "Custom branding", "API access", "Dedicated account manager", "Unlimited users"], icon: Zap },
+];
 
 export default function SettingsPage() {
   const [userFullName, setUserFullName] = useState("User");
@@ -41,6 +90,23 @@ export default function SettingsPage() {
   const [profileSaveStatus, setProfileSaveStatus] = useState<SaveStatus>("idle");
   const [securitySaveStatus, setSecuritySaveStatus] = useState<SaveStatus>("idle");
   const [notificationSaveStatus, setNotificationSaveStatus] = useState<SaveStatus>("idle");
+  const [subscriptionSaveStatus, setSubscriptionSaveStatus] = useState<SaveStatus>("idle");
+
+  // Billing State
+  const [currentSubscription, setCurrentSubscription] = useState<UserSubscription>({
+    planName: "Free Trial",
+    renewsOn: null,
+    paymentMethod: null,
+  });
+  const [billingHistory, setBillingHistory] = useState<BillingHistoryEntry[]>([]);
+  const [isChangePlanDialogOpen, setIsChangePlanDialogOpen] = useState(false);
+  const [selectedPlanInModal, setSelectedPlanInModal] = useState<string>(availablePlans[0].id);
+  const [isUpdatePaymentDialogOpen, setIsUpdatePaymentDialogOpen] = useState(false);
+  const [tempCardNumber, setTempCardNumber] = useState("");
+  const [tempCardExpiry, setTempCardExpiry] = useState("");
+  const [tempCardCvc, setTempCardCvc] = useState("");
+  const [isCancelSubscriptionAlertOpen, setIsCancelSubscriptionAlertOpen] = useState(false);
+
 
   const { toast } = useToast();
 
@@ -65,6 +131,40 @@ export default function SettingsPage() {
     sigRotateY.set(0);
   }, [sigRotateX, sigRotateY]);
 
+  const loadSubscriptionData = () => {
+    if (typeof window !== 'undefined') {
+      const storedSubscription = localStorage.getItem("userSubscription");
+      if (storedSubscription) {
+        try {
+          const parsedSubscription = JSON.parse(storedSubscription);
+          // Basic validation
+          if (parsedSubscription.planName && availablePlans.find(p => p.name === parsedSubscription.planName)) {
+             setCurrentSubscription(parsedSubscription);
+          } else {
+            // Invalid plan name found, reset to Free Trial
+             setCurrentSubscription({ planName: "Free Trial", renewsOn: null, paymentMethod: null });
+             localStorage.setItem("userSubscription", JSON.stringify({ planName: "Free Trial", renewsOn: null, paymentMethod: null }));
+          }
+        } catch (e) {
+          console.error("Failed to parse subscription from localStorage", e);
+          setCurrentSubscription({ planName: "Free Trial", renewsOn: null, paymentMethod: null });
+        }
+      } else {
+         // No subscription data, default to Free Trial
+         localStorage.setItem("userSubscription", JSON.stringify({ planName: "Free Trial", renewsOn: null, paymentMethod: null }));
+      }
+
+      const storedHistory = localStorage.getItem("userBillingHistory");
+      if (storedHistory) {
+        try {
+          setBillingHistory(JSON.parse(storedHistory));
+        } catch (e) {
+            console.error("Failed to parse billing history", e);
+            setBillingHistory([]);
+        }
+      }
+    }
+  };
 
   useEffect(() => {
     const storedFullName = localStorage.getItem("userFullName");
@@ -87,11 +187,13 @@ export default function SettingsPage() {
     if (storedAvatar && storedAvatar.trim() !== "") setUserAvatarUrl(storedAvatar);
     else setUserAvatarUrl(undefined);
 
+    loadSubscriptionData();
+
   }, []);
 
   useEffect(() => {
     const currentSignatureContainer = signatureContainerRef.current;
-    if (currentSignatureContainer && userSignature && !showUpdateSignatureArea) { 
+    if (currentSignatureContainer && userSignature && !showUpdateSignatureArea) {
       currentSignatureContainer.addEventListener('mousemove', handleSignatureMouseMove);
       currentSignatureContainer.addEventListener('mouseleave', handleSignatureMouseLeave);
     }
@@ -103,7 +205,6 @@ export default function SettingsPage() {
     };
   }, [handleSignatureMouseMove, handleSignatureMouseLeave, userSignature, showUpdateSignatureArea]);
 
-
   const handleSignatureSave = (dataUrl: string) => {
     setUserSignature(dataUrl);
     toast({
@@ -113,7 +214,7 @@ export default function SettingsPage() {
     setShowUpdateSignatureArea(false);
   };
 
-  const simulateSave = async (setStatus: React.Dispatch<React.SetStateAction<SaveStatus>>, successMessage: string, action?: () => Promise<void>) => {
+  const simulateSave = async (setStatus: React.Dispatch<React.SetStateAction<SaveStatus>>, successMessage: string, action?: () => Promise<void> | void) => {
     setStatus("saving");
     try {
       if (action) {
@@ -151,7 +252,7 @@ export default function SettingsPage() {
 
   const handleProfileSave = async () => {
     const fullNameRegex = new RegExp("^\\p{L}+(?:['\\-\\s]+\\p{L}+)+$", "u");
-    if (!fullNameRegex.test(userFullName) && userFullName !== "User") { 
+    if (!fullNameRegex.test(userFullName) && userFullName !== "User") {
       toast({
         variant: "destructive",
         title: "Invalid Full Name",
@@ -172,13 +273,13 @@ export default function SettingsPage() {
         }
         if (avatarPreview) {
         localStorage.setItem("userAvatarUrl", avatarPreview);
-        setUserAvatarUrl(avatarPreview); 
-        setAvatarPreview(null); 
-        } else if (!userAvatarUrl && !avatarPreview) { 
+        setUserAvatarUrl(avatarPreview);
+        setAvatarPreview(null);
+        } else if (!userAvatarUrl && !avatarPreview) {
             localStorage.removeItem("userAvatarUrl");
             setUserAvatarUrl(undefined);
         }
-        
+
         if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('profileUpdated'));
         }
@@ -220,12 +321,111 @@ export default function SettingsPage() {
     await simulateSave(setNotificationSaveStatus, "Notification preferences saved (mock).");
   };
 
+  const handlePlanChange = () => {
+    const newPlanDetails = availablePlans.find(p => p.id === selectedPlanInModal);
+    if (!newPlanDetails) return;
+
+    const newSubscription: UserSubscription = {
+        planName: newPlanDetails.name,
+        renewsOn: newPlanDetails.id !== "free" ? addMonths(new Date(), 1).toISOString() : null,
+        paymentMethod: newPlanDetails.id !== "free" ? (currentSubscription.paymentMethod || { type: "Visa", last4: "••••", expiry: "MM/YY" }) : null
+    };
+    
+    if (newPlanDetails.id !== "free" && !newSubscription.paymentMethod?.last4.match(/\d{4}/)) {
+        // If changing to paid plan and no valid payment method, prompt to add one
+        setIsChangePlanDialogOpen(false); // Close plan change dialog
+        setIsUpdatePaymentDialogOpen(true); // Open payment update dialog
+        toast({title: "Payment Method Required", description: `Please add a payment method for the ${newPlanDetails.name}.`});
+        return; // Don't update subscription yet
+    }
+
+    setCurrentSubscription(newSubscription);
+    localStorage.setItem("userSubscription", JSON.stringify(newSubscription));
+
+    if (newPlanDetails.id !== "free") {
+      const newHistoryEntry: BillingHistoryEntry = {
+        id: Date.now().toString(),
+        date: format(new Date(), "yyyy-MM-dd"),
+        description: `Subscribed to ${newPlanDetails.name}`,
+        amount: newPlanDetails.price.replace("/mo", ""),
+        status: "Paid",
+        invoiceUrl: "#mockInvoice"
+      };
+      const updatedHistory = [newHistoryEntry, ...billingHistory];
+      setBillingHistory(updatedHistory);
+      localStorage.setItem("userBillingHistory", JSON.stringify(updatedHistory));
+    }
+
+    toast({ title: "Plan Updated!", description: `You are now on the ${newPlanDetails.name}.` });
+    setIsChangePlanDialogOpen(false);
+  };
+
+  const handlePaymentMethodSave = () => {
+    if (!tempCardNumber || !tempCardExpiry || !tempCardCvc) {
+        toast({ variant: "destructive", title: "Missing Information", description: "Please fill all card details."});
+        return;
+    }
+    if (!/^\d{13,16}$/.test(tempCardNumber.replace(/\s/g, ''))) {
+        toast({ variant: "destructive", title: "Invalid Card Number", description: "Please enter a valid card number."});
+        return;
+    }
+    if (!/^(0[1-9]|1[0-2])\/?([0-9]{2})$/.test(tempCardExpiry)) {
+        toast({ variant: "destructive", title: "Invalid Expiry Date", description: "Please use MM/YY format."});
+        return;
+    }
+    if (!/^\d{3,4}$/.test(tempCardCvc)) {
+        toast({ variant: "destructive", title: "Invalid CVC", description: "Please enter a valid CVC."});
+        return;
+    }
+
+
+    const updatedPaymentMethod = {
+        type: "Visa", // Assume Visa for mock
+        last4: tempCardNumber.slice(-4),
+        expiry: tempCardExpiry
+    };
+    const updatedSubscription = { ...currentSubscription, paymentMethod: updatedPaymentMethod };
+    setCurrentSubscription(updatedSubscription);
+    localStorage.setItem("userSubscription", JSON.stringify(updatedSubscription));
+    toast({ title: "Payment Method Updated!", description: "Your payment details have been saved."});
+    setIsUpdatePaymentDialogOpen(false);
+    setTempCardNumber(""); setTempCardExpiry(""); setTempCardCvc("");
+
+    // If user was in the middle of changing plan, continue
+    const planToUpgradeTo = availablePlans.find(p => p.id === selectedPlanInModal);
+    if (planToUpgradeTo && planToUpgradeTo.id !== "free" && currentSubscription.planName === "Free Trial") {
+        handlePlanChange(); // Re-trigger plan change with new payment method
+    }
+
+  };
+
+  const handleCancelSubscription = () => {
+    const freeTrialPlan = availablePlans.find(p => p.id === 'free')!;
+    const newSubscription: UserSubscription = {
+        planName: freeTrialPlan.name,
+        renewsOn: null,
+        paymentMethod: null,
+    };
+    setCurrentSubscription(newSubscription);
+    localStorage.setItem("userSubscription", JSON.stringify(newSubscription));
+    // Optionally clear billing history or mark as cancelled
+    // setBillingHistory([]); 
+    // localStorage.removeItem("userBillingHistory");
+
+    toast({ title: "Subscription Cancelled", description: `You have been moved to the ${freeTrialPlan.name}.`});
+    setIsCancelSubscriptionAlertOpen(false);
+  };
+
+
   const renderSaveButtonContent = (status: SaveStatus, defaultText: string) => {
     if (status === "saving") return <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Saving...</>;
     if (status === "success") return <><Check className="mr-2 h-4 w-4"/> Saved!</>;
     if (status === "error") return <><XCircle className="mr-2 h-4 w-4"/> Error</>;
     return <><Save className="mr-2 h-4 w-4"/> {defaultText}</>;
   };
+
+  const currentPlanDetails = availablePlans.find(p => p.name === currentSubscription.planName) || availablePlans[0];
+  const PlanIcon = currentPlanDetails.icon;
 
   return (
     <div className="container mx-auto">
@@ -259,7 +459,7 @@ export default function SettingsPage() {
                    {avatarPreview || userAvatarUrl ? (
                     <AvatarImage src={avatarPreview || userAvatarUrl!} alt={`${userFullName}'s avatar`} data-ai-hint="user avatar" />
                   ) : (
-                    <AvatarFallback className="bg-card border border-border flex items-center justify-center">
+                     <AvatarFallback className="bg-card border border-border flex items-center justify-center">
                         <GradientBirdIcon className="h-10 w-10 text-primary" />
                     </AvatarFallback>
                   )}
@@ -290,9 +490,9 @@ export default function SettingsPage() {
               </div>
               <div>
                 <Label>Your Signature</Label>
-                <Card 
-                    className="mt-1 p-4 bg-muted/30 perspective" 
-                    id="signature" 
+                <Card
+                    className="mt-1 p-4 bg-muted/30 perspective"
+                    id="signature"
                     ref={signatureContainerRef}
                 >
                   {userSignature && !showUpdateSignatureArea && (
@@ -303,13 +503,13 @@ export default function SettingsPage() {
                           whileHover={{ scale: 1.03, filter: 'drop-shadow(0 0 10px hsl(var(--primary)/0.4))' }}
                           transition={{ type: "spring", stiffness: 300, damping: 20 }}
                         >
-                          <Image 
-                            src={userSignature} 
-                            alt="Current signature" 
-                            width={400} height={150} 
-                            className="border rounded-md bg-card mx-auto mb-2 backface-hidden" 
+                          <Image
+                            src={userSignature}
+                            alt="Current signature"
+                            width={400} height={150}
+                            className="border rounded-md bg-card mx-auto mb-2 backface-hidden"
                             data-ai-hint="signature image"
-                            priority 
+                            priority
                           />
                         </motion.div>
                         <Button variant="link" onClick={() => setShowUpdateSignatureArea(true)} className="mt-2">Update Signature</Button>
@@ -428,32 +628,223 @@ export default function SettingsPage() {
               <CardTitle className="text-xl font-headline">Billing & Subscription</CardTitle>
               <CardDescription>Manage your subscription plan and payment methods.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="p-4 border rounded-lg bg-primary/5">
-                    <h4 className="font-semibold">Current Plan: Pro Tier</h4>
-                    <p className="text-sm text-muted-foreground">Renews on: December 1, 2024</p>
-                    <Button variant="link" className="p-0 h-auto text-primary">Change Plan</Button>
-                </div>
-                 <div>
-                    <h4 className="font-semibold mb-2">Payment Method</h4>
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center">
-                            <CreditCard className="mr-3 h-6 w-6 text-muted-foreground"/>
-                            <div>
-                                <p>Visa ending in 1234</p>
-                                <p className="text-xs text-muted-foreground">Expires 12/2025</p>
-                            </div>
+            <CardContent className="space-y-8">
+                <Card className="bg-muted/20 border-primary/30">
+                    <CardHeader className="flex flex-row items-start space-x-4 pb-3">
+                        <PlanIcon className="h-10 w-10 text-primary mt-1" />
+                        <div>
+                            <CardTitle className="text-lg font-semibold">Current Plan: {currentSubscription.planName}</CardTitle>
+                            <CardDescription className="text-xs">
+                                {currentSubscription.planName === "Free Trial"
+                                ? "Enjoy basic features. Upgrade for more."
+                                : currentSubscription.renewsOn && isValid(parseISO(currentSubscription.renewsOn))
+                                    ? `Renews on: ${format(parseISO(currentSubscription.renewsOn), "MMMM d, yyyy")}`
+                                    : "Renewal date not set."}
+                            </PageDescription>
                         </div>
-                        <Button variant="outline" size="sm">Update</Button>
-                    </div>
-                 </div>
+                    </CardHeader>
+                    <CardContent>
+                         <Dialog open={isChangePlanDialogOpen} onOpenChange={setIsChangePlanDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" className="w-full sm:w-auto">
+                                    <DollarSign className="mr-2 h-4 w-4"/> Change Plan
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-lg">
+                                <DialogHeader>
+                                <DialogTitle className="font-headline text-xl">Change Subscription Plan</DialogTitle>
+                                <DialogDescription>Select a new plan that fits your needs.</DialogDescription>
+                                </DialogHeader>
+                                <RadioGroup value={selectedPlanInModal} onValueChange={setSelectedPlanInModal} className="my-4 space-y-3">
+                                {availablePlans.map((plan) => {
+                                    const CurrentPlanIcon = plan.icon;
+                                    return(
+                                    <Label 
+                                        key={plan.id} 
+                                        htmlFor={`plan-${plan.id}`}
+                                        className={cn(
+                                            "flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 p-4 border rounded-lg cursor-pointer transition-all",
+                                            selectedPlanInModal === plan.id ? "bg-primary/10 border-primary ring-2 ring-primary" : "hover:bg-accent/50"
+                                        )}
+                                    >
+                                        <RadioGroupItem value={plan.id} id={`plan-${plan.id}`} className="mt-1 sm:mt-0 flex-shrink-0" />
+                                        <div className="flex items-center space-x-3">
+                                            <CurrentPlanIcon className="h-6 w-6 text-primary flex-shrink-0" />
+                                            <div className="flex-grow">
+                                                <span className="font-semibold">{plan.name}</span>
+                                                <span className="text-sm text-muted-foreground ml-2">{plan.price}</span>
+                                                <ul className="text-xs text-muted-foreground list-disc list-inside mt-1">
+                                                    {plan.features.map(f => <li key={f}>{f}</li>)}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </Label>
+                                )})}
+                                </RadioGroup>
+                                <DialogFooter>
+                                <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                                <Button onClick={handlePlanChange} className="btn-gradient-hover" disabled={currentSubscription.planName === availablePlans.find(p=>p.id === selectedPlanInModal)?.name}>
+                                    Confirm Change
+                                </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                    </CardContent>
+                </Card>
+
                  <div>
-                    <h4 className="font-semibold mb-2">Billing History</h4>
-                    <p className="text-sm text-muted-foreground p-3 border rounded-lg">No billing history available yet. Or list invoices here.</p>
+                    <h4 className="font-semibold mb-2 text-md">Payment Method</h4>
+                    {currentSubscription.paymentMethod && currentSubscription.planName !== "Free Trial" ? (
+                        <Card className="border-dashed">
+                            <CardContent className="p-4 flex items-center justify-between">
+                                <div className="flex items-center">
+                                    <CreditCard className="mr-3 h-8 w-8 text-muted-foreground"/>
+                                    <div>
+                                        <p className="font-medium">{currentSubscription.paymentMethod.type} ending in {currentSubscription.paymentMethod.last4}</p>
+                                        <p className="text-xs text-muted-foreground">Expires {currentSubscription.paymentMethod.expiry}</p>
+                                    </div>
+                                </div>
+                                <Dialog open={isUpdatePaymentDialogOpen} onOpenChange={setIsUpdatePaymentDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm">Update</Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-md">
+                                        <DialogHeader>
+                                            <DialogTitle className="font-headline">Update Payment Method</DialogTitle>
+                                            <DialogDescription>Enter your new card details below.</DialogDescription>
+                                        </DialogHeader>
+                                        <div className="grid gap-4 py-4">
+                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                <Label htmlFor="cardNumber" className="text-right col-span-1">Card No.</Label>
+                                                <Input id="cardNumber" value={tempCardNumber} onChange={e => setTempCardNumber(e.target.value)} placeholder="•••• •••• •••• ••••" className="col-span-3" />
+                                            </div>
+                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                <Label htmlFor="cardExpiry" className="text-right col-span-1">Expiry</Label>
+                                                <Input id="cardExpiry" value={tempCardExpiry} onChange={e => setTempCardExpiry(e.target.value)} placeholder="MM/YY" className="col-span-3" />
+                                            </div>
+                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                <Label htmlFor="cardCvc" className="text-right col-span-1">CVC</Label>
+                                                <Input id="cardCvc" value={tempCardCvc} onChange={e => setTempCardCvc(e.target.value)} placeholder="•••" className="col-span-3" />
+                                            </div>
+                                        </div>
+                                        <DialogFooter>
+                                            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                                            <Button onClick={handlePaymentMethodSave} className="btn-gradient-hover">Save Card</Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <Card className="border-dashed text-center">
+                             <CardContent className="p-6">
+                                <p className="text-sm text-muted-foreground mb-3">No payment method on file. Required for paid plans.</p>
+                                <Dialog open={isUpdatePaymentDialogOpen} onOpenChange={setIsUpdatePaymentDialogOpen}>
+                                    <DialogTrigger asChild>
+                                         <Button variant="secondary">
+                                            <CreditCard className="mr-2 h-4 w-4"/> Add Payment Method
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-md"> {/* Re-using same content as update */}
+                                        <DialogHeader>
+                                            <DialogTitle className="font-headline">Add Payment Method</DialogTitle>
+                                            <DialogDescription>Enter your card details below.</DialogDescription>
+                                        </DialogHeader>
+                                        <div className="grid gap-4 py-4">
+                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                <Label htmlFor="cardNumberModal" className="text-right col-span-1">Card No.</Label>
+                                                <Input id="cardNumberModal" value={tempCardNumber} onChange={e => setTempCardNumber(e.target.value)} placeholder="•••• •••• •••• ••••" className="col-span-3" />
+                                            </div>
+                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                <Label htmlFor="cardExpiryModal" className="text-right col-span-1">Expiry</Label>
+                                                <Input id="cardExpiryModal" value={tempCardExpiry} onChange={e => setTempCardExpiry(e.target.value)} placeholder="MM/YY" className="col-span-3" />
+                                            </div>
+                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                <Label htmlFor="cardCvcModal" className="text-right col-span-1">CVC</Label>
+                                                <Input id="cardCvcModal" value={tempCardCvc} onChange={e => setTempCardCvc(e.target.value)} placeholder="•••" className="col-span-3" />
+                                            </div>
+                                        </div>
+                                        <DialogFooter>
+                                            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                                            <Button onClick={handlePaymentMethodSave} className="btn-gradient-hover">Save Card</Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                            </CardContent>
+                        </Card>
+                    )}
                  </div>
-                  <div className="flex justify-end">
-                    <Button variant="destructive">Cancel Subscription</Button>
-                  </div>
+
+                 <div>
+                    <h4 className="font-semibold mb-2 text-md">Billing History</h4>
+                    {billingHistory.length > 0 ? (
+                        <Card>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead>Description</TableHead>
+                                    <TableHead>Amount</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Invoice</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {billingHistory.map((item) => (
+                                    <TableRow key={item.id}>
+                                        <TableCell>{format(parseISO(item.date), "MMM d, yyyy")}</TableCell>
+                                        <TableCell>{item.description}</TableCell>
+                                        <TableCell>{item.amount}</TableCell>
+                                        <TableCell>
+                                            <span className={cn("px-2 py-0.5 rounded-full text-xs",
+                                                item.status === "Paid" && "bg-green-100 text-green-700",
+                                                item.status === "Pending" && "bg-yellow-100 text-yellow-700",
+                                                item.status === "Failed" && "bg-red-100 text-red-700"
+                                            )}>{item.status}</span>
+                                        </TableCell>
+                                        <TableCell>
+                                            {item.invoiceUrl && <Button variant="link" size="sm" className="p-0 h-auto" asChild><a href={item.invoiceUrl} target="_blank" rel="noopener noreferrer">View</a></Button>}
+                                        </TableCell>
+                                    </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </Card>
+                    ) : (
+                        <Card className="border-dashed">
+                            <CardContent className="p-6 text-center">
+                                <FileClock className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
+                                <p className="text-sm text-muted-foreground">No billing history available yet.</p>
+                            </CardContent>
+                        </Card>
+                    )}
+                 </div>
+                {currentSubscription.planName !== "Free Trial" && (
+                    <div className="flex justify-end pt-4">
+                        <AlertDialog open={isCancelSubscriptionAlertOpen} onOpenChange={setIsCancelSubscriptionAlertOpen}>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" className="group">
+                                    <AlertTriangle className="mr-2 h-4 w-4 group-hover:animate-pulse" /> Cancel Subscription
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle className="font-headline">Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will cancel your "{currentSubscription.planName}" subscription. You will be moved to the Free Trial plan.
+                                    This action cannot be undone for the current billing cycle.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleCancelSubscription} className={buttonVariants({variant: "destructive"})}>
+                                    Yes, Cancel Subscription
+                                </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -461,5 +852,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    
