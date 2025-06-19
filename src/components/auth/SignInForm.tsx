@@ -170,7 +170,17 @@ export function SignInForm() {
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                           <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} className="pl-10" disabled={isLoading} />
+                            <Input 
+                              type="password" 
+                              placeholder="••••••••" 
+                              value={field.value}
+                              onChange={field.onChange}
+                              onBlur={field.onBlur}
+                              name={field.name}
+                              ref={field.ref}
+                              className="pl-10" 
+                              disabled={isLoading} 
+                            />
                           </FormControl>
                         </div>
                         <FormMessage />
@@ -184,7 +194,7 @@ export function SignInForm() {
                       className="px-0 text-sm text-muted-foreground hover:text-primary"
                       onClick={() => {
                         setShowResetPasswordForm(true);
-                        signInForm.reset(); // Clear sign-in form if navigating away
+                        signInForm.reset(); 
                       }}
                       disabled={isLoading}
                     >
@@ -252,7 +262,7 @@ export function SignInForm() {
                 className="mt-6 w-full text-sm text-muted-foreground hover:text-primary flex items-center"
                 onClick={() => {
                   setShowResetPasswordForm(false);
-                  resetForm.reset(); // Clear reset form if navigating away
+                  resetForm.reset(); 
                 }}
                 disabled={isLoading}
               >
