@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Download, CheckCircle, Home, Share2, AlertTriangle, Terminal, Phone, Building } from 'lucide-react';
 import { motion } from 'framer-motion';
-// Removed QRCode import as it's no longer generated here
 
 interface FinalizedDocumentData {
   documentId: string;
@@ -22,12 +21,10 @@ interface FinalizedDocumentData {
 
 export default function DocumentSignedPage() {
   const router = useRouter();
-  // const params = useParams(); // documentId is now from localStorage
   const [finalizedData, setFinalizedData] = useState<FinalizedDocumentData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const dataProcessedRef = useRef(false);
   const signatureBlobUrlToRevokeRef = useRef<string | null>(null);
-  // Removed qrCodeUrl state
 
   useEffect(() => {
     if (dataProcessedRef.current) {
@@ -45,13 +42,12 @@ export default function DocumentSignedPage() {
         if (data.signatureUrl && data.signatureUrl.startsWith('blob:')) {
             signatureBlobUrlToRevokeRef.current = data.signatureUrl;
         }
-        // QR code generation logic removed from here
       } catch (e) {
         console.error("Error parsing finalized document data:", e);
-        setError("Could not load document confirmation details.");
+        setError("Could not load document confirmation details. The data might be corrupted or missing.");
       }
     } else {
-      setError("No finalized document data found. Please ensure the document was finalized correctly.");
+      setError("No finalized document data found. Please ensure the document was finalized correctly or try signing again.");
     }
 
     return () => {
@@ -75,20 +71,37 @@ export default function DocumentSignedPage() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4 text-center">
-        <h1 className="text-2xl font-bold text-red-500 mb-4">Error</h1>
-        <p className="text-lg mb-6">{error}</p>
-        <Button asChild variant="outline" className="text-white border-white hover:bg-white hover:text-gray-900">
-          <Link href="/dashboard">Go to Dashboard</Link>
-        </Button>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-6 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Card className="w-full max-w-lg shadow-xl rounded-2xl border-destructive/50">
+            <CardHeader className="bg-destructive/10">
+              <div className="flex flex-col items-center">
+                <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
+                <CardTitle className="text-2xl font-headline text-destructive">Operation Failed</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <p className="text-lg text-muted-foreground mb-6">{error}</p>
+              <Button asChild variant="outline" className="w-full">
+                <Link href="/dashboard">
+                  <Home className="mr-2 h-4 w-4" /> Go to Dashboard
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     );
   }
 
   if (!finalizedData) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
-        <p className="text-lg">Loading confirmation...</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-800 text-white p-4">
+        <p className="text-lg animate-pulse">Loading confirmation...</p>
       </div>
     );
   }
@@ -172,9 +185,9 @@ export default function DocumentSignedPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
         >
-          You can now download the finalized document. Information about watermarks and device verification (if applicable) is included in the PDF certificate page.
+          You can now download the finalized document. 
+          Check the PDF certificate page (usually the last page) for information regarding watermarks and device verification.
         </motion.p>
-
 
         <motion.div 
             className="flex flex-col sm:flex-row justify-center gap-4 mb-8"
@@ -195,8 +208,6 @@ export default function DocumentSignedPage() {
         </motion.div>
       </motion.div>
       
-      {/* QR Code card removed from here */}
-
       <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
