@@ -3,19 +3,15 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { FileText, PlusCircle, Edit, Trash2, Search, AlertTriangle, CreditCard, ArrowRight } from "lucide-react";
+import { FileText, PlusCircle, Edit, Trash2, Search, AlertTriangle, CreditCard } from "lucide-react"; // Removed ArrowRight
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import type { UserSubscription } from "@/app/(app)/settings/page"; // Adjusted path
+import type { UserSubscription } from "@/app/(app)/settings/page";
 
-const mockTemplates = [
-  { id: "tpl1", name: "Standard NDA", description: "Non-Disclosure Agreement for new clients.", lastModified: "2023-10-15" },
-  { id: "tpl2", name: "Employee Onboarding Packet", description: "Collection of forms for new hires.", lastModified: "2023-09-20" },
-  { id: "tpl3", name: "Consulting Agreement", description: "Standard terms for consulting services.", lastModified: "2023-11-01" },
-];
+// Removed mockTemplates array
 
 const FreeTrialRestrictionCard = () => (
   <Card className="shadow-xl rounded-2xl text-center max-w-2xl mx-auto my-10">
@@ -43,7 +39,10 @@ const FreeTrialRestrictionCard = () => (
 export default function TemplatesPage() {
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
   const [isLoadingPlan, setIsLoadingPlan] = useState(true);
-  const { toast } = useToast();
+  const { toast } = useToast(); // toast might be used for future actions like delete
+
+  // Placeholder for actual templates - this would come from localStorage or API
+  const [userTemplates, setUserTemplates] = useState<Array<{id: string, name: string, description: string, lastModified: string}>>([]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -54,12 +53,17 @@ export default function TemplatesPage() {
           setCurrentPlan(parsedSubscription.planName);
         } catch (e) {
           console.error("Failed to parse subscription from localStorage", e);
-          setCurrentPlan("Free Trial"); // Default to free trial on error
+          setCurrentPlan("Free Trial");
         }
       } else {
-        setCurrentPlan("Free Trial"); // Default if no subscription found
+        setCurrentPlan("Free Trial");
       }
       setIsLoadingPlan(false);
+
+      // TODO: Load actual user templates from localStorage or API when implemented
+      // For now, it will be an empty array, demonstrating the "No Templates Yet" state.
+      // const loadedTemplates = JSON.parse(localStorage.getItem('userTemplates') || '[]');
+      // setUserTemplates(loadedTemplates);
     }
   }, []);
 
@@ -76,12 +80,18 @@ export default function TemplatesPage() {
       <div className="container mx-auto py-8">
          <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
           <h1 className="text-3xl font-bold font-headline">Document Templates</h1>
-          {/* Button is hidden for free trial, but header remains for context */}
         </div>
         <FreeTrialRestrictionCard />
       </div>
     );
   }
+
+  // TODO: Implement handleDeleteTemplate function
+  // const handleDeleteTemplate = (templateId: string) => {
+  //   setUserTemplates(prev => prev.filter(t => t.id !== templateId));
+  //   // Update localStorage/API
+  //   toast({ title: "Template Deleted", description: "The template has been removed."});
+  // };
 
   return (
     <div className="container mx-auto">
@@ -102,9 +112,9 @@ export default function TemplatesPage() {
         </div>
       </div>
 
-      {mockTemplates.length > 0 ? (
+      {userTemplates.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockTemplates.map((template, index) => (
+          {userTemplates.map((template, index) => (
             <motion.div
               key={template.id}
               initial={{ opacity: 0, y: 20 }}
@@ -124,11 +134,11 @@ export default function TemplatesPage() {
               </CardContent>
               <CardFooter className="flex gap-2">
                 <Button variant="outline" size="sm" asChild className="flex-1">
-                  <Link href={`/templates/${template.id}/edit`}>
+                  <Link href={`/templates/${template.id}/edit`}> {/* TODO: Implement edit page */}
                     <Edit className="mr-2 h-4 w-4" /> Edit
                   </Link>
                 </Button>
-                <Button variant="destructive" size="sm" className="flex-1">
+                <Button variant="destructive" size="sm" className="flex-1"> {/* onClick={() => handleDeleteTemplate(template.id)} */}
                   <Trash2 className="mr-2 h-4 w-4" /> Delete
                 </Button>
               </CardFooter>
