@@ -1,21 +1,17 @@
 
-"use client";
+// THIS IS A MINIMAL TEST PAGE FOR /about
 
-// Removed all complex imports and content for debugging
-
-export default function AboutUsPage() {
-  console.log("Simplified AboutUsPage rendering now - testing route and layout for /about.");
+export default function MinimalAboutUsPage() {
+  console.log("--- MINIMAL ABOUT US PAGE IS RENDERING ---"); // Specific log for this test
   return (
-    <div className="container mx-auto py-12 md:py-20 px-4 space-y-16">
-      <section className="text-center">
-        <h1 className="text-4xl md:text-5xl font-bold font-headline mb-4 text-primary">
-          Minimal About Us Page (Test)
-        </h1>
-        <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-          If you see this, the /about route and its public layout are working at a basic level.
-          The original content of this page has been temporarily replaced for debugging.
-        </p>
-      </section>
+    <div style={{ padding: '20px', border: '2px solid orange' }}>
+      <h1 style={{ fontSize: '2em', color: 'orange', textAlign: 'center' }}>
+        Minimal About Us Page Content
+      </h1>
+      <p style={{ textAlign: 'center', marginTop: '10px' }}>
+        If you see this inside a LIME GREEN BORDER with a LIGHTCORAL header and LIGHTSKYBLUE footer,
+        then the (public) layout is working.
+      </p>
     </div>
   );
 }

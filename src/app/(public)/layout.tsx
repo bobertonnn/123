@@ -1,23 +1,23 @@
 
-"use client";
+// THIS IS A MINIMAL TEST LAYOUT FOR THE (public) GROUP
 
-import React from 'react';
-import { PublicHeader } from '@/components/layout/PublicHeader';
-import { PublicFooter } from '@/components/layout/PublicFooter';
-
-export default function PublicLayout({
+export default function MinimalPublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  console.log("PublicLayout (for /about, /contact etc.) rendering.");
+  console.log("--- MINIMAL PUBLIC LAYOUT IS RENDERING ---"); // Specific log for this test
   return (
-    <div className="flex flex-col min-h-screen text-foreground bg-background">
-      <PublicHeader />
-      <main className="flex-1">
+    <div style={{ border: '10px solid limegreen', padding: '20px', backgroundColor: '#e0ffe0', minHeight: '100vh' }}>
+      <header style={{ backgroundColor: 'lightcoral', padding: '10px', textAlign: 'center', fontSize: '2em', color: 'white' }}>
+        MINIMAL PUBLIC HEADER (from (public)/layout.tsx)
+      </header>
+      <main style={{ border: '5px dashed blue', padding: '15px', margin: '20px 0', backgroundColor: 'white' }}>
         {children}
       </main>
-      <PublicFooter />
+      <footer style={{ backgroundColor: 'lightskyblue', padding: '10px', textAlign: 'center', fontSize: '2em', color: 'white', marginTop: '20px' }}>
+        MINIMAL PUBLIC FOOTER (from (public)/layout.tsx)
+      </footer>
     </div>
   );
 }
