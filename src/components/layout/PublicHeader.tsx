@@ -19,11 +19,11 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
-import { Settings, User as UserIcon, LogOut, Home } from 'lucide-react'; // Added Home for dashboard link in mobile
+import { Settings, User as UserIcon, LogOut, Home } from 'lucide-react';
 
 const publicNavLinks = [
   { href: "/#features", label: "Features" },
-  { href: "/#pricing", label: "Pricing (TBD)" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/about", label: "About Us" },
   { href: "/contact", label: "Contact" },
 ];
@@ -40,7 +40,6 @@ export function PublicHeader() {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       if (user) {
-        // Try to get from localStorage first, then Firebase profile
         const localName = typeof window !== 'undefined' ? localStorage.getItem("userFullName") : null;
         const localAvatar = typeof window !== 'undefined' ? localStorage.getItem("userAvatarUrl") : null;
         setUserName(localName || user.displayName || "User");
