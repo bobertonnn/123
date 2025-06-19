@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Logo, GradientBirdIcon } from '@/components/icons/Logo'; // Added GradientBirdIcon
+import { Logo, GradientBirdIcon } from '@/components/icons/Logo';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,15 +12,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Added Avatar
-import { ChevronDown, ArrowRight, Linkedin, Twitter, Github, Youtube, Instagram, FacebookIcon, User, Settings, LogOut as LogOutIcon } from 'lucide-react'; // Added User, Settings, LogOutIcon
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ChevronDown, ArrowRight, Linkedin, Twitter, Github, Youtube, Instagram, FacebookIcon, User, Settings, LogOut as LogOutIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
-import { useState, useEffect } from 'react'; // Added
-import { useRouter } from 'next/navigation'; // Added
-import { auth } from '@/lib/firebase'; // Added
-import { onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth'; // Added
-import { cn } from '@/lib/utils'; // Added for Avatar Fallback
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth';
+import { cn } from '@/lib/utils';
 
 const footerLinks = {
   product: [
@@ -31,8 +31,8 @@ const footerLinks = {
   ],
   resources: [
     { label: "Help & Support", href: "/help" },
-    { label: "FAQ", href: "/faq" }, 
-    { label: "Blog", href: "/blog" }, 
+    { label: "FAQ", href: "/faq" },
+    { label: "Blog", href: "/blog" },
   ],
   company: [
     { label: "About Us", href: "/about" },
@@ -107,7 +107,6 @@ export default function PublicLayout({
       router.push('/');
     } catch (error) {
       console.error("Logout Error:", error);
-      // Consider adding a toast notification for logout errors
     }
   };
 

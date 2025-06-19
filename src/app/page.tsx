@@ -3,12 +3,9 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-// Logo is now in PublicLayout
-// DropdownMenu components are now in PublicLayout
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ArrowRight, CheckCircle, UploadCloud, PenTool, FileText as FileTextIconLucide, Move, Link2, Activity, Settings, Palette as PaletteIcon, Maximize, Briefcase, User as UserIcon, Building, Scale as ScaleIcon, Layers, Zap, ShieldCheck, BrainCircuit, Server, FileText, ArrowUp } from 'lucide-react';
-// Removed social icons and footer links as they are in PublicLayout
 import * as LucideIcons from 'lucide-react';
 import { motion, useScroll, useTransform, type MotionValue, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
 import { CompanyTicker } from '@/components/landing/CompanyTicker';
@@ -41,8 +38,6 @@ const whyDocuSignerFeatures = [
   { title: "Public Share Links", description: "Generate links to collect signatures from anyone.", icon: LucideIcons.Link2, hint: "sharing link" },
   { title: "Trackable Progress", description: "Monitor document status in real-time.", icon: LucideIcons.Activity, hint: "progress chart" },
 ];
-
-// Footer links and social icons are now handled by PublicLayout
 
 
 const fadeInUp = {
@@ -499,409 +494,399 @@ export default function LandingPage() {
   let letterAnimationIndex = 0;
 
   return (
-    <div className="flex flex-col min-h-screen text-foreground relative overflow-hidden bg-background">
+    <> {/* Removed the outer div and main tag from here; they are provided by PublicLayout */}
       <ScrollToTopButton />
-      {/* Header is now handled by PublicLayout */}
-      {/* Removed <motion.header> ... </motion.header> block */}
+      <motion.section
+        ref={heroSectionRef}
+        className="container relative mx-auto grid place-items-center py-20 md:py-32 gap-10"
+      >
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
+            {isClient && heroParticlesConfig.map(p => (
+            <AnimatedHeroParticle key={p.id} config={p} scrollYProgress={heroScrollYProgress} />
+          ))}
+        </div>
 
-      <main className="flex-1">
-        <motion.section
-          ref={heroSectionRef}
-          className="container relative mx-auto grid place-items-center py-20 md:py-32 gap-10"
+        <motion.div
+          className="lg:col-span-2 text-center space-y-6 flex flex-col items-center relative z-10"
+          initial="initial"
+          animate="animate"
+          variants={staggerContainer}
         >
-          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
-             {isClient && heroParticlesConfig.map(p => (
-              <AnimatedHeroParticle key={p.id} config={p} scrollYProgress={heroScrollYProgress} />
-            ))}
-          </div>
+          <motion.h1
+              className="text-5xl md:text-6xl font-bold font-headline"
+              aria-label="Sign. Send. Succeed. with DocuSigner"
+              variants={fadeInUp}
+            >
+              {heroTitleSegments.map((segment, segmentIndex) => {
+                if (segment.type === 'group') {
+                  return (
+                    <span key={segmentIndex} className={`inline-block mr-3 ${segment.gradientClass ? `bg-gradient-to-r ${segment.gradientClass} bg-clip-text text-transparent` : ''}`}>
+                      {segment.words.map((word, wordIndexInGroup) => (
+                        <React.Fragment key={wordIndexInGroup}>
+                          {word.split("").map((letter, letterIndex) => {
+                            const currentDelayIndex = letterAnimationIndex++;
+                            return (
+                              <motion.span
+                                key={`${segmentIndex}-${wordIndexInGroup}-${letterIndex}`}
+                                custom={currentDelayIndex}
+                                variants={letterVariant}
+                                className={`inline-block ${letter === " " ? "mx-1" : ""}`}
+                              >
+                                {letter}
+                              </motion.span>
+                            );
+                          })}
+                          {wordIndexInGroup < segment.words.length - 1 && <span className="mx-1">&nbsp;</span>}
+                        </React.Fragment>
+                      ))}
+                    </span>
+                  );
+                } else { // single
+                  return (
+                    <span key={segmentIndex} className="inline-block mr-3">
+                      {segment.word.split("").map((letter, letterIndex) => {
+                        const currentDelayIndex = letterAnimationIndex++;
+                        return (
+                          <motion.span
+                            key={`${segmentIndex}-${letterIndex}`}
+                            custom={currentDelayIndex}
+                            variants={letterVariant}
+                            className={`inline-block ${letter === " " ? "mx-1" : ""} ${segment.gradientClass ? `bg-gradient-to-r ${segment.gradientClass} bg-clip-text text-transparent` : 'text-foreground'}`}
+                          >
+                            {letter}
+                          </motion.span>
+                        );
+                      })}
+                    </span>
+                  );
+                }
+              })}
+                with DocuSigner
+            </motion.h1>
+
+          <motion.p
+            variants={fadeInUp}
+            className="text-xl text-muted-foreground md:w-10/12 mx-auto"
+          >
+            The simplest, most secure way to manage your digital documents. Upload, sign, and track with ease.
+          </motion.p>
 
           <motion.div
-            className="lg:col-span-2 text-center space-y-6 flex flex-col items-center relative z-10"
-            initial="initial"
-            animate="animate"
-            variants={staggerContainer}
+            variants={fadeInUp}
+            className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-2 w-full max-w-md"
           >
-            <motion.h1
-                className="text-5xl md:text-6xl font-bold font-headline"
-                aria-label="Sign. Send. Succeed. with DocuSigner"
-                variants={fadeInUp}
-              >
-                {heroTitleSegments.map((segment, segmentIndex) => {
-                  if (segment.type === 'group') {
-                    return (
-                      <span key={segmentIndex} className={`inline-block mr-3 ${segment.gradientClass ? `bg-gradient-to-r ${segment.gradientClass} bg-clip-text text-transparent` : ''}`}>
-                        {segment.words.map((word, wordIndexInGroup) => (
-                          <React.Fragment key={wordIndexInGroup}>
-                            {word.split("").map((letter, letterIndex) => {
-                              const currentDelayIndex = letterAnimationIndex++;
-                              return (
-                                <motion.span
-                                  key={`${segmentIndex}-${wordIndexInGroup}-${letterIndex}`}
-                                  custom={currentDelayIndex}
-                                  variants={letterVariant}
-                                  className={`inline-block ${letter === " " ? "mx-1" : ""}`}
-                                >
-                                  {letter}
-                                </motion.span>
-                              );
-                            })}
-                            {wordIndexInGroup < segment.words.length - 1 && <span className="mx-1">&nbsp;</span>}
-                          </React.Fragment>
-                        ))}
-                      </span>
-                    );
-                  } else { // single
-                    return (
-                      <span key={segmentIndex} className="inline-block mr-3">
-                        {segment.word.split("").map((letter, letterIndex) => {
-                          const currentDelayIndex = letterAnimationIndex++;
-                          return (
-                            <motion.span
-                              key={`${segmentIndex}-${letterIndex}`}
-                              custom={currentDelayIndex}
-                              variants={letterVariant}
-                              className={`inline-block ${letter === " " ? "mx-1" : ""} ${segment.gradientClass ? `bg-gradient-to-r ${segment.gradientClass} bg-clip-text text-transparent` : 'text-foreground'}`}
-                            >
-                              {letter}
-                            </motion.span>
-                          );
-                        })}
-                      </span>
-                    );
-                  }
-                })}
-                 with DocuSigner
-              </motion.h1>
-
-            <motion.p
-              variants={fadeInUp}
-              className="text-xl text-muted-foreground md:w-10/12 mx-auto"
-            >
-              The simplest, most secure way to manage your digital documents. Upload, sign, and track with ease.
-            </motion.p>
-
-            <motion.div
-              variants={fadeInUp}
-              className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-2 w-full max-w-md"
-            >
-              <Button asChild className="btn-cta-primary-emerald" size="lg">
-                 <Link href="/auth/signup">
-                    <span>
-                      <span>Get Started</span>
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                    </span>
-                  </Link>
-              </Button>
-
-              <Button asChild className="btn-cta-secondary-emerald" size="lg">
-                <Link href="/dashboard">
-                   <span>
-                    <span>View Demo</span>
+            <Button asChild className="btn-cta-primary-emerald" size="lg">
+                <Link href="/auth/signup">
+                  <span>
+                    <span>Get Started</span>
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </span>
                 </Link>
-              </Button>
+            </Button>
+
+            <Button asChild className="btn-cta-secondary-emerald" size="lg">
+              <Link href="/dashboard">
+                  <span>
+                  <span>View Demo</span>
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </span>
+              </Link>
+            </Button>
+          </motion.div>
+        </motion.div>
+
+        <motion.div
+          className="lg:col-span-2 w-full mt-16 z-10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <div className="grid lg:grid-cols-2 gap-10 xl:gap-16 items-start">
+            <motion.div
+              className="relative group"
+              initial={{ opacity: 0, scale: 0.8, rotateY: -15 }}
+              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+              transition={{ duration: 0.7, ease: "easeOut", delay: 0.3 }}
+            >
+              <div className="absolute -inset-2.5 bg-gradient-to-r from-primary to-accent rounded-xl blur opacity-40 group-hover:opacity-60 transition duration-1000 group-hover:duration-200 animate-pulse-slow"></div>
+              <Card className="relative shadow-2xl rounded-xl bg-card/80 backdrop-blur-md border-border/50">
+                <CardHeader>
+                  <CardTitle className="text-3xl font-headline text-center" style={textShadowStyle}>
+                    DocuSigner Core Features
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-1 p-4 md:p-6">
+                  <Accordion type="single" collapsible className="w-full">
+                    {heroFeatures.map((feature, index) => {
+                      const Icon = feature.icon;
+                      return (
+                        <AccordionItem value={`item-${index}`} key={feature.title} className="border-b-0 mb-2 last:mb-0">
+                          <motion.div
+                            initial={{ opacity:0, x: -20 }}
+                            animate={{ opacity:1, x: 0 }}
+                            transition={{ duration:0.4, delay: 0.5 + index * 0.1 }}
+                          >
+                            <AccordionTrigger className="p-3 bg-muted/30 hover:bg-muted/60 rounded-lg transition-all duration-300 hover:shadow-[0_0_15px_hsl(var(--primary)/0.3)] hover:border-primary/50 border border-transparent hover:scale-[1.02] [&[data-state=open]>svg]:text-primary">
+                              <div className="flex items-start space-x-3 text-left">
+                                <Icon className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
+                                <div>
+                                  <h3 className="text-lg font-semibold text-foreground" style={featureTitleShadowStyle}>{feature.title}</h3>
+                                  <p className="text-sm text-muted-foreground">{feature.shortDescription}</p>
+                                </div>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="p-3 pt-2 text-sm text-muted-foreground bg-muted/10 rounded-b-lg">
+                              {feature.longDescription}
+                            </AccordionContent>
+                          </motion.div>
+                        </AccordionItem>
+                      );
+                    })}
+                  </Accordion>
+                  <Button variant="link" className="w-full text-primary hover:text-primary/80 pt-3" asChild>
+                      <Link href="#features">
+                          <span className="inline-flex items-center">
+                              <span>And many more... </span>
+                              <ArrowRight className="ml-1 h-4 w-4" />
+                          </span>
+                      </Link>
+                  </Button>
+                </CardContent>
+              </Card>
             </motion.div>
+
+            <motion.div
+              ref={pdfContainerRef}
+              className="relative flex items-center justify-center h-[400px] md:h-[450px] group perspective"
+              initial={{ opacity: 0, scale: 0.7, y: 50 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: "easeOut", delay: 0.5 }}
+            >
+              <motion.div
+                className="relative transform-style-preserve-3d"
+                style={{ rotateX: springRotateX, rotateY: springRotateY, scale: 1.05 }}
+              >
+                <div
+                  className="absolute w-[280px] h-[380px] bg-card/60 border border-border/30 rounded-lg shadow-sm backface-hidden"
+                  style={{ transform: 'rotateY(15deg) translateZ(-20px) translateY(10px)' }}
+                />
+                <div
+                  className="absolute w-[280px] h-[380px] bg-card/80 border border-border/50 rounded-lg shadow-md backface-hidden"
+                  style={{ transform: 'rotateY(10deg) translateZ(-10px) translateY(5px)' }}
+                />
+                <div
+                  className="relative w-[280px] h-[380px] bg-card border border-border rounded-lg shadow-xl p-6 flex flex-col transform-style-preserve-3d overflow-hidden backface-hidden"
+                >
+                  <div className="flex items-center space-x-2 mb-4">
+                    <FileTextIconLucide className="w-6 h-6 text-primary" />
+                    <span className="font-code text-sm font-medium text-foreground">DocuSigner.pdf</span>
+                  </div>
+                  <div className="space-y-2 mb-4 flex-grow">
+                    {isClient && pdfTextLineStyles.map((style, i) => (
+                      <motion.div
+                        key={i}
+                        className={`h-2 rounded-sm ${
+                          i % 4 === 0 ? 'bg-primary/70' :
+                          i % 4 === 1 ? 'bg-accent/70' :
+                          i % 4 === 2 ? 'bg-muted-foreground/60' :
+                          'bg-muted-foreground/50'
+                        }`}
+                        initial={{ width: '0%' }}
+                        animate={{ width: style.initialWidth }}
+                        transition={{ duration: 0.5, delay: 0.8 + i * 0.05, ease: "circOut" }}
+                      />
+                    ))}
+                  </div>
+                  <div className="mt-auto flex justify-end">
+                    <div className="p-2 bg-primary/20 rounded-full">
+                      <PenTool className="w-5 h-5 text-primary" />
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          </div>
+        </motion.div>
+
+      </motion.section>
+
+      <motion.section>
+        <CompanyTicker />
+      </motion.section>
+
+      <motion.section ref={animatedTechShowcaseRef} className="py-20 sm:py-32 relative">
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
+          {isClient && techShowcaseRingsConfig.map(ring => (
+            <AnimatedRingParticle key={ring.id} config={ring} scrollYProgress={animatedTechShowcaseScrollYProgress} />
+          ))}
+        </div>
+        <AnimatedTechShowcase />
+      </motion.section>
+
+      <motion.section
+        ref={detailedBenefitsRef}
+        className="py-20 sm:py-32 relative"
+      >
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
+          {isClient && detailedBenefitsGeometricsConfig.map(shape => (
+            shape.animate ? (
+              <AnimatedGeometricShape key={shape.id} config={shape} scrollYProgress={detailedBenefitsScrollYProgress} />
+            ) : (
+              <StaticGeometricShape key={shape.id} config={shape} />
+            )
+          ))}
+        </div>
+        <DetailedBenefits />
+      </motion.section>
+
+      <motion.section
+          ref={useCasesRef}
+          className="transition-all duration-700 ease-in-out"
+      >
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
+          {isClient && useCasesNetworkLinesConfig.map(line => (
+            <NetworkLineParticle key={line.id} config={line} scrollYProgress={useCasesScrollYProgress} />
+          ))}
+        </div>
+        <UseCases3D />
+      </motion.section>
+
+      <motion.section>
+        <InteractiveFeatureSwiper />
+      </motion.section>
+
+
+      <motion.section
+          id="features"
+          ref={whyDocuSignerRef}
+          className="py-20 sm:py-32 relative"
+      >
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
+            {isClient && whyDocuSignerGeometricsConfig.map(shape => (
+              <AnimatedGeometricShape key={shape.id} config={shape} scrollYProgress={whyDocuSignerScrollYProgress} />
+            ))}
+        </div>
+        <div className="container mx-auto space-y-16 relative z-10">
+          <motion.div
+            className="text-center"
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true, amount: 0.3 }}
+            variants={staggerContainer}
+          >
+            <motion.h2 variants={fadeInUp} className="text-4xl md:text-5xl font-bold font-headline">Why DocuSigner?</motion.h2>
+            <motion.p
+              variants={fadeInUp}
+              className="md:w-2/3 lg:w-1/2 mx-auto mt-4 text-lg text-muted-foreground"
+            >
+              Experience a seamless document workflow designed for modern businesses, packed with features to enhance your productivity.
+            </motion.p>
           </motion.div>
 
           <motion.div
-            className="lg:col-span-2 w-full mt-16 z-10"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <div className="grid lg:grid-cols-2 gap-10 xl:gap-16 items-start">
-              <motion.div
-                className="relative group"
-                initial={{ opacity: 0, scale: 0.8, rotateY: -15 }}
-                animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-                transition={{ duration: 0.7, ease: "easeOut", delay: 0.3 }}
-              >
-                <div className="absolute -inset-2.5 bg-gradient-to-r from-primary to-accent rounded-xl blur opacity-40 group-hover:opacity-60 transition duration-1000 group-hover:duration-200 animate-pulse-slow"></div>
-                <Card className="relative shadow-2xl rounded-xl bg-card/80 backdrop-blur-md border-border/50">
-                  <CardHeader>
-                    <CardTitle className="text-3xl font-headline text-center" style={textShadowStyle}>
-                      DocuSigner Core Features
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-1 p-4 md:p-6">
-                    <Accordion type="single" collapsible className="w-full">
-                      {heroFeatures.map((feature, index) => {
-                        const Icon = feature.icon;
-                        return (
-                          <AccordionItem value={`item-${index}`} key={feature.title} className="border-b-0 mb-2 last:mb-0">
-                            <motion.div
-                              initial={{ opacity:0, x: -20 }}
-                              animate={{ opacity:1, x: 0 }}
-                              transition={{ duration:0.4, delay: 0.5 + index * 0.1 }}
-                            >
-                              <AccordionTrigger className="p-3 bg-muted/30 hover:bg-muted/60 rounded-lg transition-all duration-300 hover:shadow-[0_0_15px_hsl(var(--primary)/0.3)] hover:border-primary/50 border border-transparent hover:scale-[1.02] [&[data-state=open]>svg]:text-primary">
-                                <div className="flex items-start space-x-3 text-left">
-                                  <Icon className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
-                                  <div>
-                                    <h3 className="text-lg font-semibold text-foreground" style={featureTitleShadowStyle}>{feature.title}</h3>
-                                    <p className="text-sm text-muted-foreground">{feature.shortDescription}</p>
-                                  </div>
-                                </div>
-                              </AccordionTrigger>
-                              <AccordionContent className="p-3 pt-2 text-sm text-muted-foreground bg-muted/10 rounded-b-lg">
-                                {feature.longDescription}
-                              </AccordionContent>
-                            </motion.div>
-                          </AccordionItem>
-                        );
-                      })}
-                    </Accordion>
-                    <Button variant="link" className="w-full text-primary hover:text-primary/80 pt-3" asChild>
-                        <Link href="#features">
-                            <span className="inline-flex items-center">
-                                <span>And many more... </span>
-                                <ArrowRight className="ml-1 h-4 w-4" />
-                            </span>
-                        </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              <motion.div
-                ref={pdfContainerRef}
-                className="relative flex items-center justify-center h-[400px] md:h-[450px] group perspective"
-                initial={{ opacity: 0, scale: 0.7, y: 50 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ duration: 0.7, ease: "easeOut", delay: 0.5 }}
-              >
-                <motion.div
-                  className="relative transform-style-preserve-3d"
-                  style={{ rotateX: springRotateX, rotateY: springRotateY, scale: 1.05 }}
-                >
-                  <div
-                    className="absolute w-[280px] h-[380px] bg-card/60 border border-border/30 rounded-lg shadow-sm backface-hidden"
-                    style={{ transform: 'rotateY(15deg) translateZ(-20px) translateY(10px)' }}
-                  />
-                  <div
-                    className="absolute w-[280px] h-[380px] bg-card/80 border border-border/50 rounded-lg shadow-md backface-hidden"
-                    style={{ transform: 'rotateY(10deg) translateZ(-10px) translateY(5px)' }}
-                  />
-                  <div
-                    className="relative w-[280px] h-[380px] bg-card border border-border rounded-lg shadow-xl p-6 flex flex-col transform-style-preserve-3d overflow-hidden backface-hidden"
-                  >
-                    <div className="flex items-center space-x-2 mb-4">
-                      <FileTextIconLucide className="w-6 h-6 text-primary" />
-                      <span className="font-code text-sm font-medium text-foreground">DocuSigner.pdf</span>
-                    </div>
-                    <div className="space-y-2 mb-4 flex-grow">
-                      {isClient && pdfTextLineStyles.map((style, i) => (
-                        <motion.div
-                          key={i}
-                          className={`h-2 rounded-sm ${
-                            i % 4 === 0 ? 'bg-primary/70' :
-                            i % 4 === 1 ? 'bg-accent/70' :
-                            i % 4 === 2 ? 'bg-muted-foreground/60' :
-                            'bg-muted-foreground/50'
-                          }`}
-                          initial={{ width: '0%' }}
-                          animate={{ width: style.initialWidth }}
-                          transition={{ duration: 0.5, delay: 0.8 + i * 0.05, ease: "circOut" }}
-                        />
-                      ))}
-                    </div>
-                    <div className="mt-auto flex justify-end">
-                      <div className="p-2 bg-primary/20 rounded-full">
-                        <PenTool className="w-5 h-5 text-primary" />
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              </motion.div>
-            </div>
-          </motion.div>
-
-        </motion.section>
-
-        <motion.section>
-          <CompanyTicker />
-        </motion.section>
-
-        <motion.section ref={animatedTechShowcaseRef} className="py-20 sm:py-32 relative">
-          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
-            {isClient && techShowcaseRingsConfig.map(ring => (
-              <AnimatedRingParticle key={ring.id} config={ring} scrollYProgress={animatedTechShowcaseScrollYProgress} />
-            ))}
-          </div>
-          <AnimatedTechShowcase />
-        </motion.section>
-
-        <motion.section
-          ref={detailedBenefitsRef}
-          className="py-20 sm:py-32 relative"
-        >
-          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
-            {isClient && detailedBenefitsGeometricsConfig.map(shape => (
-              shape.animate ? (
-                <AnimatedGeometricShape key={shape.id} config={shape} scrollYProgress={detailedBenefitsScrollYProgress} />
-              ) : (
-                <StaticGeometricShape key={shape.id} config={shape} />
-              )
-            ))}
-          </div>
-          <DetailedBenefits />
-        </motion.section>
-
-        <motion.section
-           ref={useCasesRef}
-           className="transition-all duration-700 ease-in-out"
-        >
-          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
-            {isClient && useCasesNetworkLinesConfig.map(line => (
-              <NetworkLineParticle key={line.id} config={line} scrollYProgress={useCasesScrollYProgress} />
-            ))}
-          </div>
-          <UseCases3D />
-        </motion.section>
-
-        <motion.section>
-          <InteractiveFeatureSwiper />
-        </motion.section>
-
-
-        <motion.section
-            id="features"
-            ref={whyDocuSignerRef}
-            className="py-20 sm:py-32 relative"
-        >
-          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
-             {isClient && whyDocuSignerGeometricsConfig.map(shape => (
-                <AnimatedGeometricShape key={shape.id} config={shape} scrollYProgress={whyDocuSignerScrollYProgress} />
-              ))}
-          </div>
-          <div className="container mx-auto space-y-16 relative z-10">
-            <motion.div
-              className="text-center"
-              initial="initial"
-              whileInView="animate"
-              viewport={{ once: true, amount: 0.3 }}
-              variants={staggerContainer}
-            >
-              <motion.h2 variants={fadeInUp} className="text-4xl md:text-5xl font-bold font-headline">Why DocuSigner?</motion.h2>
-              <motion.p
-                variants={fadeInUp}
-                className="md:w-2/3 lg:w-1/2 mx-auto mt-4 text-lg text-muted-foreground"
-              >
-                Experience a seamless document workflow designed for modern businesses, packed with features to enhance your productivity.
-              </motion.p>
-            </motion.div>
-
-            <motion.div
-              className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
-              initial="initial"
-              whileInView="animate"
-              viewport={{ once: true, amount: 0.1 }}
-              variants={staggerContainer}
-            >
-              {whyDocuSignerFeatures.map((feature, index) => {
-                const Icon = feature.icon;
-                return (
-                  <motion.div
-                    key={feature.title}
-                    className="p-0.5 rounded-2xl bg-gradient-to-br from-primary/20 via-accent/10 to-transparent group"
-                    variants={cardFadeInUp}
-                    custom={index}
-                  >
-                    <motion.div
-                      className="bg-card/80 backdrop-blur-md border border-border/20 p-6 md:p-8 rounded-[15px] shadow-xl h-full flex flex-col items-start text-left transition-all duration-300 group-hover:border-primary/50"
-                      whileHover={{
-                        scale: 1.03,
-                        boxShadow: "0px 10px 30px -5px hsl(var(--primary) / 0.3)",
-                        transition: { duration: 0.2, ease: "circOut" }
-                      }}
-                    >
-                      <motion.div
-                        className="p-3 bg-primary/10 rounded-lg mb-5 inline-block ring-2 ring-primary/0 group-hover:ring-primary/30 transition-all duration-300"
-                        whileHover={{ scale: 1.1 }}
-                      >
-                        <Icon className="w-10 h-10 md:w-12 md:h-12 text-primary transition-transform duration-300 group-hover:scale-110" />
-                      </motion.div>
-                      <h3 className="text-xl md:text-2xl font-semibold mb-2 font-headline text-foreground/90" style={featureTitleShadowStyle}>{feature.title}</h3>
-                      <p className="text-muted-foreground text-sm md:text-base leading-relaxed">{feature.description}</p>
-                    </motion.div>
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-          </div>
-        </motion.section>
-
-         <motion.section
-            ref={testimonialSectionRef}
-            className="py-20 md:py-32 bg-background relative overflow-hidden"
+            className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
             initial="initial"
             whileInView="animate"
             viewport={{ once: true, amount: 0.1 }}
             variants={staggerContainer}
           >
-            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
-                {isClient && heroParticlesConfig.slice(0,20).map(p => (
-                <AnimatedHeroParticle key={`testimonial-particle-${p.id}`} config={{...p, scrollFactorY: (Math.random() - 0.5) * 0.5, opacityRange: [0, Math.random()*0.1+0.1, Math.random()*0.1+0.1, 0]}} scrollYProgress={testimonialScrollYProgress} />
-                ))}
-            </div>
-            <div className="container mx-auto text-center relative z-10">
-                <motion.h2
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.5 }}
-                    transition={{ duration: 0.5 }}
-                    className="text-4xl md:text-5xl font-bold font-headline mb-6"
+            {whyDocuSignerFeatures.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <motion.div
+                  key={feature.title}
+                  className="p-0.5 rounded-2xl bg-gradient-to-br from-primary/20 via-accent/10 to-transparent group"
+                  variants={cardFadeInUp}
+                  custom={index}
                 >
-                    Loved by Users Worldwide
-                </motion.h2>
-                <motion.p
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.5 }}
-                    transition={{ duration: 0.5, delay: 0.1 }}
-                    className="text-xl text-muted-foreground md:w-2/3 mx-auto mb-12"
-                >
-                    Discover what our clients are saying about their DocuSigner experience.
-                </motion.p>
-                 <TestimonialGrid />
-            </div>
-        </motion.section>
-
-        {/* "Trusted on Popular Platforms" section removed */}
-
-         <motion.section
-            className="py-20 md:py-32 bg-background relative overflow-hidden"
-        >
-            <div className="container mx-auto text-center relative z-10">
-                 <motion.div
-                    initial="initial"
-                    whileInView="animate"
-                    viewport={{ once: true, amount: 0.5 }}
-                    variants={fadeInUp}
-                 >
-                    <h2 className="text-4xl md:text-5xl font-bold font-headline mb-6">
-                        Ready to Simplify Your Documents?
-                    </h2>
-                    <p className="text-xl text-muted-foreground md:w-2/3 mx-auto mb-10">
-                        Join thousands of users streamlining their workflow with DocuSigner.
-                        Sign up for free and experience the future of document management today.
-                    </p>
-                    <Button className="btn-cta-primary-emerald px-10 py-6 text-lg" asChild>
-                        <Link href="/auth/signup">
-                             <span>
-                                <span>Start Free Trial</span>
-                                <ArrowRight className="ml-2 h-5 w-5" />
-                            </span>
-                        </Link>
-                    </Button>
+                  <motion.div
+                    className="bg-card/80 backdrop-blur-md border border-border/20 p-6 md:p-8 rounded-[15px] shadow-xl h-full flex flex-col items-start text-left transition-all duration-300 group-hover:border-primary/50"
+                    whileHover={{
+                      scale: 1.03,
+                      boxShadow: "0px 10px 30px -5px hsl(var(--primary) / 0.3)",
+                      transition: { duration: 0.2, ease: "circOut" }
+                    }}
+                  >
+                    <motion.div
+                      className="p-3 bg-primary/10 rounded-lg mb-5 inline-block ring-2 ring-primary/0 group-hover:ring-primary/30 transition-all duration-300"
+                      whileHover={{ scale: 1.1 }}
+                    >
+                      <Icon className="w-10 h-10 md:w-12 md:h-12 text-primary transition-transform duration-300 group-hover:scale-110" />
+                    </motion.div>
+                    <h3 className="text-xl md:text-2xl font-semibold mb-2 font-headline text-foreground/90" style={featureTitleShadowStyle}>{feature.title}</h3>
+                    <p className="text-muted-foreground text-sm md:text-base leading-relaxed">{feature.description}</p>
+                  </motion.div>
                 </motion.div>
-            </div>
-        </motion.section>
-      </main>
+              );
+            })}
+          </motion.div>
+        </div>
+      </motion.section>
 
-      {/* Footer is now handled by PublicLayout */}
-      {/* Removed <motion.footer> ... </motion.footer> block */}
-    </div>
+        <motion.section
+          ref={testimonialSectionRef}
+          className="py-20 md:py-32 bg-background relative overflow-hidden"
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true, amount: 0.1 }}
+          variants={staggerContainer}
+        >
+          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
+              {isClient && heroParticlesConfig.slice(0,20).map(p => (
+              <AnimatedHeroParticle key={`testimonial-particle-${p.id}`} config={{...p, scrollFactorY: (Math.random() - 0.5) * 0.5, opacityRange: [0, Math.random()*0.1+0.1, Math.random()*0.1+0.1, 0]}} scrollYProgress={testimonialScrollYProgress} />
+              ))}
+          </div>
+          <div className="container mx-auto text-center relative z-10">
+              <motion.h2
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.5 }}
+                  transition={{ duration: 0.5 }}
+                  className="text-4xl md:text-5xl font-bold font-headline mb-6"
+              >
+                  Loved by Users Worldwide
+              </motion.h2>
+              <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.5 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                  className="text-xl text-muted-foreground md:w-2/3 mx-auto mb-12"
+              >
+                  Discover what our clients are saying about their DocuSigner experience.
+              </motion.p>
+                <TestimonialGrid />
+          </div>
+      </motion.section>
+
+        <motion.section
+          className="py-20 md:py-32 bg-background relative overflow-hidden"
+      >
+          <div className="container mx-auto text-center relative z-10">
+                <motion.div
+                  initial="initial"
+                  whileInView="animate"
+                  viewport={{ once: true, amount: 0.5 }}
+                  variants={fadeInUp}
+                >
+                  <h2 className="text-4xl md:text-5xl font-bold font-headline mb-6">
+                      Ready to Simplify Your Documents?
+                  </h2>
+                  <p className="text-xl text-muted-foreground md:w-2/3 mx-auto mb-10">
+                      Join thousands of users streamlining their workflow with DocuSigner.
+                      Sign up for free and experience the future of document management today.
+                  </p>
+                  <Button className="btn-cta-primary-emerald px-10 py-6 text-lg" asChild>
+                      <Link href="/auth/signup">
+                            <span>
+                              <span>Start Free Trial</span>
+                              <ArrowRight className="ml-2 h-5 w-5" />
+                          </span>
+                      </Link>
+                  </Button>
+              </motion.div>
+          </div>
+      </motion.section>
+    </>
   );
 }
