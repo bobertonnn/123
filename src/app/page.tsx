@@ -494,7 +494,7 @@ export default function LandingPage() {
   let letterAnimationIndex = 0;
 
   return (
-    <> {/* Removed the outer div and main tag from here; they are provided by PublicLayout */}
+    <>
       <ScrollToTopButton />
       <motion.section
         ref={heroSectionRef}

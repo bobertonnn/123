@@ -21,6 +21,7 @@ import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth';
 import { cn } from '@/lib/utils';
+import { useToast } from "@/hooks/use-toast";
 
 const footerLinks = {
   product: [
@@ -65,19 +66,25 @@ export default function PublicLayout({
   const [userName, setUserName] = useState("User");
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | undefined>(undefined);
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       if (user) {
         let storedName = localStorage.getItem("userFullName");
+        let storedAvatar = localStorage.getItem("userAvatarUrl");
+
         if (storedName && storedName.trim() !== "") {
           setUserName(storedName.trim());
         } else {
           setUserName(user.displayName || "User");
         }
-        const storedAvatar = localStorage.getItem("userAvatarUrl");
-        setUserAvatarUrl(storedAvatar && storedAvatar.trim() !== "" ? storedAvatar : user.photoURL || undefined);
+        if (storedAvatar && storedAvatar.trim() !== "") {
+            setUserAvatarUrl(storedAvatar);
+        } else {
+            setUserAvatarUrl(user.photoURL || undefined);
+        }
       } else {
         setUserName("User");
         setUserAvatarUrl(undefined);
@@ -104,9 +111,11 @@ export default function PublicLayout({
       localStorage.removeItem('userSubscription');
       localStorage.removeItem('userBillingHistory');
       localStorage.removeItem('onboardingPromptDismissed');
+      toast({ title: "Logged Out", description: "You have been successfully logged out." });
       router.push('/');
     } catch (error) {
       console.error("Logout Error:", error);
+      toast({ variant: "destructive", title: "Logout Failed", description: "Could not log out." });
     }
   };
 
@@ -179,7 +188,7 @@ export default function PublicLayout({
                           <AvatarImage src={userAvatarUrl} alt={userName} data-ai-hint="user avatar" />
                         ) : null}
                         <AvatarFallback className={cn(!userAvatarUrl ? "bg-card border border-border flex items-center justify-center" : "bg-muted flex items-center justify-center", "text-sm")}>
-                          {userName.split(' ').map(n => n[0]).join('').substring(0,2) || <GradientBirdIcon className="h-5 w-5 text-primary" />}
+                          {userName.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase() || <GradientBirdIcon className="h-5 w-5 text-primary" />}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
