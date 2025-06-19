@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sparkles, Quote } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Image from "next/image"; 
 
 interface Testimonial {
   id: string;
@@ -23,7 +24,7 @@ const mockTestimonials: Testimonial[] = [
     quote: "DocuSigner made signing urgent company documents a breeze. The interface is clean and incredibly efficient for our entire team.",
     name: 'Michael S.',
     date: 'March 27, 2024',
-    avatarUrl: 'https://placehold.co/80x80.png?text=MS',
+    avatarUrl: 'https://placehold.co/80x80.png',
     tag: 'Efficiency Boost'
   },
   {
@@ -31,21 +32,21 @@ const mockTestimonials: Testimonial[] = [
     quote: "As a remote team lead, getting contracts signed across time zones was a nightmare. DocuSigner streamlined the entire process for us!",
     name: 'Emily R.',
     date: 'April 24, 2024',
-    avatarUrl: 'https://placehold.co/80x80.png?text=ER',
+    avatarUrl: 'https://placehold.co/80x80.png',
   },
   {
     id: 't3',
     quote: "The security features are top-notch. I feel confident handling sensitive legal documents with DocuSigner for my law firm.",
     name: 'David L.',
     date: 'June 15, 2024',
-    avatarUrl: 'https://placehold.co/80x80.png?text=DL',
+    avatarUrl: 'https://placehold.co/80x80.png',
   },
   {
     id: 't4',
     quote: "Our startup relies on DocuSigner for all our client onboarding. It's saved us countless hours and looks so professional. The mobile signing is a huge plus!",
     name: 'Priya K.',
     date: 'January 10, 2024',
-    avatarUrl: 'https://placehold.co/80x80.png?text=PK',
+    avatarUrl: 'https://placehold.co/80x80.png',
     tag: 'Client Onboarding Simplified'
   },
   {
@@ -53,7 +54,7 @@ const mockTestimonials: Testimonial[] = [
     quote: "We needed a reliable e-signature solution for international agreements. DocuSigner delivered with its ease of use and clear audit trails. Very impressive platform.",
     name: 'Wei Z.',
     date: 'February 05, 2024',
-    avatarUrl: 'https://placehold.co/80x80.png?text=WZ',
+    avatarUrl: 'https://placehold.co/80x80.png',
   }
 ];
 
@@ -99,14 +100,14 @@ export function TestimonialGrid() {
         else if (index === 1) testimonialGridClasses = 'md:col-start-3 md:row-start-1';
         else if (index === 2) testimonialGridClasses = 'md:col-start-2 md:row-start-2';
         else if (index === 3) testimonialGridClasses = 'md:col-start-3 md:row-start-2';
-        else if (index === 4) testimonialGridClasses = 'md:col-start-2 md:col-span-2 md:row-start-3'; // New positioning for 5th item
+        else if (index === 4) testimonialGridClasses = 'md:col-start-2 md:col-span-2 md:row-start-3'; 
 
         return (
           <motion.div
             key={testimonial.id}
             className={cn(testimonialGridClasses)}
             variants={cardVariants}
-            custom={index + 1} // Adjust custom prop for staggered animation
+            custom={index + 1} 
             initial="initial"
             whileInView="animate"
             viewport={{ once: true, amount: 0.2 }}
@@ -120,7 +121,8 @@ export function TestimonialGrid() {
                 <div className="mt-auto pt-3">
                   <div className="flex items-center space-x-3">
                       <Avatar className="w-10 h-10 border-2 border-primary/30">
-                      <AvatarImage src={testimonial.avatarUrl} alt={testimonial.name} />
+                      {/* Using next/image for placeholder */}
+                      <Image src={testimonial.avatarUrl} alt={testimonial.name} width={80} height={80} className="rounded-full" />
                       <AvatarFallback>{testimonial.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                       </Avatar>
                       <div>

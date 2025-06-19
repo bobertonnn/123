@@ -2,11 +2,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Target, Eye, Zap, Lightbulb, TrendingUp } from "lucide-react"; // Added Lightbulb, TrendingUp
+import Image from "next/image"; // Import next/image
 
 const teamMembers = [
-  { name: "Alice Wonderland", role: "CEO & Visionary", avatar: "https://placehold.co/100x100.png?text=AW" },
-  { name: "Bob The Builder", role: "CTO & Lead Architect", avatar: "https://placehold.co/100x100.png?text=BB" },
-  { name: "Charlie Brown", role: "Head of Product", avatar: "https://placehold.co/100x100.png?text=CB" },
+  { name: "Alice Wonderland", role: "CEO & Visionary", avatar: "https://placehold.co/100x100.png" },
+  { name: "Bob The Builder", role: "CTO & Lead Architect", avatar: "https://placehold.co/100x100.png" },
+  { name: "Charlie Brown", role: "Head of Product", avatar: "https://placehold.co/100x100.png" },
 ];
 
 const coreValues = [
@@ -80,7 +81,8 @@ export default function AboutUsPage() {
           {teamMembers.map((member) => (
             <Card key={member.name} className="text-center shadow-lg rounded-xl p-6 hover:scale-105 transition-transform duration-300">
               <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-primary/50">
-                <AvatarImage src={member.avatar} alt={member.name} />
+                 {/* Using next/image for placeholder */}
+                <Image src={member.avatar} alt={member.name} width={100} height={100} className="rounded-full" />
                 <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
               </Avatar>
               <h3 className="text-xl font-semibold text-foreground">{member.name}</h3>

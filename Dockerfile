@@ -1,70 +1,51 @@
+# Stage 1: Build the application
+FROM node:20-alpine AS builder
 
-# 1. Этап сборки (Build Stage)
-FROM node:18-alpine AS builder
+# Set working directory
+WORKDIR /app
 
-# Установка pnpm (если используется, иначе можно пропустить или заменить на yarn/npm)
+# Install pnpm - if you use pnpm, otherwise adjust for npm or yarn
 # RUN npm install -g pnpm
 
-WORKDIR /app
-
-# Копирование файлов package.json и lock-файла (pnpm-lock.yaml, package-lock.json, yarn.lock)
+# Copy package.json and lock file
 COPY package.json ./
-# COPY pnpm-lock.yaml ./ # Если используется pnpm
-COPY package-lock.json ./ # Если используется npm
-# COPY yarn.lock ./ # Если используется yarn
+# COPY pnpm-lock.yaml ./ # If using pnpm
+COPY package-lock.json ./ # If using npm
 
-# Установка зависимостей
-RUN npm install --frozen-lockfile # или pnpm install --frozen-lockfile или yarn install --frozen-lockfile
+# Install dependencies
+RUN npm install
+# RUN pnpm install --frozen-lockfile # If using pnpm
 
-# Копирование остальных файлов проекта
+# Copy the rest of the application source code
 COPY . .
 
-# Сборка приложения Next.js
-# Переменные окружения для сборки (например, NEXT_PUBLIC_FIREBASE_API_KEY)
-# должны быть доступны на этом этапе, если они используются в коде во время сборки.
-# Их можно передать через --build-arg в команде docker build или если они есть в .env файле, который копируется.
-# Однако, для публичных переменных (NEXT_PUBLIC_*) они должны быть доступны во время выполнения,
-# поэтому их часто устанавливают при запуске контейнера.
-# Для переменных, нужных ТОЛЬКО на этапе сборки, можно использовать ARG.
-# ARG NEXT_PUBLIC_FIREBASE_API_KEY
-# ENV NEXT_PUBLIC_FIREBASE_API_KEY=$NEXT_PUBLIC_FIREBASE_API_KEY
-# ... и так далее для других NEXT_PUBLIC_* переменных, если они нужны именно при сборке.
-
+# Build the Next.js application
 RUN npm run build
 
-# 2. Этап выполнения (Production Stage)
-FROM node:18-alpine
+# Stage 2: Production image
+FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Копирование собранного приложения из этапа сборки
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/public ./public # Если есть папка public
+# Set environment to production
+ENV NODE_ENV=production
+# Optionally, define a port, Next.js default is 3000
+# ENV PORT=3000
 
-# Установка переменных окружения для выполнения.
-# Эти переменные будут использоваться при запуске приложения.
-# Их значения следует передавать при запуске контейнера (docker run -e ...).
-# Здесь можно указать значения по умолчанию, если это безопасно, или оставить их пустыми.
-# ENV NODE_ENV production
-# ENV PORT 3000
-# ENV DB_HOST=db_host_example
-# ... и другие переменные из .env.production
+# Automatically leverage output traces to reduce image size
+# https://nextjs.org/docs/advanced-features/output-file-tracing
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Открытие порта, на котором будет работать приложение
+# Create a non-root user for security
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+USER nextjs
+
 EXPOSE 3000
 
-# Команда для запуска приложения
-# Используем "next start" напрямую, так как PM2 в Docker обычно избыточен (Docker сам управляет процессом).
-# Если нужен легковесный запуск без полного сервера Node.js, можно использовать `node server.js` после `npx next-server`.
-CMD ["npm", "run", "start"]
-
-# Для более легковесного образа можно использовать multi-stage build
-# и копировать только необходимые артефакты.
-# Также можно рассмотреть использование `node:18-alpine` для уменьшения размера образа.
-
-# Важно: Файл .env.production не должен копироваться в образ Docker.
-# Переменные окружения передаются в контейнер при его запуске.
-# Убедитесь, что .dockerignore настроен правильно, чтобы исключить node_modules, .next и т.д. из контекста сборки (если они не нужны).
-# В данном Dockerfile node_modules копируются с этапа сборки, что является стандартной практикой.
+# Start the Next.js application
+# The server.js file is created by the `output: 'standalone'` build option
+CMD ["node", "server.js"]

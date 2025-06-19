@@ -22,7 +22,7 @@ const platformData: RatingPlatform[] = [
   {
     id: 'trustpilot',
     name: 'Trustpilot',
-    logoUrl: 'https://placehold.co/140x45.png?text=Trustpilot+Logo&font=roboto', // Adjusted size & text
+    logoUrl: 'https://placehold.co/140x45.png', 
     rating: 4.8,
     reviewsCount: '2,500+ Reviews',
     reviewUrl: '#', 
@@ -31,7 +31,7 @@ const platformData: RatingPlatform[] = [
   {
     id: 'capterra',
     name: 'Capterra',
-    logoUrl: 'https://placehold.co/140x45.png?text=Capterra+Logo&font=lato', // Adjusted size & text
+    logoUrl: 'https://placehold.co/140x45.png', 
     rating: 4.7,
     reviewsCount: '1,800+ Reviews',
     reviewUrl: '#', 
@@ -40,7 +40,7 @@ const platformData: RatingPlatform[] = [
   {
     id: 'g2',
     name: 'G2',
-    logoUrl: 'https://placehold.co/100x45.png?text=G2+Logo&font=montserrat', // Adjusted size & text
+    logoUrl: 'https://placehold.co/100x45.png', 
     rating: 4.9,
     reviewsCount: '3,200+ Reviews',
     reviewUrl: '#', 
@@ -64,7 +64,7 @@ const cardVariants = {
 
 const StarRating = ({ rating, maxRating = 5 }: { rating: number; maxRating?: number }) => {
   const fullStars = Math.floor(rating);
-  const halfStar = rating % 1 >= 0.4 && rating % 1 < 0.9; // Common threshold for half star
+  const halfStar = rating % 1 >= 0.4 && rating % 1 < 0.9; 
   const emptyStars = maxRating - fullStars - (halfStar ? 1 : 0);
 
   return (
@@ -72,7 +72,6 @@ const StarRating = ({ rating, maxRating = 5 }: { rating: number; maxRating?: num
       {[...Array(fullStars)].map((_, i) => (
         <Star key={`full-${i}`} className="h-5 w-5 text-yellow-400 fill-yellow-400" />
       ))}
-      {/* For simplicity, not rendering half stars with current icons, adjust if specific half-star icon is available */}
       {[...Array(emptyStars)].map((_, i) => (
         <Star key={`empty-${i}`} className="h-5 w-5 text-yellow-400" />
       ))}
@@ -113,7 +112,6 @@ export function PlatformRatings() {
               {platform.reviewsCount && (
                 <p className="text-sm text-muted-foreground">{platform.reviewsCount}</p>
               )}
-              {/* "Read Reviews" button removed as per request */}
             </CardContent>
           </Card>
         </motion.div>
