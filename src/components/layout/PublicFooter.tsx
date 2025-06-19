@@ -2,15 +2,11 @@
 "use client";
 
 import Link from 'next/link';
-// import { motion } from 'framer-motion'; // Removed motion import
 import { Logo } from '@/components/icons/Logo';
 
 export function PublicFooter() {
   return (
-    <footer // Changed from motion.footer
-      className="py-12 md:py-16 border-t border-border/40 bg-muted/20"
-      // Removed initial, animate, and transition props
-    >
+    <footer>
       <div className="container mx-auto text-center">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
           <div>
@@ -34,7 +30,6 @@ export function PublicFooter() {
             <ul className="space-y-2">
               <li><Link href="/blog" className="text-sm text-muted-foreground hover:text-primary">Blog (TBD)</Link></li>
               <li><Link href="/faq" className="text-sm text-muted-foreground hover:text-primary">FAQ</Link></li>
-              {/* Link to /help for authenticated users, /faq for public */}
             </ul>
           </div>
           <div>
@@ -56,4 +51,3 @@ export function PublicFooter() {
     </footer>
   );
 }
-
