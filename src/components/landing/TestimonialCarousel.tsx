@@ -93,52 +93,54 @@ export function TestimonialGrid() {
         </div>
       </motion.div>
 
-      {mockTestimonials.map((testimonial, index) => (
-        <motion.div
-          key={testimonial.id}
-          className={cn(
-            index === 0 ? 'md:col-start-2 md:row-start-1' : '',
-            index === 1 ? 'md:col-start-3 md:row-start-1' : '',
-            index === 2 ? 'md:col-start-2 md:row-start-2' : '',
-            index === 3 ? 'md:col-start-3 md:row-start-2' : '',
-            // Adjusted 5th testimonial: starts in col 1, row 2, with negative top margin to overlap
-            index === 4 ? 'md:col-start-1 md:row-start-2 md:mt-[-80px]' : '' 
-          )}
-          variants={cardVariants}
-          custom={index + 1}
-          initial="initial"
-          whileInView="animate"
-          viewport={{ once: true, amount: 0.2 }}
-        >
-          <Card className="bg-card/80 backdrop-blur-md border border-border/50 shadow-lg rounded-xl h-full flex flex-col">
-            <CardContent className="p-6 space-y-3 flex-grow flex flex-col">
-              <Quote className="w-8 h-8 text-primary/70 mb-2" />
-              <p className="text-sm text-foreground/90 leading-relaxed flex-grow">
-                "{testimonial.quote}"
-              </p>
-              <div className="mt-auto pt-3">
-                <div className="flex items-center space-x-3">
-                    <Avatar className="w-10 h-10 border-2 border-primary/30">
-                    <AvatarImage src={testimonial.avatarUrl} alt={testimonial.name} />
-                    <AvatarFallback>{testimonial.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                    <h4 className="font-semibold text-foreground">{testimonial.name}</h4>
-                    <p className="text-xs text-muted-foreground">{testimonial.date}</p>
-                    </div>
+      {mockTestimonials.map((testimonial, index) => {
+        let testimonialGridClasses = '';
+        if (index === 0) testimonialGridClasses = 'md:col-start-2 md:row-start-1';
+        else if (index === 1) testimonialGridClasses = 'md:col-start-3 md:row-start-1';
+        else if (index === 2) testimonialGridClasses = 'md:col-start-2 md:row-start-2';
+        else if (index === 3) testimonialGridClasses = 'md:col-start-3 md:row-start-2';
+        else if (index === 4) testimonialGridClasses = 'md:col-start-2 md:col-span-2 md:row-start-3'; // New positioning for 5th item
+
+        return (
+          <motion.div
+            key={testimonial.id}
+            className={cn(testimonialGridClasses)}
+            variants={cardVariants}
+            custom={index + 1} // Adjust custom prop for staggered animation
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true, amount: 0.2 }}
+          >
+            <Card className="bg-card/80 backdrop-blur-md border border-border/50 shadow-lg rounded-xl h-full flex flex-col">
+              <CardContent className="p-6 space-y-3 flex-grow flex flex-col">
+                <Quote className="w-8 h-8 text-primary/70 mb-2" />
+                <p className="text-sm text-foreground/90 leading-relaxed flex-grow">
+                  "{testimonial.quote}"
+                </p>
+                <div className="mt-auto pt-3">
+                  <div className="flex items-center space-x-3">
+                      <Avatar className="w-10 h-10 border-2 border-primary/30">
+                      <AvatarImage src={testimonial.avatarUrl} alt={testimonial.name} />
+                      <AvatarFallback>{testimonial.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                      <h4 className="font-semibold text-foreground">{testimonial.name}</h4>
+                      <p className="text-xs text-muted-foreground">{testimonial.date}</p>
+                      </div>
+                  </div>
+                  {testimonial.tag && (
+                      <div className="pt-3">
+                      <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded-full">
+                          {testimonial.tag}
+                      </span>
+                      </div>
+                  )}
                 </div>
-                {testimonial.tag && (
-                    <div className="pt-3">
-                    <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded-full">
-                        {testimonial.tag}
-                    </span>
-                    </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      ))}
+              </CardContent>
+            </Card>
+          </motion.div>
+        );
+      })}
     </div>
   );
 }
