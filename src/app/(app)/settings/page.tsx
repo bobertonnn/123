@@ -7,14 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Lock, Bell, CreditCard, Save, Edit3, XCircle, Loader2, Check, UploadCloud, Trash2, LogOut, DollarSign, ShoppingBag, FileClock, AlertTriangle, Package, Star, Zap, Tag, CalendarDays, Phone, Building } from "lucide-react";
+import { User, Lock, Bell, CreditCard, Save, Edit3, XCircle, Loader2, Check, UploadCloud, Trash2, LogOut, DollarSign, ShoppingBag, FileClock, AlertTriangle, Package, Star, Zap, Tag, CalendarDays, Phone, Building, Mail } from "lucide-react";
 import { SignatureCanvas } from "@/components/auth/SignatureCanvas";
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
-import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
+import { EmailAuthProvider, reauthenticateWithCredential, updatePassword, verifyBeforeUpdateEmail, signOut } from "firebase/auth";
 import { GradientBirdIcon } from "@/components/icons/Logo";
 import { cn } from "@/lib/utils";
 import { motion, useMotionValue, useSpring } from "framer-motion";
@@ -38,12 +38,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format, addMonths, parseISO, isValid } from "date-fns";
-import { buttonVariants } from "@/components/ui/button"; // Correct import for buttonVariants
+import { buttonVariants } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+
 
 type SaveStatus = "idle" | "saving" | "success" | "error";
 
@@ -78,6 +79,7 @@ const availablePlans = [
 ];
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [userFullName, setUserFullName] = useState("User");
   const [userEmail, setUserEmail] = useState("user@example.com");
   const [userPhoneNumber, setUserPhoneNumber] = useState("");
@@ -90,7 +92,9 @@ export default function SettingsPage() {
   const signatureContainerRef = useRef<HTMLDivElement>(null);
   const signatureImageRef = useRef<HTMLImageElement>(null);
 
-  const [currentPassword, setCurrentPassword] = useState("");
+  const [currentPasswordForEmailChange, setCurrentPasswordForEmailChange] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [currentPasswordForPasswordChange, setCurrentPasswordForPasswordChange] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [userJoinDate, setUserJoinDate] = useState<string | null>(null);
@@ -98,7 +102,8 @@ export default function SettingsPage() {
 
 
   const [profileSaveStatus, setProfileSaveStatus] = useState<SaveStatus>("idle");
-  const [securitySaveStatus, setSecuritySaveStatus] = useState<SaveStatus>("idle");
+  const [passwordChangeStatus, setPasswordChangeStatus] = useState<SaveStatus>("idle");
+  const [emailChangeStatus, setEmailChangeStatus] = useState<SaveStatus>("idle");
   const [notificationSaveStatus, setNotificationSaveStatus] = useState<SaveStatus>("idle");
 
 
@@ -345,28 +350,34 @@ export default function SettingsPage() {
     setShowUpdateSignatureArea(false);
   };
 
-  const simulateSave = async (setStatus: React.Dispatch<React.SetStateAction<SaveStatus>>, successMessage: string, action?: () => Promise<void> | void) => {
+  const simulateAction = async (
+    setStatus: React.Dispatch<React.SetStateAction<SaveStatus>>, 
+    actionFn: () => Promise<string | void>, // Can return a success message or void
+    loadingMessage: string,
+    defaultSuccessMessage: string
+  ) => {
     setStatus("saving");
+    toast({ title: loadingMessage, description: "Please wait..." });
     try {
-      if (action) {
-        await action();
-      } else {
-        await new Promise(resolve => setTimeout(resolve, 1500));
-      }
+      const successMessage = (await actionFn()) || defaultSuccessMessage;
       setStatus("success");
       toast({
-        title: "Saved!",
+        title: "Success!",
         description: successMessage,
       });
       setTimeout(() => setStatus("idle"), 2000);
+      return true;
     } catch (error: any) {
       setStatus("error");
+      console.error("Action failed:", error);
+      const errorMessage = (error.message || "An unexpected error occurred.").replace("Firebase: ", "");
       toast({
         variant: "destructive",
-        title: "Uh oh! Something went wrong.",
-        description: error.message || "Could not save settings. Please try again.",
+        title: "Operation Failed",
+        description: errorMessage,
       });
       setTimeout(() => setStatus("idle"), 3000);
+      return false;
     }
   };
 
@@ -394,9 +405,9 @@ export default function SettingsPage() {
       return;
     }
 
-    await simulateSave(setProfileSaveStatus, "Your profile changes have been saved to local storage.", async () => {
+    await simulateAction(setProfileSaveStatus, async () => {
         localStorage.setItem("userFullName", userFullName);
-        localStorage.setItem("userEmail", userEmail);
+        // Email is not saved here, it's handled by handleEmailChange
         localStorage.setItem("userPhoneNumber", userPhoneNumber);
         localStorage.setItem("userCompanyName", userCompanyName);
 
@@ -425,57 +436,113 @@ export default function SettingsPage() {
             setUserTag(newTag);
         }
 
-
         if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('profileUpdated'));
         }
-    });
+        return "Your profile changes have been saved.";
+    }, "Saving profile...", "Profile changes saved.");
   };
 
-  const handleSecuritySave = async () => {
+  const handlePasswordChange = async () => {
     if (newPassword !== confirmNewPassword) {
       toast({ variant: "destructive", title: "Error", description: "New passwords do not match." });
+      setPasswordChangeStatus("error");
+      setTimeout(() => setPasswordChangeStatus("idle"), 3000);
       return;
     }
     if (newPassword.length > 0 && newPassword.length < 6) {
-      toast({ variant: "destructive", title: "Error", description: "New password must be at least 6 characters long." });
+      toast({ variant: "destructive", title: "Error", description: "New password must be at least 8 characters long." });
+      setPasswordChangeStatus("error");
+      setTimeout(() => setPasswordChangeStatus("idle"), 3000);
       return;
     }
-    if (newPassword.length === 0 && currentPassword.length === 0) {
+    if (newPassword.length === 0 && currentPasswordForPasswordChange.length === 0) {
       toast({ title: "No Changes", description: "No password changes were entered."});
       return;
     }
-     if (newPassword.length > 0 && currentPassword.length === 0) {
+     if (newPassword.length > 0 && currentPasswordForPasswordChange.length === 0) {
       toast({ variant: "destructive", title: "Current Password Required", description: "Please enter your current password to set a new one."});
-      setSecuritySaveStatus("error");
-      setTimeout(() => setSecuritySaveStatus("idle"), 3000);
+      setPasswordChangeStatus("error");
+      setTimeout(() => setPasswordChangeStatus("idle"), 3000);
       return;
     }
-
 
     const user = auth.currentUser;
     if (!user || !user.email) {
       toast({ variant: "destructive", title: "Error", description: "No user logged in or email missing." });
+      setPasswordChangeStatus("error");
+      setTimeout(() => setPasswordChangeStatus("idle"), 3000);
       return;
     }
 
-    await simulateSave(setSecuritySaveStatus, "Password updated successfully.", async () => {
-      const credential = EmailAuthProvider.credential(user.email!, currentPassword);
-      try {
-        await reauthenticateWithCredential(user, credential);
-        await updatePassword(user, newPassword);
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmNewPassword("");
-      } catch (error: any) {
-        console.error("Password update error:", error);
-        throw new Error(error.message.replace("Firebase: ", "") || "Failed to update password.");
-      }
-    });
+    const success = await simulateAction(setPasswordChangeStatus, async () => {
+      const credential = EmailAuthProvider.credential(user.email!, currentPasswordForPasswordChange);
+      await reauthenticateWithCredential(user, credential);
+      await updatePassword(user, newPassword);
+      setCurrentPasswordForPasswordChange("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      return "Password updated successfully.";
+    }, "Updating password...", "Password updated successfully.");
+    if (success) {
+       // Optionally sign out and redirect to login
+        await signOut(auth);
+        localStorage.clear(); 
+        router.push('/auth/signin');
+        toast({ title: "Security Update", description: "Password changed. Please sign in again with your new password." });
+    }
   };
 
+  const handleEmailChange = async () => {
+    if (!newEmail.trim()) {
+        toast({ variant: "destructive", title: "New Email Required", description: "Please enter a new email address." });
+        setEmailChangeStatus("error"); setTimeout(() => setEmailChangeStatus("idle"), 3000);
+        return;
+    }
+    if (!/\S+@\S+\.\S+/.test(newEmail)) {
+        toast({ variant: "destructive", title: "Invalid Email Format", description: "Please enter a valid email address." });
+        setEmailChangeStatus("error"); setTimeout(() => setEmailChangeStatus("idle"), 3000);
+        return;
+    }
+    if (!currentPasswordForEmailChange) {
+        toast({ variant: "destructive", title: "Current Password Required", description: "Please enter your current password to change your email." });
+        setEmailChangeStatus("error"); setTimeout(() => setEmailChangeStatus("idle"), 3000);
+        return;
+    }
+
+    const user = auth.currentUser;
+    if (!user || !user.email) {
+      toast({ variant: "destructive", title: "Error", description: "No user logged in or current email missing." });
+      setEmailChangeStatus("error"); setTimeout(() => setEmailChangeStatus("idle"), 3000);
+      return;
+    }
+    if (user.email === newEmail) {
+        toast({ variant: "default", title: "No Change", description: "The new email is the same as your current email." });
+        return;
+    }
+
+    const success = await simulateAction(setEmailChangeStatus, async () => {
+      const credential = EmailAuthProvider.credential(user.email!, currentPasswordForEmailChange);
+      await reauthenticateWithCredential(user, credential);
+      await verifyBeforeUpdateEmail(user, newEmail);
+      setNewEmail("");
+      setCurrentPasswordForEmailChange("");
+      // DO NOT update userEmail state or localStorage here. Firebase handles it.
+      // The user will see the new email after they verify it and re-login or app re-fetches auth state.
+      return `Verification link sent to ${newEmail}. Please verify to complete the change. You will be signed out.`;
+    }, "Processing email change...", `Verification link sent to ${newEmail}.`);
+    
+    if (success) {
+        await signOut(auth);
+        localStorage.clear(); 
+        router.push('/auth/signin');
+        toast({ title: "Verify New Email", description: `Please check ${newEmail} for a verification link and sign in again.` });
+    }
+  };
+
+
   const handleNotificationSave = async () => {
-    await simulateSave(setNotificationSaveStatus, "Notification preferences saved (mock).");
+    await simulateAction(setNotificationSaveStatus, async () => {}, "Saving notification settings...", "Notification preferences saved.");
   };
 
   const handlePlanChange = () => {
@@ -594,11 +661,11 @@ export default function SettingsPage() {
   };
 
 
-  const renderSaveButtonContent = (status: SaveStatus, defaultText: string) => {
+  const renderSaveButtonContent = (status: SaveStatus, defaultText: string, Icon: React.ElementType = Save) => {
     if (status === "saving") return <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Saving...</>;
     if (status === "success") return <><Check className="mr-2 h-4 w-4"/> Saved!</>;
     if (status === "error") return <><XCircle className="mr-2 h-4 w-4"/> Error</>;
-    return <><Save className="mr-2 h-4 w-4"/> {defaultText}</>;
+    return <><Icon className="mr-2 h-4 w-4"/> {defaultText}</>;
   };
 
   const currentPlanDetails = availablePlans.find(p => p.name === currentSubscription.planName) || availablePlans[0];
@@ -639,7 +706,7 @@ export default function SettingsPage() {
           <Card className="shadow-xl rounded-2xl">
             <CardHeader>
               <CardTitle className="text-xl font-headline">Profile Information</CardTitle>
-              <CardDescription>Manage your personal details and signature.</CardDescription>
+              <CardDescription>Manage your personal details and signature. Email is managed under Security.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center space-x-4">
@@ -672,8 +739,9 @@ export default function SettingsPage() {
                   <Input id="fullName" value={userFullName} onChange={(e) => setUserFullName(e.target.value)} className="mt-1"/>
                 </div>
                 <div>
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input id="email" type="email" value={userEmail} onChange={(e) => setUserEmail(e.target.value)} className="mt-1" />
+                  <Label htmlFor="currentEmailDisplay">Current Email Address</Label>
+                  <Input id="currentEmailDisplay" type="email" value={userEmail} className="mt-1 bg-muted/50" readOnly disabled />
+                   <p className="text-xs text-muted-foreground mt-1">To change your email, go to the 'Security' tab.</p>
                 </div>
                  <div>
                   <Label htmlFor="phoneNumber">Phone Number (Optional)</Label>
@@ -772,29 +840,62 @@ export default function SettingsPage() {
           <Card className="shadow-xl rounded-2xl">
             <CardHeader>
               <CardTitle className="text-xl font-headline">Security Settings</CardTitle>
-              <CardDescription>Manage your password and account security.</CardDescription>
+              <CardDescription>Manage your email, password, and account security.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <Label htmlFor="currentPassword">Current Password</Label>
-                <Input id="currentPassword" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="mt-1"/>
+            <CardContent className="space-y-8">
+              {/* Change Email Section */}
+              <div className="space-y-4 p-4 border rounded-lg">
+                <h3 className="text-lg font-semibold font-headline">Change Email Address</h3>
+                <div>
+                  <Label htmlFor="newEmail">New Email Address</Label>
+                  <Input id="newEmail" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="mt-1" placeholder="new.email@example.com" disabled={emailChangeStatus === 'saving'}/>
+                </div>
+                <div>
+                  <Label htmlFor="currentPasswordForEmailChange">Current Password (for email change)</Label>
+                  <Input id="currentPasswordForEmailChange" type="password" value={currentPasswordForEmailChange} onChange={(e) => setCurrentPasswordForEmailChange(e.target.value)} className="mt-1" placeholder="Enter current password" disabled={emailChangeStatus === 'saving'}/>
+                </div>
+                <div className="flex justify-end">
+                  <Button
+                      className={`btn-gradient-hover ${emailChangeStatus === 'success' ? 'bg-green-500 hover:bg-green-600' : emailChangeStatus === 'error' ? 'bg-red-500 hover:bg-red-600' : ''}`}
+                      onClick={handleEmailChange}
+                      disabled={emailChangeStatus === 'saving'}
+                  >
+                      {renderSaveButtonContent(emailChangeStatus, "Change Email", Mail)}
+                  </Button>
+                </div>
+                 <p className="text-xs text-muted-foreground">
+                    After requesting an email change, a verification link will be sent to your new email address. 
+                    Your email will be updated after you click this link. You will be signed out to complete the process.
+                </p>
               </div>
-              <div>
-                <Label htmlFor="newPassword">New Password</Label>
-                <Input id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="mt-1"/>
-              </div>
-              <div>
-                <Label htmlFor="confirmNewPassword">Confirm New Password</Label>
-                <Input id="confirmNewPassword" type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} className="mt-1"/>
-              </div>
-               <div className="flex justify-end">
-                <Button
-                    className={`btn-gradient-hover ${securitySaveStatus === 'success' ? 'bg-green-500 hover:bg-green-600' : securitySaveStatus === 'error' ? 'bg-red-500 hover:bg-red-600' : ''}`}
-                    onClick={handleSecuritySave}
-                    disabled={securitySaveStatus === 'saving'}
-                >
-                    {renderSaveButtonContent(securitySaveStatus, "Update Security Settings")}
-                </Button>
+
+              {/* Change Password Section */}
+              <div className="space-y-4 p-4 border rounded-lg">
+                <h3 className="text-lg font-semibold font-headline">Change Password</h3>
+                <div>
+                  <Label htmlFor="currentPasswordForPasswordChange">Current Password</Label>
+                  <Input id="currentPasswordForPasswordChange" type="password" value={currentPasswordForPasswordChange} onChange={(e) => setCurrentPasswordForPasswordChange(e.target.value)} className="mt-1" disabled={passwordChangeStatus === 'saving'}/>
+                </div>
+                <div>
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <Input id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="mt-1" disabled={passwordChangeStatus === 'saving'}/>
+                </div>
+                <div>
+                  <Label htmlFor="confirmNewPassword">Confirm New Password</Label>
+                  <Input id="confirmNewPassword" type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} className="mt-1" disabled={passwordChangeStatus === 'saving'}/>
+                </div>
+                <div className="flex justify-end">
+                  <Button
+                      className={`btn-gradient-hover ${passwordChangeStatus === 'success' ? 'bg-green-500 hover:bg-green-600' : passwordChangeStatus === 'error' ? 'bg-red-500 hover:bg-red-600' : ''}`}
+                      onClick={handlePasswordChange}
+                      disabled={passwordChangeStatus === 'saving'}
+                  >
+                      {renderSaveButtonContent(passwordChangeStatus, "Update Password", Lock)}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                    After successfully changing your password, you will be signed out and prompted to sign in again with your new password.
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -829,7 +930,7 @@ export default function SettingsPage() {
                         onClick={handleNotificationSave}
                         disabled={notificationSaveStatus === 'saving'}
                     >
-                        {renderSaveButtonContent(notificationSaveStatus, "Save Notification Settings")}
+                        {renderSaveButtonContent(notificationSaveStatus, "Save Notification Settings", Bell)}
                     </Button>
                 </div>
             </CardContent>
@@ -1085,5 +1186,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    
