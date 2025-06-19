@@ -24,6 +24,7 @@ import { Settings, User as UserIcon, LogOut, Home } from 'lucide-react';
 const publicNavLinks = [
   { href: "/#features", label: "Features" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/blog", label: "Blog" },
   { href: "/about", label: "About Us" },
   { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },

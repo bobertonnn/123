@@ -29,7 +29,7 @@ export function PublicFooter() {
           <div>
             <h4 className="font-semibold mb-3 text-foreground">Resources</h4>
             <ul className="space-y-2">
-              {/* <li><Link href="/blog" className="text-sm text-muted-foreground hover:text-primary">Blog (TBD)</Link></li> */}
+              <li><Link href="/blog" className="text-sm text-muted-foreground hover:text-primary">Blog</Link></li>
               <li><Link href="/faq" className="text-sm text-muted-foreground hover:text-primary">FAQ</Link></li>
             </ul>
           </div>

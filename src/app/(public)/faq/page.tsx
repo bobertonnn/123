@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { HelpCircle, Search, LifeBuoy, MessageSquare, BookOpen } from "lucide-react";
+import { HelpCircle, Search, MessageSquare } from "lucide-react";
 import Link from "next/link";
 
 const faqItems = [
@@ -13,27 +13,35 @@ const faqItems = [
   },
   {
     question: "How do I upload a document for signing?",
-    answer: "Once logged in, navigate to the 'Upload Document' page. You can drag and drop your PDF file or click to browse and select a file from your computer. After uploading, you can add signature fields and assign signers."
+    answer: "Once logged in, navigate to the 'Upload Document' page from the sidebar or dashboard. You can drag and drop your PDF file or click to browse and select a file from your computer. After uploading, you can add signature fields and assign signers."
   },
   {
     question: "Is DocuSigner secure?",
-    answer: "Yes, security is a top priority for us. We use industry-standard encryption (conceptual for this demo) and secure storage for your documents. For authenticated users, Firebase provides robust security features for user data and access control."
+    answer: "Yes, security is a top priority. We use industry-standard encryption (conceptual for this demo) for data in transit and at rest. For authenticated users, Firebase provides robust security features for user data and access control. We also plan to implement comprehensive audit trails for all document actions."
   },
   {
     question: "What types of documents can I use with DocuSigner?",
-    answer: "Currently, DocuSigner primarily supports PDF documents for uploading and signing."
+    answer: "Currently, DocuSigner primarily supports PDF documents for uploading and signing. We are working on expanding support for other common document formats in the future."
   },
   {
-    question: "Do I need an account to sign a document?",
-    answer: "If someone sends you a public signing link, you may not need an account to sign. However, to upload, manage, and send documents yourself, you will need to create a free DocuSigner account."
+    question: "Do I need an account to sign a document sent to me?",
+    answer: "If someone sends you a public signing link, you typically do not need a DocuSigner account to sign the document. However, to upload, manage, and send documents yourself, you will need to create a free DocuSigner account."
   },
   {
     question: "Can I create document templates?",
-    answer: "Yes, creating and using document templates is a feature available on our Pro and Business plans. Templates help you save time on frequently used documents."
+    answer: "Yes, creating and using document templates is a feature available on our Pro and Business plans. Templates help you save time by pre-setting fields and signer roles for frequently used documents like NDAs or sales contracts."
+  },
+  {
+    question: "How does the audit trail work?",
+    answer: "For every document, DocuSigner (conceptually for this demo) maintains a detailed audit trail that records all significant events, such as when the document was created, viewed, signed, or modified. This provides a verifiable history for compliance and legal purposes."
+  },
+  {
+    question: "What integrations do you offer?",
+    answer: "We are planning to offer integrations with popular cloud storage services (like Google Drive, Dropbox) and CRM platforms. Stay tuned for announcements regarding specific integrations!"
   },
   {
     question: "How can I contact support if I have an issue?",
-    answer: "You can visit our Help & Support page (accessible when logged in) or use the 'Contact Us' page for general inquiries. Our support team is ready to assist you."
+    answer: "You can visit our Help & Support page (accessible when logged in from the sidebar) or use the 'Contact Us' page for general inquiries. Our support team is ready to assist you."
   }
 ];
 
