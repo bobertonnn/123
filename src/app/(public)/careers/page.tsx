@@ -5,10 +5,10 @@ import { Briefcase, Users, Zap, BrainCircuit, Heart, ArrowRight, Send, Star, Lig
 import Link from "next/link";
 
 const companyPerks = [
-  { title: "Innovative Culture", description: "Be part of a team that values creativity and forward-thinking solutions.", icon: BrainCircuit },
-  { title: "Growth Opportunities", description: "We invest in our employees' development and offer clear paths for advancement.", icon: Zap },
-  { title: "Collaborative Environment", description: "Work with talented and passionate individuals in a supportive setting.", icon: Users },
-  { title: "Meaningful Work", description: "Contribute to a product that simplifies lives and empowers businesses.", icon: Heart },
+  { title: "Innovative Culture", description: "Be part of a team that values creativity and forward-thinking solutions.", icon: BrainCircuit, dataAiHint: "brain circuit" },
+  { title: "Growth Opportunities", description: "We invest in our employees' development and offer clear paths for advancement.", icon: Zap, dataAiHint: "lightning bolt" },
+  { title: "Collaborative Environment", description: "Work with talented and passionate individuals in a supportive setting.", icon: Users, dataAiHint: "group people" },
+  { title: "Meaningful Work", description: "Contribute to a product that simplifies lives and empowers businesses.", icon: Heart, dataAiHint: "heart symbol" },
 ];
 
 const cultureCards = [
@@ -18,9 +18,11 @@ const cultureCards = [
 ]
 
 export default function CareersPage() {
+  console.log("CareersPage rendering.");
   return (
     <div className="container mx-auto py-12 md:py-20 px-4 space-y-16">
       <section className="text-center">
+        <Briefcase className="mx-auto h-16 w-16 text-primary mb-6" data-ai-hint="briefcase work"/>
         <h1 className="text-4xl md:text-5xl font-bold font-headline mb-4 text-primary">Join Our Team</h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
           At DocuSigner, we're building the future of document management. We're always looking for talented, driven individuals
@@ -39,7 +41,7 @@ export default function CareersPage() {
                         return (
                         <div key={perk.title} className="flex items-start">
                             <div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-4">
-                                <Icon className="h-5 w-5" />
+                                <Icon className="h-5 w-5" data-ai-hint={perk.dataAiHint}/>
                             </div>
                             <div>
                                 <h4 className="text-lg font-semibold">{perk.title}</h4>
@@ -56,7 +58,7 @@ export default function CareersPage() {
                         {cultureCards.map(card => {
                              const CardIcon = card.icon;
                             return (
-                            <Card key={card.title} className="bg-card shadow">
+                            <Card key={card.title} className="bg-card shadow hover:shadow-lg transition-shadow">
                                 <CardHeader className="flex flex-row items-center space-x-3 pb-2 pt-4">
                                      <CardIcon className="h-6 w-6 text-primary" data-ai-hint={card.dataAiHint} />
                                     <CardTitle className="text-lg font-semibold">{card.title}</CardTitle>
@@ -79,7 +81,7 @@ export default function CareersPage() {
         </h2>
         <Card className="shadow-lg hover:shadow-xl transition-shadow rounded-xl">
             <CardContent className="p-6 md:p-10 text-center">
-                <Briefcase className="mx-auto h-16 w-16 text-primary/70 mb-6" />
+                <Briefcase className="mx-auto h-16 w-16 text-primary/70 mb-6" data-ai-hint="empty briefcase"/>
                 <CardTitle className="text-2xl font-semibold mb-3">No Open Positions Currently</CardTitle>
                 <CardDescription className="text-muted-foreground text-lg max-w-lg mx-auto">
                     We are not actively hiring for specific roles at the moment. However, we are always interested in hearing from talented individuals who believe they can contribute to our mission.

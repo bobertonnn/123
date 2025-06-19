@@ -1,23 +1,20 @@
 
-// THIS IS A MINIMAL TEST LAYOUT FOR THE (public) GROUP
+import { PublicHeader } from '@/components/layout/PublicHeader';
+import { PublicFooter } from '@/components/layout/PublicFooter';
 
-export default function MinimalPublicLayout({
+export default function StandardPublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  console.log("--- MINIMAL PUBLIC LAYOUT IS RENDERING ---"); // Specific log for this test
+  console.log("StandardPublicLayout (for /about, /contact, etc.) rendering.");
   return (
-    <div style={{ border: '10px solid limegreen', padding: '20px', backgroundColor: '#e0ffe0', minHeight: '100vh' }}>
-      <header style={{ backgroundColor: 'lightcoral', padding: '10px', textAlign: 'center', fontSize: '2em', color: 'white' }}>
-        MINIMAL PUBLIC HEADER (from (public)/layout.tsx)
-      </header>
-      <main style={{ border: '5px dashed blue', padding: '15px', margin: '20px 0', backgroundColor: 'white' }}>
+    <div className="flex flex-col min-h-screen">
+      <PublicHeader />
+      <main className="flex-1 py-8 md:py-12 bg-background">
         {children}
       </main>
-      <footer style={{ backgroundColor: 'lightskyblue', padding: '10px', textAlign: 'center', fontSize: '2em', color: 'white', marginTop: '20px' }}>
-        MINIMAL PUBLIC FOOTER (from (public)/layout.tsx)
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

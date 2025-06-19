@@ -7,9 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Mail, Phone, MapPin, Send, Clock, CalendarCheck2 } from "lucide-react"; // Added Clock, CalendarCheck2
 
 export default function ContactUsPage() {
+  console.log("ContactUsPage rendering.");
   return (
     <div className="container mx-auto py-12 md:py-20 px-4">
       <section className="text-center mb-16">
+        <Mail className="mx-auto h-16 w-16 text-primary mb-6" data-ai-hint="email envelope" />
         <h1 className="text-4xl md:text-5xl font-bold font-headline mb-4 text-primary">Get In Touch</h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
           We're here to help and answer any question you might have. We look forward to hearing from you!
@@ -52,7 +54,7 @@ export default function ContactUsPage() {
         </Card>
 
         <div className="space-y-8">
-          <Card className="shadow-lg rounded-xl">
+          <Card className="shadow-lg rounded-xl hover:shadow-primary/10 transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center mb-3">
                 <Mail className="w-8 h-8 text-primary mr-4" />
@@ -64,7 +66,7 @@ export default function ContactUsPage() {
               <p className="text-sm text-muted-foreground pl-12">For general inquiries and support.</p>
             </CardContent>
           </Card>
-          <Card className="shadow-lg rounded-xl">
+          <Card className="shadow-lg rounded-xl hover:shadow-primary/10 transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center mb-3">
                 <Phone className="w-8 h-8 text-primary mr-4" />
@@ -76,7 +78,7 @@ export default function ContactUsPage() {
                <p className="text-sm text-muted-foreground pl-12">For sales and urgent matters.</p>
             </CardContent>
           </Card>
-          <Card className="shadow-lg rounded-xl">
+          <Card className="shadow-lg rounded-xl hover:shadow-primary/10 transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center mb-3">
                 <MapPin className="w-8 h-8 text-primary mr-4" />
