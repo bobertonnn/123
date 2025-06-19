@@ -151,7 +151,6 @@ export default function DocumentSignedPage() {
                   width={300}
                   height={150}
                   className="bg-gray-600 rounded-md shadow-inner"
-                  data-ai-hint="signature image"
                 />
               </CardContent>
             </Card>
