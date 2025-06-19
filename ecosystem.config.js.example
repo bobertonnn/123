@@ -1,62 +1,36 @@
-// ecosystem.config.js.example
-// Файл конфигурации для PM2
-// Скопируйте этот файл в ecosystem.config.js и настройте под свои нужды
 
 module.exports = {
   apps: [
     {
       name: 'my-nextjs-app', // Замените на имя вашего приложения
-      script: 'npm',
-      args: 'run start', // Команда для запуска вашего Next.js приложения в продакшен режиме
-      // args: 'start -p 3001', // Если нужно указать порт отличный от 3000
-      instances: 1, // Количество инстансов. 'max' для использования всех доступных CPU.
+      script: 'node_modules/next/dist/bin/next',
+      args: 'start -p ${PORT:-3000}', // PORT можно переопределить переменной окружения
+      watch: false, // Отключите watch в продакшене, перезапускайте через pm2 reload
       autorestart: true, // Автоматический перезапуск при сбоях
-      watch: false, // Отключите watch в продакшене. Используйте для разработки, если нужно.
-      max_memory_restart: '1G', // Перезапуск, если приложение потребляет больше 1GB RAM
-      // Настройка переменных окружения для приложения
-      // PM2 будет использовать .env файлы, но здесь можно переопределить или добавить
-      env: {
-        NODE_ENV: 'development', // PM2 по умолчанию установит это, если не указано
-      },
       env_production: {
         NODE_ENV: 'production',
-        // PORT: 3000, // Укажите порт, если нужно
-        // Здесь можно указать другие переменные окружения,
-        // но лучше использовать .env.production для секретов
-        // DB_HOST: 'your_mysql_host',
-        // DB_USER: 'your_mysql_user',
-        // ...
+        // Здесь можно указать переменные окружения, специфичные для production,
+        // но лучше использовать .env.production файл, который Next.js подхватит автоматически.
+        // PORT: 3000, 
       },
-      // Логирование
-      // out_file: './logs/out.log', // Путь к файлу для стандартного вывода
-      // error_file: './logs/error.log', // Путь к файлу для ошибок
-      // merge_logs: true, // Объединять логи из разных инстансов
-      // log_date_format: 'YYYY-MM-DD HH:mm Z', // Формат даты в логах
+      // Убедитесь, что cwd (current working directory) указывает на корень вашего проекта,
+      // если этот файл лежит не в корне.
+      // cwd: '/path/to/your-project-directory', 
+      // Логи
+      output: './logs/out.log',
+      error: './logs/error.log',
+      log_date_format: 'YYYY-MM-DD HH:mm Z',
     },
   ],
 
   // deploy: {
   //   production: {
-  //     user: 'node', // Пользователь на сервере
-  //     host: 'your_server_ip', // IP вашего сервера
-  //     ref: 'origin/main', // Ветка для деплоя
-  //     repo: 'git@github.com:user/repo.git', // URL вашего репозитория
-  //     path: '/var/www/production', // Путь на сервере, куда будет развернуто приложение
+  //     user: 'node',
+  //     host: 'YOUR_SERVER_IP',
+  //     ref: 'origin/main', // Или ваша продакшен ветка
+  //     repo: 'GIT_REPOSITORY_URL',
+  //     path: '/var/www/production',
   //     'post-deploy': 'npm install && npm run build && pm2 reload ecosystem.config.js --env production',
   //   },
   // },
 };
-
-// Для запуска:
-// pm2 start ecosystem.config.js --env production
-
-// Для просмотра логов:
-// pm2 logs my-nextjs-app
-
-// Другие полезные команды PM2:
-// pm2 list
-// pm2 stop my-nextjs-app
-// pm2 restart my-nextjs-app
-// pm2 delete my-nextjs-app
-// pm2 startup (для автозапуска PM2 и приложений при перезагрузке сервера)
-// pm2 save (сохранить текущий список процессов)

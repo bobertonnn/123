@@ -5,7 +5,9 @@ import type { Contact } from "@/types/contact";
 
 const CONTACTS_STORAGE_KEY = "userContacts";
 
-// TODO: При переходе на MySQL, эта функция должна будет делать fetch-запрос к вашему API.
+// TODO: [DB Integration] Replace localStorage with API calls to your backend.
+// This function should fetch contacts from your database via an API endpoint.
+// Example: const response = await fetch('/api/contacts?userId=...); const data = await response.json(); return data;
 export const getContacts = (): Contact[] => {
   if (typeof window === 'undefined') return [];
   const storedContacts = localStorage.getItem(CONTACTS_STORAGE_KEY);
@@ -21,16 +23,18 @@ export const getContacts = (): Contact[] => {
   return [];
 };
 
-// TODO: При переходе на MySQL, эта функция должна будет делать fetch-запрос к вашему API.
+// TODO: [DB Integration] Replace localStorage with API calls.
+// This function is likely not needed if getContacts always fetches fresh data.
+// If used for caching, ensure cache invalidation strategies.
 export const saveContacts = (contacts: Contact[]): void => {
   if (typeof window === 'undefined') return;
   localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(contacts));
-   // В будущем, после успешного запроса к API, можно обновить локальный кэш или вызвать getContacts для обновления.
 };
 
-// TODO: При переходе на MySQL, эта функция должна будет делать POST-запрос к вашему API.
+// TODO: [DB Integration] Replace localStorage logic with a POST request to your /api/contacts endpoint.
+// The API should handle saving the contact to the database and return the created contact.
 export const addContact = (newContactData: Omit<Contact, 'id'>): Contact => {
-  // Логика для localStorage (для прототипа)
+  // Current localStorage logic (for prototype)
   const contacts = getContacts();
   const newContact: Contact = {
     id: Date.now().toString(), 
@@ -41,33 +45,33 @@ export const addContact = (newContactData: Omit<Contact, 'id'>): Contact => {
   saveContacts(contacts);
   return newContact;
 
-  // Примерная логика для API (в будущем):
+  // Example API logic (for future):
   // const response = await fetch('/api/contacts', {
   //   method: 'POST',
   //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify(newContactData),
+  //   body: JSON.stringify(newContactData), // Ensure your API can handle user association
   // });
   // if (!response.ok) throw new Error('Failed to add contact');
   // const savedContact = await response.json();
   // return savedContact;
 };
 
-// TODO: При переходе на MySQL, эта функция должна будет делать fetch-запрос к вашему API.
+// TODO: [DB Integration] Replace localStorage with an API call to /api/contacts/[id].
 export const getContactById = (id: string): Contact | null => {
-  // Логика для localStorage (для прототипа)
+  // Current localStorage logic (for prototype)
   const contacts = getContacts();
   return contacts.find(contact => contact.id === id) || null;
 
-  // Примерная логика для API (в будущем):
+  // Example API logic (for future):
   // const response = await fetch(`/api/contacts/${id}`);
-  // if (!response.ok) return null; // или throw new Error('Contact not found');
+  // if (!response.ok) return null;
   // const contact = await response.json();
   // return contact;
 };
 
-// TODO: При переходе на MySQL, эта функция должна будет делать PUT-запрос к вашему API.
+// TODO: [DB Integration] Replace localStorage with a PUT request to /api/contacts/[id].
 export const updateContact = (updatedContact: Contact): Contact | null => {
-  // Логика для localStorage (для прототипа)
+  // Current localStorage logic (for prototype)
   let contacts = getContacts();
   const contactIndex = contacts.findIndex(contact => contact.id === updatedContact.id);
   if (contactIndex > -1) {
@@ -80,7 +84,7 @@ export const updateContact = (updatedContact: Contact): Contact | null => {
   }
   return null;
 
-  // Примерная логика для API (в будущем):
+  // Example API logic (for future):
   // const response = await fetch(`/api/contacts/${updatedContact.id}`, {
   //   method: 'PUT',
   //   headers: { 'Content-Type': 'application/json' },
@@ -91,9 +95,9 @@ export const updateContact = (updatedContact: Contact): Contact | null => {
   // return result;
 };
 
-// TODO: При переходе на MySQL, эта функция должна будет делать DELETE-запрос к вашему API.
+// TODO: [DB Integration] Replace localStorage with a DELETE request to /api/contacts/[id].
 export const deleteContact = (id: string): boolean => {
-  // Логика для localStorage (для прототипа)
+  // Current localStorage logic (for prototype)
   let contacts = getContacts();
   const initialLength = contacts.length;
   contacts = contacts.filter(contact => contact.id !== id);
@@ -103,7 +107,7 @@ export const deleteContact = (id: string): boolean => {
   }
   return false;
 
-  // Примерная логика для API (в будущем):
+  // Example API logic (for future):
   // const response = await fetch(`/api/contacts/${id}`, { method: 'DELETE' });
   // return response.ok;
 };

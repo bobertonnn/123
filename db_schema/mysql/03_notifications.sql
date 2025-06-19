@@ -1,19 +1,21 @@
 
--- Table to store user notifications
-CREATE TABLE notifications (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id VARCHAR(255) NOT NULL,      -- Foreign key to users table (recipient of the notification)
+CREATE TABLE IF NOT EXISTS notifications (
+    id VARCHAR(255) NOT NULL, -- Может быть UUID, генерируемый приложением
+    user_id VARCHAR(255) NOT NULL, -- Firebase UID получателя уведомления
     title VARCHAR(255) NOT NULL,
     description TEXT,
-    timestamp DATETIME NOT NULL,
-    is_read BOOLEAN DEFAULT FALSE,      -- 'read' can be a reserved keyword, using is_read
-    link VARCHAR(2048),
-    icon_name VARCHAR(50),
-    category VARCHAR(50),
+    timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    read_status BOOLEAN NOT NULL DEFAULT FALSE,
+    link VARCHAR(2048) DEFAULT NULL,
+    icon_name VARCHAR(50) DEFAULT NULL,
+    category VARCHAR(50) DEFAULT NULL, -- e.g., 'system', 'document', 'user'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE INDEX idx_notifications_user_id ON notifications(user_id);
-CREATE INDEX idx_notifications_timestamp ON notifications(timestamp);
+    PRIMARY KEY (id)
+    -- INDEX fk_notifications_user_idx (user_id ASC),
+    -- CONSTRAINT fk_notifications_user
+    --   FOREIGN KEY (user_id)
+    --   REFERENCES users (id) -- Если у вас есть таблица users
+    --   ON DELETE CASCADE
+    --   ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

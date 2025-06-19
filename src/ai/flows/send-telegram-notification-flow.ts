@@ -33,11 +33,11 @@ const sendTelegramNotificationFlow = ai.defineFlow(
     outputSchema: SendTelegramNotificationOutputSchema,
   },
   async (input) => {
-    const botToken = "8146761380:AAE6ssjEIWpY-ALcBl6dyGbWsfxm89TkRK4"; // Временно для теста
-    const chatId = "-4673849808"; // Временно для теста
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
 
     if (!botToken || !chatId) {
-      const errorMessage = 'Telegram Bot Token or Chat ID is not configured (expected in env vars or hardcoded for test).';
+      const errorMessage = 'Telegram Bot Token or Chat ID is not configured. Please set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID environment variables.';
       console.error(errorMessage);
       return { success: false, error: errorMessage };
     }
@@ -64,18 +64,15 @@ const sendTelegramNotificationFlow = ai.defineFlow(
         let errorDescription = 'Unknown error';
         let rawErrorDataString = 'Could not retrieve raw error data.';
         try {
-          // Пытаемся получить errorData как JSON
           const errorData = await response.json();
-          // Преобразуем errorData в строку для безопасного логирования
           rawErrorDataString = JSON.stringify(errorData); 
           errorDescription = errorData?.description || rawErrorDataString;
         } catch (jsonError: any) {
           console.error("Failed to parse Telegram API error response as JSON:", jsonError.message || String(jsonError));
-          // Если JSON не удался, пытаемся получить как текст
           try {
             const errorText = await response.text();
-            rawErrorDataString = errorText; // Сохраняем текстовый ответ
-            errorDescription = `Non-JSON error response: ${errorText.substring(0, 150)}`; // Ограничиваем длину для лога
+            rawErrorDataString = errorText;
+            errorDescription = `Non-JSON error response: ${errorText.substring(0, 150)}`;
           } catch (textError: any) {
             console.error("Failed to parse Telegram API error response as text:", textError.message || String(textError));
             errorDescription = `Telegram API returned ${response.status} but error details are unreadable.`;
@@ -83,18 +80,16 @@ const sendTelegramNotificationFlow = ai.defineFlow(
           }
         }
         const errorMessage = `Telegram API error: ${response.status} - ${errorDescription}`;
-        console.error(errorMessage); // Логируем основное сообщение
-        console.error("Raw Telegram error data string:", rawErrorDataString); // Логируем строковое представление ответа
+        console.error(errorMessage);
+        console.error("Raw Telegram error data string:", rawErrorDataString);
         return { success: false, error: errorMessage };
       }
 
       console.log('Telegram notification sent successfully.');
       return { success: true };
     } catch (error: any) {
-      // Ошибка самого fetch запроса (сетевая и т.д.)
       const errorMessage = `Failed to send Telegram notification: ${error.message || 'Unknown fetch error'}`;
-      console.error(errorMessage); // Логируем сообщение ошибки
-      // Логируем объект ошибки как строку и его стек, если есть
+      console.error(errorMessage);
       console.error("Full fetch error object details:", String(error), error.stack ? `\nStack: ${error.stack}` : ''); 
       return { success: false, error: errorMessage };
     }

@@ -10,30 +10,37 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Progress } from "@/components/ui/progress";
 import Link from 'next/link';
 import type { Document } from '@/components/documents/DocumentCard';
-import { summarizeDocument } from "@/ai/flows/summarize-document-flow"; // Import the AI flow
+import { summarizeDocument } from "@/ai/flows/summarize-document-flow";
 import { useToast } from "@/hooks/use-toast";
 
 
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
+// TODO: [DB Integration] Replace localStorage with API calls to your backend.
+// This function should fetch documents from your database.
 const getStoredDocuments = (): Document[] => {
   if (typeof window === 'undefined') return [];
   const stored = localStorage.getItem('uploadedDocuments');
   return stored ? JSON.parse(stored) : [];
 };
 
+// TODO: [DB Integration] Replace localStorage with API calls.
+// This function should save a new document metadata to your database
+// and potentially upload the file to a storage service (e.g., Firebase Storage, S3).
 const saveStoredDocuments = (documents: Document[]) => {
   if (typeof window === 'undefined') return;
   localStorage.setItem('uploadedDocuments', JSON.stringify(documents));
-  window.dispatchEvent(new CustomEvent('storage')); // Dispatch event for dashboard to potentially update
+  // Dispatch a generic storage event that other components might listen to for updates.
+  // A more robust solution would use a state management library or React Context.
+  window.dispatchEvent(new CustomEvent('storageChanged', { detail: { key: 'uploadedDocuments' } }));
 };
 
 
 export function PdfUploader() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [isProcessing, setIsProcessing] = useState(false); // Combined state for uploading and AI summary
+  const [isProcessing, setIsProcessing] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lastUploadedDocumentId, setLastUploadedDocumentId] = useState<string | null>(null);
@@ -85,14 +92,14 @@ export function PdfUploader() {
     
     reader.onprogress = (event) => {
       if (event.lengthComputable) {
-        const progress = Math.round((event.loaded * 100) / event.total * 0.5); // Reading is 50%
+        const progress = Math.round((event.loaded * 100) / event.total * 0.5);
         setUploadProgress(progress);
       }
     };
 
     reader.onloadend = async () => {
       try {
-        setUploadProgress(50); // File reading complete
+        setUploadProgress(50);
         const dataUrl = reader.result as string;
         const newDocumentId = Date.now().toString();
         
@@ -101,33 +108,44 @@ export function PdfUploader() {
           toast({ title: "Generating AI Summary...", description: "Please wait."});
           const summaryResponse = await summarizeDocument({ documentName: uploadedFile.name });
           summary = summaryResponse.summary;
-          setUploadProgress(75); // AI summary is another 25%
+          setUploadProgress(75);
           toast({ title: "AI Summary Generated!", description: "Document processing complete."});
         } catch (aiError) {
           console.error("AI Summary Error:", aiError);
           toast({ variant: "destructive", title: "AI Summary Failed", description: "Could not generate document summary. Proceeding without it." });
         }
 
+        // TODO: [DB Integration] Instead of localStorage, make an API call here
+        // to save the document metadata (name, summary, status, etc.) and the
+        // document itself (dataUrl or a link if uploaded to cloud storage) to your database.
+        // Example:
+        // const response = await fetch('/api/documents', {
+        //   method: 'POST',
+        //   body: JSON.stringify({ name: uploadedFile.name, dataUrl, summary, userId: '...' }),
+        // });
+        // const savedDoc = await response.json();
+        // setLastUploadedDocumentId(savedDoc.id);
+
         const newDocument: Document = {
-          id: newDocumentId,
+          id: newDocumentId, // This would come from the backend in a real scenario
           name: uploadedFile.name,
           status: "Uploaded",
-          participants: ["Me"],
+          participants: ["Me"], // Default participant
           lastModified: new Date().toISOString().split('T')[0],
-          thumbnailUrl: '', 
-          dataUrl: dataUrl,
-          summary: summary, // Add the generated summary
+          thumbnailUrl: '', // Generate or set later if needed
+          dataUrl: dataUrl, // For localStorage. In DB, might be path to storage.
+          summary: summary,
         };
 
         const documents = getStoredDocuments();
-        documents.unshift(newDocument); // Add to the beginning of the array
+        documents.unshift(newDocument);
         saveStoredDocuments(documents);
         
         setUploadStatus("success");
-        setLastUploadedDocumentId(newDocumentId);
-        setUploadProgress(100); // Final 25% for saving
+        setLastUploadedDocumentId(newDocumentId); // Use the ID from the saved document
+        setUploadProgress(100);
       } catch (e) {
-        console.error("Error processing file or saving to localStorage:", e);
+        console.error("Error processing file or saving:", e);
         setErrorMessage("Failed to process the file after upload.");
         setUploadStatus("error");
       } finally {

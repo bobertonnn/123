@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 
+// TODO: [DB Integration] Replace with checks against database data (e.g., user profile completion, document count).
 const initialOnboardingSteps = [
   { id: 'profile', label: 'Complete Your Profile', check: () => typeof window !== 'undefined' && !!(localStorage.getItem('userFullName') && localStorage.getItem('userSignature')), icon: Settings, href: '/profile' },
   { id: 'upload', label: 'Upload Your First Document', check: () => typeof window !== 'undefined' && (JSON.parse(localStorage.getItem('uploadedDocuments') || '[]') as Document[]).length > 0, icon: UploadCloud, href: '/documents/upload' },
@@ -40,12 +41,14 @@ const tourSteps: TourStep[] = [
   { title: "You're All Set!", description: "Explore and enjoy streamlining your document workflows!", targetId: null },
 ];
 
+// TODO: [DB Integration] Replace localStorage with API calls to fetch documents.
 const getStoredDocuments = (): Document[] => {
   if (typeof window === 'undefined') return [];
   const stored = localStorage.getItem('uploadedDocuments');
   return stored ? JSON.parse(stored) : [];
 };
 
+// TODO: [DB Integration] This function would be replaced by API calls to delete documents.
 const saveStoredDocuments = (documents: Document[]) => {
   if (typeof window === 'undefined') return;
   localStorage.setItem('uploadedDocuments', JSON.stringify(documents));
@@ -77,11 +80,21 @@ export default function DashboardPage() {
   useEffect(() => {
     setIsLoadingDocuments(true);
     if (typeof window !== 'undefined') {
+        // TODO: [DB Integration] Fetch documents from the backend here.
+        // Example:
+        // const fetchDocs = async () => {
+        //   const response = await fetch('/api/documents?userId=...'); // Get user ID from auth
+        //   const docs = await response.json();
+        //   setAllLoadedDocuments(docs);
+        //   // Update onboarding checks based on fetched data
+        // };
+        // fetchDocs();
         const loadedDocs = getStoredDocuments();
         setAllLoadedDocuments(loadedDocs);
 
         const onboardingDismissed = localStorage.getItem('onboardingPromptDismissed');
         if (!onboardingDismissed) {
+            // TODO: [DB Integration] Profile check should also use data from backend.
             const profileName = localStorage.getItem('userFullName');
             if (loadedDocs.length === 0 && !profileName) {
             setShowOnboardingPrompt(true);
@@ -90,7 +103,7 @@ export default function DashboardPage() {
 
         let doneSteps = 0;
         const updatedClientSteps = initialOnboardingSteps.map(step => {
-            const isStepDone = step.check();
+            const isStepDone = step.check(); // This check needs to be DB-aware in future
             if (isStepDone) {
                 doneSteps++;
             }
@@ -136,6 +149,7 @@ export default function DashboardPage() {
   const dismissOnboardingPrompt = () => {
     setShowOnboardingPrompt(false);
     if (typeof window !== 'undefined') {
+        // TODO: [DB Integration] Save this preference to the user's profile in the database.
         localStorage.setItem('onboardingPromptDismissed', 'true');
     }
   };
@@ -158,9 +172,13 @@ export default function DashboardPage() {
     setIsTourOpen(false);
   };
 
+  // TODO: [DB Integration] Replace with an API call to delete the document from the database.
   const handleDeleteDocument = (documentId: string) => {
+    // Example:
+    // await fetch(`/api/documents/${documentId}`, { method: 'DELETE' });
+    // setAllLoadedDocuments(prev => prev.filter(doc => doc.id !== documentId));
     const updatedDocuments = allLoadedDocuments.filter(doc => doc.id !== documentId);
-    saveStoredDocuments(updatedDocuments);
+    saveStoredDocuments(updatedDocuments); // For localStorage prototype
     setAllLoadedDocuments(updatedDocuments);
     toast({
       title: "Document Deleted",
