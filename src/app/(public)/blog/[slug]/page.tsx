@@ -1,10 +1,11 @@
 
-import { mockBlogPosts, type BlogPost } from '@/lib/blogData';
-import Image from 'next/image';
+import { mockBlogPosts, mockAuthors, type BlogPost, type Author } from '@/lib/blogData';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, CalendarDays, UserCircle, AlertTriangle } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // Added Avatar
+import { getInitials } from '@/lib/utils'; // Added for Avatar fallback
 
 interface BlogPostPageProps {
   params: {
@@ -33,26 +34,26 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
     );
   }
 
+  const author = mockAuthors.find(a => a.id === post.authorId);
+
   return (
     <div className="container mx-auto py-12 md:py-20 px-4 max-w-3xl">
       <article className="space-y-8">
         <header className="space-y-4">
-          <div className="relative w-full h-72 md:h-96 rounded-xl overflow-hidden shadow-lg">
-            <Image
-              src={post.imageUrl}
-              alt={post.title}
-              layout="fill"
-              objectFit="cover"
-              data-ai-hint={post.imageHint}
-            />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold font-headline text-primary">
+          {/* Image section removed */}
+          <h1 className="text-3xl md:text-4xl font-bold font-headline text-primary pt-8"> {/* Added pt-8 for spacing */}
             {post.title}
           </h1>
           <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-            <span className="flex items-center">
-              <UserCircle className="mr-1.5 h-4 w-4" /> {post.author}
-            </span>
+            {author && (
+              <span className="flex items-center">
+                 <Avatar className="mr-1.5 h-5 w-5">
+                    <AvatarImage src={author.avatarUrl} alt={author.name} data-ai-hint={author.dataAiHint} />
+                    <AvatarFallback className="text-xs">{getInitials(author.name)}</AvatarFallback>
+                 </Avatar>
+                {author.name}
+              </span>
+            )}
             <span className="flex items-center">
               <CalendarDays className="mr-1.5 h-4 w-4" /> {new Date(post.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
             </span>
@@ -63,6 +64,24 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
           className="prose prose-sm sm:prose-base lg:prose-lg dark:prose-invert max-w-none text-foreground/90"
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
+
+        {author && (
+          <Card className="mt-12 bg-muted/50">
+            <CardHeader className="flex flex-row items-center space-x-4">
+              <Avatar className="h-16 w-16">
+                <AvatarImage src={author.avatarUrl} alt={author.name} data-ai-hint={author.dataAiHint} />
+                <AvatarFallback className="text-xl">{getInitials(author.name)}</AvatarFallback>
+              </Avatar>
+              <div>
+                <CardTitle className="text-xl font-semibold">About {author.name}</CardTitle>
+                <p className="text-xs text-muted-foreground">Author</p>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground italic">{author.bio}</p>
+            </CardContent>
+          </Card>
+        )}
 
         <footer className="pt-8 border-t">
           <Button variant="outline" asChild>
@@ -75,3 +94,5 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
     </div>
   );
 }
+
+    

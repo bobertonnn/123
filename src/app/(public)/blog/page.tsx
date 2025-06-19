@@ -1,10 +1,11 @@
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { mockBlogPosts, type BlogPost } from '@/lib/blogData'; // Assuming blogData.ts is in src/lib
+import { mockBlogPosts, mockAuthors, type BlogPost, type Author } from '@/lib/blogData';
 import { Rss, ArrowRight, UserCircle, CalendarDays } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // Added Avatar
+import { getInitials } from '@/lib/utils'; // Added for Avatar fallback
 
 export default function BlogPage() {
   return (
@@ -20,45 +21,50 @@ export default function BlogPage() {
       </section>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {mockBlogPosts.map((post) => (
-          <Card key={post.id} className="flex flex-col rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden">
-            <div className="relative w-full h-56">
-              <Image
-                src={post.imageUrl}
-                alt={post.title}
-                layout="fill"
-                objectFit="cover"
-                data-ai-hint={post.imageHint}
-              />
-            </div>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-xl font-headline hover:text-primary transition-colors">
-                <Link href={`/blog/${post.slug}`}>
-                  {post.title}
-                </Link>
-              </CardTitle>
-              <CardDescription className="text-xs text-muted-foreground pt-1">
-                <div className="flex items-center space-x-3">
-                    <span className="flex items-center"><UserCircle className="mr-1 h-3.5 w-3.5"/>{post.author}</span>
+        {mockBlogPosts.map((post) => {
+          const author = mockAuthors.find(a => a.id === post.authorId);
+          return (
+            <Card key={post.id} className="flex flex-col rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden">
+              {/* Image section removed */}
+              <CardHeader className="pb-3">
+                <CardTitle className="text-xl font-headline hover:text-primary transition-colors">
+                  <Link href={`/blog/${post.slug}`}>
+                    {post.title}
+                  </Link>
+                </CardTitle>
+                <CardDescription className="text-xs text-muted-foreground pt-1">
+                  <div className="flex items-center space-x-3">
+                    {author && (
+                      <span className="flex items-center">
+                        <Avatar className="mr-1.5 h-4 w-4">
+                           <AvatarImage src={author.avatarUrl} alt={author.name} data-ai-hint={author.dataAiHint} />
+                           <AvatarFallback className="text-xs">{getInitials(author.name)}</AvatarFallback>
+                        </Avatar>
+                        {author.name}
+                      </span>
+                    )}
                     <span className="flex items-center"><CalendarDays className="mr-1 h-3.5 w-3.5"/>{new Date(post.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                </div>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow">
-              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
-                {post.excerpt}
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button variant="link" asChild className="p-0 text-primary hover:underline">
-                <Link href={`/blog/${post.slug}`}>
-                  Read More <ArrowRight className="ml-1 h-4 w-4" />
-                </Link>
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
+                  </div>
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4"> {/* Increased line-clamp slightly */}
+                  {post.excerpt}
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Button variant="link" asChild className="p-0 text-primary hover:underline">
+                  <Link href={`/blog/${post.slug}`}>
+                    Read More <ArrowRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
 }
+
+    

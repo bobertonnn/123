@@ -1,25 +1,68 @@
 
+export interface Author {
+  id: string;
+  name: string;
+  avatarUrl: string;
+  dataAiHint: string;
+  bio: string;
+}
+
 export interface BlogPost {
   id: string;
   slug: string;
   title: string;
-  author: string;
+  authorId: string; // Changed from author: string
   date: string; // ISO string or formatted string
-  imageUrl: string;
-  imageHint: string;
+  // imageUrl and imageHint are removed
   excerpt: string;
   content: string; // Simple text or basic markdown-like
 }
+
+export const mockAuthors: Author[] = [
+  {
+    id: 'author1',
+    name: 'Alice Wonderland',
+    avatarUrl: 'https://placehold.co/80x80.png?text=AW',
+    dataAiHint: 'woman writer',
+    bio: 'Alice is a tech enthusiast and expert in digital transformation, focusing on workflow automation.',
+  },
+  {
+    id: 'author2',
+    name: 'Bob The Builder',
+    avatarUrl: 'https://placehold.co/80x80.png?text=BB',
+    dataAiHint: 'man engineer',
+    bio: 'Bob has over 10 years of experience in software architecture and building scalable enterprise solutions.',
+  },
+  {
+    id: 'author3',
+    name: 'Charlie Brown',
+    avatarUrl: 'https://placehold.co/80x80.png?text=CB',
+    dataAiHint: 'person product manager',
+    bio: 'Charlie is a product manager passionate about user experience and creating intuitive digital tools.',
+  },
+  {
+    id: 'author4',
+    name: 'Diana Prince',
+    avatarUrl: 'https://placehold.co/80x80.png?text=DP',
+    dataAiHint: 'woman security expert',
+    bio: 'Diana is a cybersecurity expert specializing in data protection and digital identity verification.',
+  },
+  {
+    id: 'author5',
+    name: 'The DocuSigner Team',
+    avatarUrl: 'https://placehold.co/80x80.png?text=DS',
+    dataAiHint: 'team logo',
+    bio: 'Official updates, news, and insights from the creators of DocuSigner.',
+  }
+];
 
 export const mockBlogPosts: BlogPost[] = [
   {
     id: '1',
     slug: 'the-future-of-e-signatures',
     title: 'The Future of E-Signatures: Trends to Watch in 2024',
-    author: 'Alice Wonderland',
+    authorId: 'author1',
     date: '2024-07-15',
-    imageUrl: 'https://placehold.co/600x400.png',
-    imageHint: 'futuristic digital signature',
     excerpt: 'Explore the evolving landscape of electronic signatures and how new technologies are shaping their future...',
     content: `
 <p>The world of electronic signatures is constantly evolving. As businesses increasingly adopt digital workflows, the demand for more secure, efficient, and user-friendly e-signature solutions grows. In 2024, several key trends are set to redefine how we think about and use e-signatures.</p>
@@ -40,10 +83,8 @@ export const mockBlogPosts: BlogPost[] = [
     id: '2',
     slug: '5-tips-for-streamlining-document-workflows',
     title: '5 Tips for Streamlining Your Document Workflows',
-    author: 'Bob The Builder',
+    authorId: 'author2',
     date: '2024-06-28',
-    imageUrl: 'https://placehold.co/600x400.png',
-    imageHint: 'organized desk workflow',
     excerpt: 'Learn how to optimize your document processes for maximum efficiency and productivity...',
     content: `
 <p>Inefficient document workflows can be a major drain on productivity. Here are five tips to help you streamline your processes:</p>
@@ -63,10 +104,8 @@ export const mockBlogPosts: BlogPost[] = [
     id: '3',
     slug: 'understanding-the-legality-of-e-signatures',
     title: 'Understanding the Legality of E-Signatures Globally',
-    author: 'Charlie Brown',
+    authorId: 'author4', // Changed author
     date: '2024-05-10',
-    imageUrl: 'https://placehold.co/600x400.png',
-    imageHint: 'gavel legal document',
     excerpt: 'A look into the legal frameworks that make electronic signatures valid and enforceable around the world...',
     content: `
 <p>Electronic signatures are legally binding in most countries around the world, thanks to specific laws and regulations designed to govern their use. Key legislation includes the ESIGN Act in the United States, eIDAS in the European Union, and similar laws in many other jurisdictions.</p>
@@ -84,4 +123,97 @@ export const mockBlogPosts: BlogPost[] = [
 <p>DocuSigner is designed with these principles in mind, providing features that support the creation of legally enforceable electronic signatures (though specific legal advice should always be sought for your jurisdiction and use case).</p>
     `,
   },
+  {
+    id: '4',
+    slug: 'maximizing-productivity-with-docusigner-templates',
+    title: 'Maximizing Productivity with DocuSigner Templates',
+    authorId: 'author3',
+    date: '2024-07-20',
+    excerpt: 'Discover how DocuSigner templates can save you time, reduce errors, and ensure brand consistency across all your agreements.',
+    content: `
+<p>In a fast-paced business environment, efficiency is key. DocuSigner's template feature is a powerful tool designed to significantly boost your productivity when dealing with frequently used documents. Whether it's NDAs, sales contracts, new hire paperwork, or service agreements, templates can transform your workflow.</p>
+<br/>
+<h3 class="text-xl font-semibold mb-2">What are Document Templates?</h3>
+<p>Document templates in DocuSigner allow you to pre-define the structure, content, and signature fields for your standard documents. Instead of starting from scratch every time, you can simply select a template, add specific recipient details, and send it off for signature in minutes.</p>
+<br/>
+<h3 class="text-xl font-semibold mb-2">Key Benefits of Using Templates:</h3>
+<ul class="list-disc list-inside space-y-1">
+  <li><strong>Time Savings:</strong> Drastically reduce the time spent preparing documents. What used to take minutes or even hours can now be done in seconds.</li>
+  <li><strong>Consistency:</strong> Ensure all your documents use standardized language, formatting, and field placements. This is crucial for legal compliance and brand consistency.</li>
+  <li><strong>Reduced Errors:</strong> By pre-setting fields and information, you minimize the risk of manual data entry errors or missed signatures.</li>
+  <li><strong>Easy Updates:</strong> Need to update a clause in your standard contract? Simply edit the template, and all future documents generated from it will reflect the change.</li>
+  <li><strong>Simplified Onboarding:</strong> Quickly onboard new clients or employees by having all necessary forms pre-configured in templates.</li>
+</ul>
+<br/>
+<p>Setting up templates in DocuSigner is intuitive. Upload your base PDF, drag and drop signature, date, and text fields, assign them to signer roles (e.g., "Client," "Employee"), and save. It's that simple to start reclaiming your valuable time!</p>
+    `,
+  },
+  {
+    id: '5',
+    slug: 'environmental-impact-of-e-signatures',
+    title: 'Go Green: The Environmental Impact of E-Signatures',
+    authorId: 'author1',
+    date: '2024-07-05',
+    excerpt: 'Learn how adopting electronic signatures can significantly reduce your carbon footprint and contribute to a more sustainable future.',
+    content: `
+<p>In an era where environmental consciousness is paramount, businesses are increasingly looking for ways to reduce their ecological footprint. One often-overlooked area where significant positive change can be made is document management. Moving from traditional paper-based processes to electronic signatures offers substantial environmental benefits.</p>
+<br/>
+<h3 class="text-xl font-semibold mb-2">Reducing Paper Consumption</h3>
+<p>The most obvious benefit is the drastic reduction in paper usage. Millions of trees are cut down annually to produce paper. By using e-signatures, you directly contribute to:
+<ul class="list-disc list-inside space-y-1">
+  <li><strong>Saving Trees:</strong> Less demand for paper means less deforestation.</li>
+  <li><strong>Water Conservation:</strong> Paper production is a water-intensive process.</li>
+  <li><strong>Reduced Waste:</strong> Eliminates paper waste in landfills.</li>
+</ul>
+</p>
+<br/>
+<h3 class="text-xl font-semibold mb-2">Lowering Carbon Emissions</h3>
+<p>Traditional document workflows involve printing, faxing, scanning, and physical transportation (couriers, mail). Each of these steps consumes energy and contributes to carbon emissions. E-signatures eliminate these needs, leading to:
+<ul class="list-disc list-inside space-y-1">
+  <li><strong>Less Energy for Printing/Copying:</strong> Reduces electricity consumption from office equipment.</li>
+  <li><strong>No Transportation Emissions:</strong> Documents are sent digitally, removing the need for physical delivery.</li>
+</ul>
+</p>
+<br/>
+<h3 class="text-xl font-semibold mb-2">Minimizing Resource Depletion</h3>
+<p>Beyond paper, consider the resources involved in producing ink, printers, scanners, and fax machines, as well as the energy they consume and the e-waste they eventually become. Digital workflows lessen the demand for these physical resources.</p>
+<br/>
+<p>By choosing DocuSigner, you're not just streamlining your operations; you're making a conscious decision to support a more sustainable and eco-friendly way of doing business. It's a small change with a big impact.</p>
+    `,
+  },
+  {
+    id: '6',
+    slug: 'docusigner-api-integrations-coming-soon',
+    title: 'DocuSigner API: Powering Your Custom Workflows (Preview)',
+    authorId: 'author5',
+    date: '2024-06-10',
+    excerpt: 'Get a sneak peek into the upcoming DocuSigner API and how it will empower developers to build seamless e-signature integrations.',
+    content: `
+<p>At DocuSigner, we're constantly working to enhance our platform and provide you with more powerful tools. We're excited to give you a preview of a major upcoming feature: the DocuSigner API!</p>
+<br/>
+<h3 class="text-xl font-semibold mb-2">What is the DocuSigner API?</h3>
+<p>Our API (Application Programming Interface) will allow developers to integrate DocuSigner's core e-signature functionalities directly into their own applications, websites, and custom workflows. This means you'll be able to programmatically manage documents, send signature requests, track statuses, and retrieve signed documents without needing to use the DocuSigner web interface for every action.</p>
+<br/>
+<h3 class="text-xl font-semibold mb-2">Potential Use Cases:</h3>
+<ul class="list-disc list-inside space-y-1">
+  <li><strong>Automated Onboarding:</strong> Integrate e-signing into your customer or employee onboarding portals.</li>
+  <li><strong>CRM Integration:</strong> Trigger signature requests directly from your CRM when a deal reaches a certain stage.</li>
+  <li><strong>Custom Dashboards:</strong> Build tailored dashboards to monitor document statuses specific to your business needs.</li>
+  <li><strong>Batch Processing:</strong> Send out hundreds of similar documents for signature with a single API call.</li>
+  <li><strong>Embedded Signing:</strong> Allow users to sign documents directly within your application's interface for a seamless experience.</li>
+</ul>
+<br/>
+<h3 class="text-xl font-semibold mb-2">Key Features (Planned):</h3>
+<ul class="list-disc list-inside space-y-1">
+  <li>RESTful architecture with clear, concise endpoints.</li>
+  <li>Secure authentication using API keys.</li>
+  <li>Comprehensive documentation and SDKs (planned for popular languages).</li>
+  <li>Webhooks for real-time status updates.</li>
+</ul>
+<br/>
+<p>We believe the DocuSigner API will open up a world of possibilities for businesses looking to deeply integrate e-signatures and automate their document-heavy processes. Stay tuned for more announcements and our official launch!</p>
+    `,
+  },
 ];
+
+    
