@@ -11,11 +11,10 @@ export interface BlogPost {
   id: string;
   slug: string;
   title: string;
-  authorId: string; // Changed from author: string
-  date: string; // ISO string or formatted string
-  // imageUrl and imageHint are removed
+  authorId: string; 
+  date: string; 
   excerpt: string;
-  content: string; // Simple text or basic markdown-like
+  content: string; 
 }
 
 export const mockAuthors: Author[] = [
@@ -104,7 +103,7 @@ export const mockBlogPosts: BlogPost[] = [
     id: '3',
     slug: 'understanding-the-legality-of-e-signatures',
     title: 'Understanding the Legality of E-Signatures Globally',
-    authorId: 'author4', // Changed author
+    authorId: 'author4', 
     date: '2024-05-10',
     excerpt: 'A look into the legal frameworks that make electronic signatures valid and enforceable around the world...',
     content: `
@@ -214,6 +213,85 @@ export const mockBlogPosts: BlogPost[] = [
 <p>We believe the DocuSigner API will open up a world of possibilities for businesses looking to deeply integrate e-signatures and automate their document-heavy processes. Stay tuned for more announcements and our official launch!</p>
     `,
   },
+  {
+    id: '7',
+    slug: 'docusigner-for-remote-teams',
+    title: 'DocuSigner for Remote Teams: Enhancing Collaboration Across Distances',
+    authorId: 'author1', // Alice Wonderland
+    date: '2024-07-25',
+    excerpt: 'Discover how DocuSigner empowers remote teams to collaborate effectively on documents, no matter where they are.',
+    content: `
+<p>The shift to remote and hybrid work models has highlighted the critical need for tools that facilitate seamless collaboration. DocuSigner is perfectly positioned to help remote teams overcome the challenges of distance when it comes to document workflows.</p>
+<br/>
+<h3 class="text-xl font-semibold mb-2">Centralized Document Hub</h3>
+<p>Forget emailing documents back and forth. DocuSigner provides a centralized platform where all team members can access, review, and sign documents. This ensures everyone is working with the latest version and has visibility into the document's status.</p>
+<br/>
+<h3 class="text-xl font-semibold mb-2">Real-Time Tracking & Notifications</h3>
+<p>Stay informed every step of the way. DocuSigner offers real-time tracking of document views and signatures. Automatic notifications alert participants when it's their turn to sign or when a document is completed, keeping projects moving forward without constant manual follow-up.</p>
+<br/>
+<h3 class="text-xl font-semibold mb-2">Accessible Anywhere, Anytime</h3>
+<p>Whether your team members are at home, in different cities, or even different countries, DocuSigner is accessible from any device with an internet connection. This flexibility is crucial for maintaining productivity in a distributed workforce.</p>
+<br/>
+<h3 class="text-xl font-semibold mb-2">Defined Roles and Signing Orders</h3>
+<p>Clearly define who needs to sign and in what order. This structured approach prevents confusion and ensures documents are processed correctly, even with multiple stakeholders involved remotely.</p>
+<br/>
+<p>Embrace the power of digital collaboration with DocuSigner and empower your remote team to work more efficiently and securely than ever before.</p>
+    `,
+  },
+  {
+    id: '8',
+    slug: 'psychology-of-trust-in-digital-transactions',
+    title: 'The Psychology of Trust in Digital Transactions: Why Secure E-Signatures Matter',
+    authorId: 'author4', // Diana Prince
+    date: '2024-08-01',
+    excerpt: 'Delve into the importance of security, transparency, and legal validity in building trust for online document signing.',
+    content: `
+<p>In the digital age, trust is a currency. When it comes to signing important documents online, users need to feel confident that the process is secure, their data is protected, and the resulting agreement is legally sound. This is where the psychology of trust meets the technology of e-signatures.</p>
+<br/>
+<h3 class="text-xl font-semibold mb-2">Transparency and Clarity</h3>
+<p>A trustworthy e-signature process is transparent. Users should clearly understand what they are signing and the implications of their electronic signature. DocuSigner aims for clarity in its interface, guiding users through each step.</p>
+<br/>
+<h3 class="text-xl font-semibold mb-2">Security Cues and Assurance</h3>
+<p>Visual cues of security, such as SSL encryption (httpspadlock icon), clear privacy policies, and information about data protection measures, reassure users. Knowing that a platform employs bank-grade security, like DocuSigner, helps build confidence.</p>
+<br/>
+<h3 class="text-xl font-semibold mb-2">Legal Validity and Compliance</h3>
+<p>Users are more likely to trust a system that adheres to recognized legal standards for electronic signatures (e.g., ESIGN, eIDAS). Providing information about compliance and the legal enforceability of signatures is crucial.</p>
+<br/>
+<h3 class="text-xl font-semibold mb-2">Audit Trails and Verifiability</h3>
+<p>A comprehensive audit trail that logs every action taken on a document provides an immutable record of the signing process. This not only enhances legal standing but also gives users peace of mind that the document's history is traceable and verifiable.</p>
+<br/>
+<p>DocuSigner is built on these pillars of trust. We understand that an e-signature is more than just a digital mark; it's a commitment. Our platform is designed to ensure that commitment is made with confidence and backed by robust security and compliance.</p>
+    `,
+  },
+  {
+    id: '9',
+    slug: 'organizing-digital-documents-with-docusigner',
+    title: 'From Clutter to Clarity: Organizing Your Digital Documents with DocuSigner',
+    authorId: 'author3', // Charlie Brown
+    date: '2024-08-10',
+    excerpt: 'Explore features and best practices for keeping your signed documents organized, searchable, and easily accessible within DocuSigner.',
+    content: `
+<p>The transition to digital documents brings immense benefits, but it can also lead to digital clutter if not managed properly. DocuSigner offers features and encourages practices to help you maintain an organized and efficient digital document repository.</p>
+<br/>
+<h3 class="text-xl font-semibold mb-2">Consistent Naming Conventions</h3>
+<p>Establish and stick to a clear naming convention for your documents. Include key information like client name, document type, and date (e.g., "ClientName_NDA_2024-08-10.pdf"). This makes searching and identification much easier.</p>
+<br/>
+<h3 class="text-xl font-semibold mb-2">Leverage Dashboard Filters</h3>
+<p>DocuSigner's dashboard (conceptually) allows you to filter documents by status (Pending, Signed, Completed), date, or participants. Regularly use these filters to quickly find what you need and to manage documents requiring action.</p>
+<br/>
+<h3 class="text-xl font-semibold mb-2">Utilize Templates for Standardization</h3>
+<p>Using templates not only speeds up document creation but also helps in organization. Documents created from the same template often share similar characteristics, making them easier to group or search for later.</p>
+<br/>
+<h3 class="text-xl font-semibold mb-2">Secure Archival and Versioning (Future Vision)</h3>
+<p>While DocuSigner currently focuses on the signing process, a future vision includes robust archival features. This would allow for secure long-term storage and easy retrieval of past documents, including version history if documents are revised and re-signed.</p>
+<br/>
+<h3 class="text-xl font-semibold mb-2">AI-Powered Summaries for Quick Identification</h3>
+<p>The AI-generated summaries for uploaded documents can serve as a quick way to understand a document's content without opening it, aiding in faster identification and organization.</p>
+<br/>
+<p>By adopting good organizational habits and leveraging DocuSigner's features, you can transform your digital document management from a source of stress into a streamlined and efficient part of your workflow.</p>
+    `,
+  },
 ];
 
     
+
