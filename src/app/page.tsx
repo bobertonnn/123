@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ArrowRight, CheckCircle, UploadCloud, PenTool, FileText as FileTextIconLucide, Move, Link2, Activity, Settings, Palette as PaletteIcon, Maximize, Briefcase, User as UserIcon, Building, Scale as ScaleIcon, Layers, Zap, ShieldCheck, BrainCircuit, Server, FileText, ArrowUp, UserCircle2, LogOut, ChevronDown, Home } from 'lucide-react';
+import { ArrowRight, CheckCircle, UploadCloud, PenTool, FileText as FileTextIconLucide, Move, Link2, Activity, Settings, Palette as PaletteIcon, Maximize, Briefcase, User as UserIconLucide, Building, Scale as ScaleIcon, Layers, Zap, ShieldCheck, BrainCircuit, Server, FileText, ArrowUp } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { motion, useScroll, useTransform, type MotionValue, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
 import { CompanyTicker } from '@/components/landing/CompanyTicker';
@@ -16,21 +16,8 @@ import { UseCases3D } from '@/components/landing/UseCases3D';
 import { TestimonialGrid } from '@/components/landing/TestimonialCarousel';
 import React, { useRef, useState, useEffect, type MouseEvent, useCallback } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Logo, GradientBirdIcon } from '@/components/icons/Logo';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, signOut as firebaseSignOut, type User as FirebaseUser } from 'firebase/auth';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
+import { PublicHeader } from '@/components/layout/PublicHeader';
+import { PublicFooter } from '@/components/layout/PublicFooter';
 
 
 const heroTitleSegments = [
@@ -203,9 +190,6 @@ interface NetworkLineConfig {
 
 function NetworkLineParticle({ config, scrollYProgress }: { config: NetworkLineConfig; scrollYProgress: MotionValue<number> }) {
   const opacity = useTransform(scrollYProgress, [0, 0.4, 0.6, 1], config.opacityRange);
-  // Removed dX and dY as they were potentially causing issues with calc() in SVG
-  // const dX = useTransform(scrollYProgress, [0, 1], [0, (Math.random() - 0.5) * 20]);
-  // const dY = useTransform(scrollYProgress, [0, 1], [0, (Math.random() - 0.5) * 20]);
 
   return (
     <motion.svg
@@ -223,8 +207,8 @@ function NetworkLineParticle({ config, scrollYProgress }: { config: NetworkLineC
       <motion.line
         x1={config.startX}
         y1={config.startY}
-        x2={config.endX} // Simplified: remove calc and pixel offset for now
-        y2={config.endY} // Simplified: remove calc and pixel offset for now
+        x2={config.endX}
+        y2={config.endY}
         className={config.colorClass}
         strokeWidth={config.thickness}
         strokeLinecap="round"
@@ -429,223 +413,88 @@ export default function LandingPage() {
     rotateY.set(0);
   }, [rotateX, rotateY]);
 
-  // Auth state for dynamic header
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [userName, setUserName] = useState<string | null>(null);
-  const [userAvatar, setUserAvatar] = useState<string | null>(null);
-  const { toast } = useToast();
-  const router = useRouter();
 
   useEffect(() => {
     setIsClient(true);
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      if (user) {
-        setUserName(user.displayName || localStorage.getItem("userFullName") || "User");
-        setUserAvatar(user.photoURL || localStorage.getItem("userAvatarUrl"));
-      } else {
-        setUserName(null);
-        setUserAvatar(null);
-      }
-      setIsLoadingAuth(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-
-  useEffect(() => {
-    if (isClient) {
-      const currentPdfContainer = pdfContainerRef.current;
-      if (currentPdfContainer) {
-        currentPdfContainer.addEventListener('mousemove', handleMouseMove);
-        currentPdfContainer.addEventListener('mouseleave', handleMouseLeave);
-      }
-
-      const heroParticles: HeroParticleConfig[] = Array.from({ length: 60 }).map((_, i) => ({
-        id: i, type: Math.random() > 0.5 ? 'circle' : 'square', initialX: `${Math.random() * 100}%`, initialY: `${Math.random() * 100}%`,
-        size: `w-${Math.floor(Math.random() * 3) + 1} h-${Math.floor(Math.random() * 3) + 1}`,
-        colorClass: i % 3 === 0 ? 'bg-primary/30' : i % 3 === 1 ? 'bg-accent/30' : 'bg-foreground/20',
-        scrollFactorX: (Math.random() - 0.5) * 0.8, scrollFactorY: (Math.random() - 0.5) * 1.2,
-        opacityRange: [0, Math.random() * 0.3 + 0.3, Math.random() * 0.3 + 0.3, 0],
-        scaleRange: [0.5, Math.random() * 0.6 + 0.7, 0.5],
-        blur: Math.random() > 0.4 ? (Math.random() > 0.6 ? 'blur-sm' : 'blur-xs') : '',
-      }));
-      setHeroParticlesConfig(heroParticles);
-
-      const whyGeometrics: GeometricShapeConfig[] = Array.from({ length: 12 }).map((_, i) => {
-        const type = ['line', 'circle', 'rect'][Math.floor(Math.random() * 3)] as 'line' | 'circle' | 'rect';
-        return {
-          id: i + 100, type, colorClass: i % 2 === 0 ? 'bg-primary/40' : 'bg-accent/40',
-          size: type === 'line' ? { width: `${Math.random() * 80 + 40}px`, height: '2px' } : { width: `${Math.random() * 30 + 15}px`, height: `${Math.random() * 30 + 15}px` },
-          initialX: `${Math.random() * 90}%`, initialY: `${Math.random() * 90}%`, initialRotation: Math.random() * 360, animate:true,
-          scrollFactorX: (Math.random() - 0.5) * 0.7, scrollFactorY: (Math.random() - 0.5) * 0.7,
-          scrollFactorRotate: (Math.random() - 0.5) * 150,
-          opacityRange: [0, Math.random() * 0.25 + 0.2, Math.random() * 0.25 + 0.2, 0],
-          scaleRange: [0.8, Math.random() * 0.3 + 0.9, 0.8], blur: Math.random() > 0.6 ? 'blur-xs' : '',
-        };
-      });
-      setWhyDocuSignerGeometricsConfig(whyGeometrics);
-
-      const detailedGeometrics: GeometricShapeConfig[] = Array.from({ length: 15 }).map((_, i) => {
-        const type = ['line', 'circle', 'rect'][Math.floor(Math.random() * 3)] as 'line' | 'circle' | 'rect';
-        const animate = Math.random() > 0.4;
-        return {
-          id: i, type, colorClass: i % 3 === 0 ? 'bg-primary/60' : i % 3 === 1 ? 'bg-accent/60' : 'bg-foreground/50',
-          size: type === 'line' ? { width: `${Math.random() * 120 + 60}px`, height: '3px' } : { width: `${Math.random() * 40 + 25}px`, height: `${Math.random() * 40 + 25}px` },
-          initialX: `${Math.random() * 90}%`, initialY: `${Math.random() * 90}%`, initialRotation: Math.random() * 360, animate,
-          scrollFactorX: animate ? (Math.random() - 0.5) * 0.9 : undefined, scrollFactorY: animate ? (Math.random() - 0.5) * 0.9 : undefined,
-          scrollFactorRotate: animate ? (Math.random() - 0.5) * 200 : undefined,
-          opacityRange: animate ? [0, Math.random() * 0.3 + 0.35, Math.random() * 0.3 + 0.35, 0] : [0.5, 0.5, 0.5, 0.5],
-          scaleRange: animate ? [1, Math.random() * 0.35 + 1, 1] : [1,1,1], blur: Math.random() > 0.5 ? 'blur-sm' : 'blur-xs',
-        };
-      });
-      setDetailedBenefitsGeometricsConfig(detailedGeometrics);
-
-
-      const rings: AnimatedRingConfig[] = Array.from({ length: 40 }).map((_, i) => ({
-        id: i, cx: `${Math.random() * 90 + 5}%`, cy: `${Math.random() * 90 + 5}%`, r: Math.random() * 60 + 20,
-        strokeWidth: Math.random() * 0.5 + 1,
-        strokeDasharray: ["1 2", "2 4", "3 5"][Math.floor(Math.random()*3)],
-        strokeColorClass: ['stroke-foreground/10', 'stroke-foreground/15', 'stroke-foreground/20'][Math.floor(Math.random() * 3)],
-        initialRotation: Math.random() * 360, rotationSpeedFactor: (Math.random() - 0.5) * 0.7,
-        opacityRange: [0, Math.random() * 0.1 + 0.05, Math.random() * 0.1 + 0.05, 0],
-        scaleRange: [0.9, Math.random() * 0.2 + 1, 0.9],
-      }));
-      setTechShowcaseRingsConfig(rings);
-
-      const networkLines: NetworkLineConfig[] = Array.from({ length: 25 }).map((_, i) => ({
-        id: i, startX: `${Math.random() * 100}%`, startY: `${Math.random() * 100}%`, endX: `${Math.random() * 100}%`, endY: `${Math.random() * 100}%`,
-        colorClass: Math.random() > 0.6 ? 'stroke-primary/30' : 'stroke-accent/30', thickness: `${Math.random() * 1.5 + 0.5}px`,
-        opacityRange: [0, Math.random() * 0.1 + 0.1, Math.random() * 0.1 + 0.1, 0],
-      }));
-      setUseCasesNetworkLinesConfig(networkLines);
-
-      return () => {
-        if (currentPdfContainer) {
-          currentPdfContainer.removeEventListener('mousemove', handleMouseMove);
-          currentPdfContainer.removeEventListener('mouseleave', handleMouseLeave);
-        }
-      };
+    const currentPdfContainer = pdfContainerRef.current;
+    if (currentPdfContainer) {
+      currentPdfContainer.addEventListener('mousemove', handleMouseMove);
+      currentPdfContainer.addEventListener('mouseleave', handleMouseLeave);
     }
+
+    const heroParticles: HeroParticleConfig[] = Array.from({ length: 60 }).map((_, i) => ({
+      id: i, type: Math.random() > 0.5 ? 'circle' : 'square', initialX: `${Math.random() * 100}%`, initialY: `${Math.random() * 100}%`,
+      size: `w-${Math.floor(Math.random() * 3) + 1} h-${Math.floor(Math.random() * 3) + 1}`,
+      colorClass: i % 3 === 0 ? 'bg-primary/30' : i % 3 === 1 ? 'bg-accent/30' : 'bg-foreground/20',
+      scrollFactorX: (Math.random() - 0.5) * 0.8, scrollFactorY: (Math.random() - 0.5) * 1.2,
+      opacityRange: [0, Math.random() * 0.3 + 0.3, Math.random() * 0.3 + 0.3, 0],
+      scaleRange: [0.5, Math.random() * 0.6 + 0.7, 0.5],
+      blur: Math.random() > 0.4 ? (Math.random() > 0.6 ? 'blur-sm' : 'blur-xs') : '',
+    }));
+    setHeroParticlesConfig(heroParticles);
+
+    const whyGeometrics: GeometricShapeConfig[] = Array.from({ length: 12 }).map((_, i) => {
+      const type = ['line', 'circle', 'rect'][Math.floor(Math.random() * 3)] as 'line' | 'circle' | 'rect';
+      return {
+        id: i + 100, type, colorClass: i % 2 === 0 ? 'bg-primary/40' : 'bg-accent/40',
+        size: type === 'line' ? { width: `${Math.random() * 80 + 40}px`, height: '2px' } : { width: `${Math.random() * 30 + 15}px`, height: `${Math.random() * 30 + 15}px` },
+        initialX: `${Math.random() * 90}%`, initialY: `${Math.random() * 90}%`, initialRotation: Math.random() * 360, animate:true,
+        scrollFactorX: (Math.random() - 0.5) * 0.7, scrollFactorY: (Math.random() - 0.5) * 0.7,
+        scrollFactorRotate: (Math.random() - 0.5) * 150,
+        opacityRange: [0, Math.random() * 0.25 + 0.2, Math.random() * 0.25 + 0.2, 0],
+        scaleRange: [0.8, Math.random() * 0.3 + 0.9, 0.8], blur: Math.random() > 0.6 ? 'blur-xs' : '',
+      };
+    });
+    setWhyDocuSignerGeometricsConfig(whyGeometrics);
+
+    const detailedGeometrics: GeometricShapeConfig[] = Array.from({ length: 15 }).map((_, i) => {
+      const type = ['line', 'circle', 'rect'][Math.floor(Math.random() * 3)] as 'line' | 'circle' | 'rect';
+      const animate = Math.random() > 0.4;
+      return {
+        id: i, type, colorClass: i % 3 === 0 ? 'bg-primary/60' : i % 3 === 1 ? 'bg-accent/60' : 'bg-foreground/50',
+        size: type === 'line' ? { width: `${Math.random() * 120 + 60}px`, height: '3px' } : { width: `${Math.random() * 40 + 25}px`, height: `${Math.random() * 40 + 25}px` },
+        initialX: `${Math.random() * 90}%`, initialY: `${Math.random() * 90}%`, initialRotation: Math.random() * 360, animate,
+        scrollFactorX: animate ? (Math.random() - 0.5) * 0.9 : undefined, scrollFactorY: animate ? (Math.random() - 0.5) * 0.9 : undefined,
+        scrollFactorRotate: animate ? (Math.random() - 0.5) * 200 : undefined,
+        opacityRange: animate ? [0, Math.random() * 0.3 + 0.35, Math.random() * 0.3 + 0.35, 0] : [0.5, 0.5, 0.5, 0.5],
+        scaleRange: animate ? [1, Math.random() * 0.35 + 1, 1] : [1,1,1], blur: Math.random() > 0.5 ? 'blur-sm' : 'blur-xs',
+      };
+    });
+    setDetailedBenefitsGeometricsConfig(detailedGeometrics);
+
+
+    const rings: AnimatedRingConfig[] = Array.from({ length: 40 }).map((_, i) => ({
+      id: i, cx: `${Math.random() * 90 + 5}%`, cy: `${Math.random() * 90 + 5}%`, r: Math.random() * 60 + 20,
+      strokeWidth: Math.random() * 0.5 + 1,
+      strokeDasharray: ["1 2", "2 4", "3 5"][Math.floor(Math.random()*3)],
+      strokeColorClass: ['stroke-foreground/10', 'stroke-foreground/15', 'stroke-foreground/20'][Math.floor(Math.random() * 3)],
+      initialRotation: Math.random() * 360, rotationSpeedFactor: (Math.random() - 0.5) * 0.7,
+      opacityRange: [0, Math.random() * 0.1 + 0.05, Math.random() * 0.1 + 0.05, 0],
+      scaleRange: [0.9, Math.random() * 0.2 + 1, 0.9],
+    }));
+    setTechShowcaseRingsConfig(rings);
+
+    const networkLines: NetworkLineConfig[] = Array.from({ length: 25 }).map((_, i) => ({
+      id: i, startX: `${Math.random() * 100}%`, startY: `${Math.random() * 100}%`, endX: `${Math.random() * 100}%`, endY: `${Math.random() * 100}%`,
+      colorClass: Math.random() > 0.6 ? 'stroke-primary/30' : 'stroke-accent/30', thickness: `${Math.random() * 1.5 + 0.5}px`,
+      opacityRange: [0, Math.random() * 0.1 + 0.1, Math.random() * 0.1 + 0.1, 0],
+    }));
+    setUseCasesNetworkLinesConfig(networkLines);
+
+    return () => {
+      if (currentPdfContainer) {
+        currentPdfContainer.removeEventListener('mousemove', handleMouseMove);
+        currentPdfContainer.removeEventListener('mouseleave', handleMouseLeave);
+      }
+    };
   }, [isClient, handleMouseMove, handleMouseLeave]);
 
-  const handleLogout = async () => {
-    try {
-      await firebaseSignOut(auth);
-      localStorage.clear();
-      toast({
-        title: "Logged Out",
-        description: "You have been successfully logged out.",
-      });
-      router.push('/'); 
-    } catch (error) {
-      console.error("Logout Error:", error);
-      toast({
-        variant: "destructive",
-        title: "Logout Failed",
-        description: "An error occurred during logout. Please try again.",
-      });
-    }
-  };
 
   let letterAnimationIndex = 0;
 
-  const publicNavLinks = [
-    { href: "/#features", label: "Features" },
-    { href: "/#pricing", label: "Pricing (TBD)" },
-    { href: "/about", label: "About Us" },
-    { href: "/contact", label: "Contact" },
-  ];
-
   return (
     <>
-      <motion.header
-        className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm"
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-      >
-        <div className="container mx-auto flex h-20 max-w-screen-2xl items-center justify-between">
-          <Link href="/" className="flex items-center space-x-2">
-            <Logo />
-          </Link>
-          <nav className="hidden md:flex items-center space-x-6">
-            {publicNavLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-          <div className="flex items-center space-x-3">
-            {isLoadingAuth ? (
-              <div className="flex items-center space-x-3">
-                 <div className="h-9 w-20 bg-muted rounded-md animate-pulse"></div>
-                 <div className="h-9 w-28 bg-muted rounded-md animate-pulse"></div>
-              </div>
-            ) : currentUser ? (
-              <>
-                <Button variant="outline" asChild className="hidden sm:inline-flex">
-                  <Link href="/dashboard">Go to Dashboard</Link>
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                      <Avatar className="h-9 w-9">
-                        <AvatarImage src={userAvatar || undefined} alt={userName || "User"} data-ai-hint="person avatar" />
-                         <AvatarFallback>
-                           <GradientBirdIcon className="h-5 w-5 text-primary" />
-                         </AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{userName || "User"}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {currentUser.email}
-                        </p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                     <DropdownMenuItem asChild className="sm:hidden">
-                        <Link href="/dashboard"><Home className="mr-2 h-4 w-4" />Dashboard</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile"><UserIcon className="mr-2 h-4 w-4" />Profile</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/settings"><Settings className="mr-2 h-4 w-4" />Settings</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Log out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            ) : (
-              <>
-                <Button variant="ghost" asChild>
-                  <Link href="/auth/signin">Sign In</Link>
-                </Button>
-                <Button className="btn-cta-primary-emerald" asChild>
-                  <Link href="/auth/signup">
-                    <span>Sign Up Free</span>
-                  </Link>
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </motion.header>
-
+      <PublicHeader />
       <main className="flex-1">
         <ScrollToTopButton />
         <section
@@ -1040,56 +889,7 @@ export default function LandingPage() {
             </div>
         </motion.section>
       </main>
-      <motion.footer 
-        className="py-12 md:py-16 border-t border-border/40 bg-muted/20"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.5 }}
-      >
-        <div className="container mx-auto text-center">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
-            <div>
-              <h4 className="font-semibold mb-3 text-foreground">Product</h4>
-              <ul className="space-y-2">
-                <li><Link href="/#features" className="text-sm text-muted-foreground hover:text-primary">Features</Link></li>
-                <li><Link href="/#pricing" className="text-sm text-muted-foreground hover:text-primary">Pricing (TBD)</Link></li>
-                <li><Link href="/dashboard" className="text-sm text-muted-foreground hover:text-primary">Demo</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-3 text-foreground">Company</h4>
-              <ul className="space-y-2">
-                <li><Link href="/about" className="text-sm text-muted-foreground hover:text-primary">About Us</Link></li>
-                <li><Link href="/careers" className="text-sm text-muted-foreground hover:text-primary">Careers</Link></li>
-                <li><Link href="/contact" className="text-sm text-muted-foreground hover:text-primary">Contact</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-3 text-foreground">Resources</h4>
-              <ul className="space-y-2">
-                <li><Link href="/blog" className="text-sm text-muted-foreground hover:text-primary">Blog (TBD)</Link></li>
-                <li><Link href="/help" className="text-sm text-muted-foreground hover:text-primary">Help Center</Link></li>
-                <li><Link href="/faq" className="text-sm text-muted-foreground hover:text-primary">FAQ (TBD)</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-3 text-foreground">Legal</h4>
-              <ul className="space-y-2">
-                <li><Link href="/terms-of-service" className="text-sm text-muted-foreground hover:text-primary">Terms of Service</Link></li>
-                <li><Link href="/privacy-policy" className="text-sm text-muted-foreground hover:text-primary">Privacy Policy</Link></li>
-                <li><Link href="/cookie-policy" className="text-sm text-muted-foreground hover:text-primary">Cookie Policy</Link></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-border/40 pt-8">
-            <Logo />
-            <p className="text-sm text-muted-foreground mt-4">
-              &copy; {new Date().getFullYear()} DocuSigner. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </motion.footer>
+      <PublicFooter />
     </>
   );
 }
-
