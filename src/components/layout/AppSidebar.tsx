@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation"; // Added useRouter
+import { usePathname, useRouter } from "next/navigation"; 
 import { Logo, GradientBirdIcon } from "@/components/icons/Logo";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -13,7 +13,7 @@ import {
   FileText,
   Settings2,
   Users,
-  LogOut,
+  LogOut as LogOutIcon,
   ChevronDown,
   HelpCircle
 } from "lucide-react";
@@ -33,8 +33,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast"; // Added useToast
-import type { UserSubscription } from "@/app/(app)/settings/page"; // Assuming this type is available
+import { useToast } from "@/hooks/use-toast"; 
+import type { UserSubscription } from "@/app/(app)/settings/page"; 
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
 
 const mainNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutGrid, id: "dashboard" },
@@ -51,8 +53,8 @@ const helpNavItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const router = useRouter(); // Added router
-  const { toast } = useToast(); // Added toast
+  const router = useRouter(); 
+  const { toast } = useToast(); 
   const [userName, setUserName] = useState("User");
   const [userEmail, setUserEmail] = useState("user@example.com");
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | undefined>(undefined);
@@ -98,11 +100,10 @@ export function AppSidebar() {
     }
 
     window.addEventListener('profileUpdated', handleUserDataUpdate);
-    // Listen for subscription changes if you have a custom event for it
-    // window.addEventListener('subscriptionUpdated', handleUserDataUpdate); 
+    
     return () => {
         window.removeEventListener('profileUpdated', handleUserDataUpdate);
-        // window.removeEventListener('subscriptionUpdated', handleUserDataUpdate);
+        
     }
   }, []);
 
@@ -116,7 +117,7 @@ export function AppSidebar() {
           variant: "default", 
         });
       } else {
-        router.push(href); // Standard navigation
+        router.push(href); 
       }
     };
     
@@ -124,10 +125,10 @@ export function AppSidebar() {
     <Button
       variant={pathname === href ? "secondary" : "ghost"}
       className="w-full justify-start"
-      onClick={id === "templates" ? handleClick : undefined} // Only add custom click for templates
-      asChild={id !== "templates"} // Only use asChild if not handling click customly
+      onClick={id === "templates" ? handleClick : undefined} 
+      asChild={id !== "templates"} 
     >
-      {id === "templates" ? ( // If it's templates, render a span or div to attach onClick
+      {id === "templates" ? ( 
         <span className="flex items-center w-full">
           <Icon className="mr-2 h-4 w-4" />
           {label}
@@ -140,6 +141,41 @@ export function AppSidebar() {
       )}
     </Button>
     );
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      // Clear all relevant localStorage items
+      localStorage.removeItem('userUID');
+      localStorage.removeItem('userFullName');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('userSignature');
+      localStorage.removeItem('userJoinDate');
+      localStorage.removeItem('userAvatarUrl');
+      localStorage.removeItem('userTag');
+      localStorage.removeItem('userPhoneNumber');
+      localStorage.removeItem('userCompanyName');
+      localStorage.removeItem('userContacts');
+      localStorage.removeItem('userSiteNotifications');
+      localStorage.removeItem('uploadedDocuments');
+      localStorage.removeItem('userSubscription');
+      localStorage.removeItem('userBillingHistory');
+      localStorage.removeItem('onboardingPromptDismissed');
+
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      });
+      router.push('/'); // Redirect to landing page
+    } catch (error) {
+      console.error("Logout Error:", error);
+      toast({
+        variant: "destructive",
+        title: "Logout Failed",
+        description: "An error occurred during logout. Please try again.",
+      });
+    }
   };
   
   return (
@@ -227,8 +263,8 @@ export function AppSidebar() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                 <LogOut className="mr-2 h-4 w-4" />
+              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                 <LogOutIcon className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>
             </DropdownMenuContent>

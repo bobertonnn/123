@@ -2,14 +2,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation"; // Added useRouter
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { 
     Menu, Search, Bell, LayoutGrid, UploadCloud, FileText as FileTextIcon, 
     Users, Settings2, HelpCircle, ChevronDown, CheckCheck, MailWarning, Trash2,
-    AlertCircle
+    AlertCircle, LogOut as LogOutIcon
 } from "lucide-react";
 import { Logo, GradientBirdIcon } from "@/components/icons/Logo";
 import {
@@ -30,8 +30,10 @@ import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import type { LucideIcon } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast"; // Added useToast
-import type { UserSubscription } from "@/app/(app)/settings/page"; // Assuming this type is available
+import { useToast } from "@/hooks/use-toast";
+import type { UserSubscription } from "@/app/(app)/settings/page";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
 
 const mainNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutGrid, id: "dashboard" },
@@ -58,13 +60,13 @@ const DefaultNotificationIcon = Bell;
 
 export function AppHeader() {
   const currentPathname = usePathname();
-  const router = useRouter(); // Added router
-  const { toast } = useToast(); // Added toast
+  const router = useRouter(); 
+  const { toast } = useToast(); 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [userName, setUserName] = useState("User");
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | undefined>(undefined);
-  const [currentPlan, setCurrentPlan] = useState<string | null>(null); // Added currentPlan
+  const [currentPlan, setCurrentPlan] = useState<string | null>(null);
 
   const loadUserDataAndSubscription = () => {
     let storedName = localStorage.getItem("userFullName");
@@ -107,7 +109,7 @@ export function AppHeader() {
       if ((event as CustomEvent).type === 'notificationsUpdated') {
         refreshNotifications();
       }
-      if ((event as CustomEvent).type === 'profileUpdated' || (event as CustomEvent).type === 'subscriptionUpdated') { // Assume subscriptionUpdated event exists if settings page dispatches it
+      if ((event as CustomEvent).type === 'profileUpdated' || (event as CustomEvent).type === 'subscriptionUpdated') { 
         loadUserDataAndSubscription();
       }
     };
@@ -115,13 +117,13 @@ export function AppHeader() {
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('notificationsUpdated', handleCustomEvent);
     window.addEventListener('profileUpdated', handleCustomEvent);
-    // window.addEventListener('subscriptionUpdated', handleCustomEvent);
+    
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('notificationsUpdated', handleCustomEvent);
       window.removeEventListener('profileUpdated', handleCustomEvent);
-      // window.removeEventListener('subscriptionUpdated', handleCustomEvent);
+      
     };
   }, []);
 
@@ -134,7 +136,7 @@ export function AppHeader() {
           description: "Templates are a premium feature. Please upgrade your plan to use them.",
           variant: "default",
         });
-        // Optionally close the sheet if it's a SheetClose trigger, or handle sheet state
+        
         const sheetCloseButton = (e.target as HTMLElement).closest('[cmdk-root]')?.parentElement?.querySelector('[cmdk-sheet-close]');
         if(sheetCloseButton instanceof HTMLElement) sheetCloseButton.click();
 
@@ -187,6 +189,41 @@ export function AppHeader() {
   const handleClearAllNotifications = () => {
     clearAllNotifications();
     refreshNotifications();
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      // Clear all relevant localStorage items
+      localStorage.removeItem('userUID');
+      localStorage.removeItem('userFullName');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('userSignature');
+      localStorage.removeItem('userJoinDate');
+      localStorage.removeItem('userAvatarUrl');
+      localStorage.removeItem('userTag');
+      localStorage.removeItem('userPhoneNumber');
+      localStorage.removeItem('userCompanyName');
+      localStorage.removeItem('userContacts');
+      localStorage.removeItem('userSiteNotifications');
+      localStorage.removeItem('uploadedDocuments');
+      localStorage.removeItem('userSubscription');
+      localStorage.removeItem('userBillingHistory');
+      localStorage.removeItem('onboardingPromptDismissed');
+      
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      });
+      router.push('/'); // Redirect to landing page
+    } catch (error) {
+      console.error("Logout Error:", error);
+      toast({
+        variant: "destructive",
+        title: "Logout Failed",
+        description: "An error occurred during logout. Please try again.",
+      });
+    }
   };
 
   return (
@@ -354,7 +391,10 @@ export function AppHeader() {
                <Link href="/settings">Settings</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Logout</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+              <LogOutIcon className="mr-2 h-4 w-4" />
+              <span>Logout</span>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
