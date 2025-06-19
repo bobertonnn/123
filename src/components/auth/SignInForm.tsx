@@ -38,6 +38,7 @@ export function SignInForm() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showResetPasswordForm, setShowResetPasswordForm] = useState(false);
+  const [tempResetEmail, setTempResetEmail] = useState(""); // Temporary state for the uncontrolled input
 
   const signInForm = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -98,15 +99,30 @@ export function SignInForm() {
 
   async function onResetPasswordSubmit(values: z.infer<typeof resetSchema>) {
     setIsLoading(true);
+    // Note: 'values.resetEmail' will be empty with the temporary uncontrolled input.
+    // This submission logic will fail, but the goal is to test typing.
+    // For actual submission with this temporary setup, you'd use 'tempResetEmail'.
+    const emailToReset = tempResetEmail; // Use the temporary state for the actual reset logic
+    if (!emailToReset) {
+      toast({
+        variant: "destructive",
+        title: "Email Required",
+        description: "Please enter your email address to reset the password.",
+      });
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      await sendPasswordResetEmail(auth, values.resetEmail);
+      await sendPasswordResetEmail(auth, emailToReset);
       toast({
         title: "Password Reset Email Sent",
-        description: `If an account exists for ${values.resetEmail}, a password reset link has been sent. Please check your inbox (and spam folder).`,
+        description: `If an account exists for ${emailToReset}, a password reset link has been sent. Please check your inbox (and spam folder).`,
         duration: 10000,
       });
       setShowResetPasswordForm(false); 
       resetForm.reset(); 
+      setTempResetEmail(""); // Clear temporary state
     } catch (error: any) {
       console.error("Firebase Reset Password Error:", error);
       const errorMessage = error.message || "Failed to send password reset email.";
@@ -222,40 +238,35 @@ export function SignInForm() {
               <CardDescription>Enter your email to receive a password reset link.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Form {...resetForm}>
-                <form onSubmit={resetForm.handleSubmit(onResetPasswordSubmit)} className="space-y-6">
-                  <FormField
-                    control={resetForm.control}
-                    name="resetEmail"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email Address</FormLabel>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                          <FormControl>
-                            <Input
-                              placeholder="you@example.com"
-                              value={field.value}
-                              onChange={field.onChange}
-                              onBlur={field.onBlur}
-                              name={field.name}
-                              ref={field.ref}
-                              className="pl-10"
-                              disabled={isLoading}
-                              autoFocus // Ensuring autoFocus is present
-                            />
-                          </FormControl>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full btn-gradient-hover" disabled={isLoading}>
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    <span>{isLoading ? "Sending Link..." : "Send Reset Link"}</span>
-                  </Button>
-                </form>
-              </Form>
+              {/* 
+                The onSubmit for the form will use react-hook-form's handleSubmit,
+                which will pass an empty 'values.resetEmail' to onResetPasswordSubmit.
+                The onResetPasswordSubmit function has been updated to use 'tempResetEmail'
+                for the actual Firebase call if you decide to test submission.
+              */}
+              <form onSubmit={resetForm.handleSubmit(onResetPasswordSubmit)} className="space-y-6">
+                <FormItem>
+                  <FormLabel>Email Address</FormLabel>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                      type="email"
+                      placeholder="you@example.com"
+                      value={tempResetEmail} // Use temporary state
+                      onChange={(e) => setTempResetEmail(e.target.value)} // Update temporary state
+                      className="pl-10"
+                      disabled={isLoading}
+                      autoFocus 
+                    />
+                  </div>
+                  {/* FormMessage from react-hook-form won't show errors for this uncontrolled input */}
+                </FormItem>
+                
+                <Button type="submit" className="w-full btn-gradient-hover" disabled={isLoading}>
+                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  <span>{isLoading ? "Sending Link..." : "Send Reset Link"}</span>
+                </Button>
+              </form>
               <Button
                 type="button"
                 variant="link"
@@ -263,6 +274,7 @@ export function SignInForm() {
                 onClick={() => {
                   setShowResetPasswordForm(false);
                   resetForm.reset(); 
+                  setTempResetEmail(""); // Clear temporary state
                 }}
                 disabled={isLoading}
               >
