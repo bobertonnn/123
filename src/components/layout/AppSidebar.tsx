@@ -219,7 +219,7 @@ export function AppSidebar() {
                 <div className="flex items-center space-x-2">
                   <Avatar className="h-8 w-8">
                     {userAvatarUrl ? (
-                        <AvatarImage src={userAvatarUrl} alt={userName} data-ai-hint="user avatar" />
+                        <AvatarImage src={userAvatarUrl} alt={userName} />
                     ) : null}
                     <AvatarFallback className={!userAvatarUrl ? "bg-card border border-border flex items-center justify-center" : "bg-muted flex items-center justify-center"}>
                         <GradientBirdIcon 

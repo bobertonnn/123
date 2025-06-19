@@ -128,7 +128,7 @@ export default function ContactsPage() {
                   <TableRow key={contact.id}>
                     <TableCell>
                       <Avatar>
-                        <AvatarImage src={contact.avatar} alt={contact.name} data-ai-hint="person avatar" />
+                        <AvatarImage src={contact.avatar} alt={contact.name} />
                         <AvatarFallback>{getInitials(contact.name)}</AvatarFallback>
                       </Avatar>
                     </TableCell>

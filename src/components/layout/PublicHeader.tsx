@@ -129,7 +129,7 @@ export function PublicHeader() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-9 w-9">
-                      <AvatarImage src={userAvatar || undefined} alt={userName || "User"} data-ai-hint="user avatar" />
+                      <AvatarImage src={userAvatar || undefined} alt={userName || "User"} />
                        <AvatarFallback>
                          <GradientBirdIcon className="h-5 w-5 text-primary" />
                        </AvatarFallback>

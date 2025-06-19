@@ -11,7 +11,6 @@ interface RatingPlatform {
   id: string;
   name: string;
   logoUrl: string; 
-  dataAiHint: string;
   rating: number; 
   maxRating?: number; 
   reviewsCount?: string; 
@@ -24,7 +23,6 @@ const platformData: RatingPlatform[] = [
     id: 'trustpilot',
     name: 'Trustpilot',
     logoUrl: 'https://placehold.co/140x45.png?text=Trustpilot+Logo&font=roboto', // Adjusted size & text
-    dataAiHint: 'Trustpilot logo',
     rating: 4.8,
     reviewsCount: '2,500+ Reviews',
     reviewUrl: '#', 
@@ -34,7 +32,6 @@ const platformData: RatingPlatform[] = [
     id: 'capterra',
     name: 'Capterra',
     logoUrl: 'https://placehold.co/140x45.png?text=Capterra+Logo&font=lato', // Adjusted size & text
-    dataAiHint: 'Capterra logo',
     rating: 4.7,
     reviewsCount: '1,800+ Reviews',
     reviewUrl: '#', 
@@ -44,7 +41,6 @@ const platformData: RatingPlatform[] = [
     id: 'g2',
     name: 'G2',
     logoUrl: 'https://placehold.co/100x45.png?text=G2+Logo&font=montserrat', // Adjusted size & text
-    dataAiHint: 'G2 logo',
     rating: 4.9,
     reviewsCount: '3,200+ Reviews',
     reviewUrl: '#', 
@@ -108,7 +104,6 @@ export function PlatformRatings() {
                     width={140} 
                     height={45} 
                     className="object-contain"
-                    data-ai-hint={platform.dataAiHint} 
                 />
               </div>
             </CardHeader>

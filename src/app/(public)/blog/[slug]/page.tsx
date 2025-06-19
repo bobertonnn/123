@@ -48,7 +48,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
             {author && (
               <span className="flex items-center">
                  <Avatar className="mr-1.5 h-5 w-5">
-                    <AvatarImage src={author.avatarUrl} alt={author.name} data-ai-hint={author.dataAiHint} />
+                    <AvatarImage src={author.avatarUrl} alt={author.name} />
                     <AvatarFallback className="text-xs">{getInitials(author.name)}</AvatarFallback>
                  </Avatar>
                 {author.name}
@@ -69,7 +69,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
           <Card className="mt-12 bg-muted/50">
             <CardHeader className="flex flex-row items-center space-x-4">
               <Avatar className="h-16 w-16">
-                <AvatarImage src={author.avatarUrl} alt={author.name} data-ai-hint={author.dataAiHint} />
+                <AvatarImage src={author.avatarUrl} alt={author.name} />
                 <AvatarFallback className="text-xl">{getInitials(author.name)}</AvatarFallback>
               </Avatar>
               <div>
@@ -94,5 +94,3 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
     </div>
   );
 }
-
-    

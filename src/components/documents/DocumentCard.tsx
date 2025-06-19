@@ -128,7 +128,6 @@ export function DocumentCard({ document, onDeleteDocument }: DocumentCardProps) 
               width={300} 
               height={150} 
               className="rounded-md object-cover aspect-video mb-2"
-              data-ai-hint="document preview"
             />
           ) : (
              <div className="w-full aspect-video bg-muted rounded-md flex items-center justify-center mb-2">

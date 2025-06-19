@@ -27,18 +27,18 @@ const heroTitleSegments = [
 
 
 const heroFeatures = [
-  { title: "Seamless PDF Uploads", icon: UploadCloud, hint: "file upload icon", shortDescription: "Drag, drop, and you're set.", longDescription: "Effortlessly upload your PDF documents using our intuitive drag-and-drop interface or by selecting files directly from your computer. Our system processes your files quickly, preparing them for signature placement, field assignments, and secure sharing, ensuring a smooth start to your document workflow. We support various PDF versions and ensure compatibility across devices." },
-  { title: "Intuitive Signature Fields", icon: PenTool, hint: "pen tool icon", shortDescription: "Place signatures with precision.", longDescription: "Add signature, initial, date, and text fields to your documents with pixel-perfect precision. Our visual editor makes it simple to define exactly where participants need to interact. Assign fields to specific signer roles to guide them through the document efficiently. Customizable field properties allow for required inputs, formatting, and conditional logic." },
-  { title: "Reusable Templates", icon: FileTextIconLucide, hint: "document icon", shortDescription: "Standardize common documents.", longDescription: "Save significant time by creating and managing reusable templates for your frequently used documents like NDAs, sales contracts, or employee onboarding forms. Pre-set fields and signer roles to expedite the sending process and ensure consistency across all your agreements. Update templates easily and track version history." },
+  { title: "Seamless PDF Uploads", icon: UploadCloud, shortDescription: "Drag, drop, and you're set.", longDescription: "Effortlessly upload your PDF documents using our intuitive drag-and-drop interface or by selecting files directly from your computer. Our system processes your files quickly, preparing them for signature placement, field assignments, and secure sharing, ensuring a smooth start to your document workflow. We support various PDF versions and ensure compatibility across devices." },
+  { title: "Intuitive Signature Fields", icon: PenTool, shortDescription: "Place signatures with precision.", longDescription: "Add signature, initial, date, and text fields to your documents with pixel-perfect precision. Our visual editor makes it simple to define exactly where participants need to interact. Assign fields to specific signer roles to guide them through the document efficiently. Customizable field properties allow for required inputs, formatting, and conditional logic." },
+  { title: "Reusable Templates", icon: FileTextIconLucide, shortDescription: "Standardize common documents.", longDescription: "Save significant time by creating and managing reusable templates for your frequently used documents like NDAs, sales contracts, or employee onboarding forms. Pre-set fields and signer roles to expedite the sending process and ensure consistency across all your agreements. Update templates easily and track version history." },
 ];
 
 const whyDocuSignerFeatures = [
-  { title: "Easy PDF Uploads", description: "Quickly upload your documents in PDF format.", icon: LucideIcons.UploadCloud, hint: "file upload" },
-  { title: "Visual Signature Capture", description: "Draw your signature directly on the platform.", icon: LucideIcons.PenTool, hint: "signature drawing" },
-  { title: "Drag & Drop Fields", description: "Place signature, date, and text fields intuitively.", icon: LucideIcons.Move, hint: "user interface" },
-  { title: "Document Templates", description: "Create reusable templates for common documents.", icon: LucideIcons.FileText, hint: "document template" },
-  { title: "Public Share Links", description: "Generate links to collect signatures from anyone.", icon: LucideIcons.Link2, hint: "sharing link" },
-  { title: "Trackable Progress", description: "Monitor document status in real-time.", icon: LucideIcons.Activity, hint: "progress chart" },
+  { title: "Easy PDF Uploads", description: "Quickly upload your documents in PDF format.", icon: LucideIcons.UploadCloud },
+  { title: "Visual Signature Capture", description: "Draw your signature directly on the platform.", icon: LucideIcons.PenTool },
+  { title: "Drag & Drop Fields", description: "Place signature, date, and text fields intuitively.", icon: LucideIcons.Move },
+  { title: "Document Templates", description: "Create reusable templates for common documents.", icon: LucideIcons.FileText },
+  { title: "Public Share Links", description: "Generate links to collect signatures from anyone.", icon: LucideIcons.Link2 },
+  { title: "Trackable Progress", description: "Monitor document status in real-time.", icon: LucideIcons.Activity },
 ];
 
 
@@ -884,5 +884,3 @@ export default function LandingPage() {
     </>
   );
 }
-
-    

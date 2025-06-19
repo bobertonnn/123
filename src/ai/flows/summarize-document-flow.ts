@@ -32,12 +32,12 @@ const prompt = ai.definePrompt({
   name: 'summarizeDocumentPrompt',
   input: {schema: SummarizeDocumentInputSchema},
   output: {schema: SummarizeDocumentOutputSchema},
-  prompt: `Based on the document title "{{documentName}}", provide a very brief, plausible 1-2 sentence summary of what this document might be about. Focus on common document types and purposes.
+  prompt: `Given the document title "{{documentName}}", provide a very brief, plausible 1-2 sentence summary of what this document might be about. Please focus on common document types and their typical purposes.
 
 For example:
-- If the title is "Q3 Sales Agreement", the summary could be "This document likely outlines the terms and conditions for sales activities conducted during the third quarter."
-- If the title is "NDA for Project Phoenix", the summary could be "This is likely a non-disclosure agreement to protect confidential information related to a project codenamed Phoenix."
-- If the title is "Employee Handbook v2.1", a summary could be "This document probably contains company policies, procedures, and guidelines for employees, version 2.1."
+- If the title is "Q3 Sales Report", a good summary would be "This document likely contains sales figures and performance analysis for the third quarter."
+- If the title is "Employee NDA Phoenix Project", a summary could be "This is probably a non-disclosure agreement related to a confidential project codenamed Phoenix, intended for employees."
+- If the title is "Handbook v3", the summary could be "This likely outlines company policies, procedures, and guidelines for employees, version 3."
 
 Document Title: {{{documentName}}}
 `,

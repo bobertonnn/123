@@ -107,7 +107,7 @@ export default function ProfilePage() {
           <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
             <Avatar className="h-32 w-32 border-4 border-background shadow-lg">
               {profileData.avatarUrl ? (
-                <AvatarImage src={profileData.avatarUrl} alt={profileData.name} data-ai-hint="person face" />
+                <AvatarImage src={profileData.avatarUrl} alt={profileData.name} />
               ) : null}
               <AvatarFallback className={!profileData.avatarUrl ? "bg-card border border-border flex items-center justify-center" : "bg-muted flex items-center justify-center"}>
                 <GradientBirdIcon
@@ -177,7 +177,7 @@ export default function ProfilePage() {
               </CardHeader>
               <CardContent className="flex flex-col items-center">
                 {profileData.signatureUrl ? (
-                  <Image src={profileData.signatureUrl} alt="User signature" width={400} height={150} className="border rounded-md bg-card shadow-sm" data-ai-hint="signature image" />
+                  <Image src={profileData.signatureUrl} alt="User signature" width={400} height={150} className="border rounded-md bg-card shadow-sm" />
                 ) : (
                   <div className="w-full max-w-[400px] h-[150px] border rounded-md bg-muted flex items-center justify-center">
                     <p className="text-muted-foreground">No signature set</p>

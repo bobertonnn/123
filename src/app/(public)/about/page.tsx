@@ -4,16 +4,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Target, Eye, Zap, Lightbulb, TrendingUp } from "lucide-react"; // Added Lightbulb, TrendingUp
 
 const teamMembers = [
-  { name: "Alice Wonderland", role: "CEO & Visionary", avatar: "https://placehold.co/100x100.png?text=AW", dataAiHint: "woman ceo" },
-  { name: "Bob The Builder", role: "CTO & Lead Architect", avatar: "https://placehold.co/100x100.png?text=BB", dataAiHint: "man engineer" },
-  { name: "Charlie Brown", role: "Head of Product", avatar: "https://placehold.co/100x100.png?text=CB", dataAiHint: "person product manager" },
+  { name: "Alice Wonderland", role: "CEO & Visionary", avatar: "https://placehold.co/100x100.png?text=AW" },
+  { name: "Bob The Builder", role: "CTO & Lead Architect", avatar: "https://placehold.co/100x100.png?text=BB" },
+  { name: "Charlie Brown", role: "Head of Product", avatar: "https://placehold.co/100x100.png?text=CB" },
 ];
 
 const coreValues = [
-  { title: "Innovation", description: "We constantly seek new ways to solve problems and improve our platform.", icon: Lightbulb, dataAiHint: "idea lightbulb" },
-  { title: "Customer Focus", description: "Our users are at the heart of everything we do. We listen and adapt.", icon: Users, dataAiHint: "people group" },
-  { title: "Integrity", description: "We operate with transparency and honesty in all our interactions.", icon: Target, dataAiHint: "target accuracy" },
-  { title: "Excellence", description: "We strive for the highest quality in our product, support, and operations.", icon: Zap, dataAiHint: "lightning speed" },
+  { title: "Innovation", description: "We constantly seek new ways to solve problems and improve our platform.", icon: Lightbulb },
+  { title: "Customer Focus", description: "Our users are at the heart of everything we do. We listen and adapt.", icon: Users },
+  { title: "Integrity", description: "We operate with transparency and honesty in all our interactions.", icon: Target },
+  { title: "Excellence", description: "We strive for the highest quality in our product, support, and operations.", icon: Zap },
 ];
 
 
@@ -22,7 +22,7 @@ export default function AboutUsPage() {
   return (
     <div className="container mx-auto px-4 space-y-16">
       <section className="text-center py-12 md:py-16">
-        <TrendingUp className="mx-auto h-16 w-16 text-primary mb-6" data-ai-hint="graph trend up" />
+        <TrendingUp className="mx-auto h-16 w-16 text-primary mb-6" />
         <h1 className="text-4xl md:text-5xl font-bold font-headline mb-4 text-primary">About DocuSigner</h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
           We are passionate about simplifying document workflows and empowering businesses with modern, secure, and efficient e-signature solutions.
@@ -61,7 +61,7 @@ export default function AboutUsPage() {
               <Card key={value.title} className="text-center shadow-lg rounded-xl hover:shadow-primary/20 hover:shadow-xl transition-shadow">
                 <CardHeader className="items-center">
                   <div className="p-3 bg-primary/10 rounded-full mb-3 inline-block">
-                    <Icon className="h-8 w-8 text-primary" data-ai-hint={value.dataAiHint} />
+                    <Icon className="h-8 w-8 text-primary" />
                   </div>
                   <CardTitle className="text-xl font-semibold">{value.title}</CardTitle>
                 </CardHeader>
@@ -80,7 +80,7 @@ export default function AboutUsPage() {
           {teamMembers.map((member) => (
             <Card key={member.name} className="text-center shadow-lg rounded-xl p-6 hover:scale-105 transition-transform duration-300">
               <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-primary/50">
-                <AvatarImage src={member.avatar} alt={member.name} data-ai-hint={member.dataAiHint} />
+                <AvatarImage src={member.avatar} alt={member.name} />
                 <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
               </Avatar>
               <h3 className="text-xl font-semibold text-foreground">{member.name}</h3>

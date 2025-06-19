@@ -37,7 +37,7 @@ export default function BlogPage() {
                     {author && (
                       <span className="flex items-center">
                         <Avatar className="mr-1.5 h-4 w-4">
-                           <AvatarImage src={author.avatarUrl} alt={author.name} data-ai-hint={author.dataAiHint} />
+                           <AvatarImage src={author.avatarUrl} alt={author.name} />
                            <AvatarFallback className="text-xs">{getInitials(author.name)}</AvatarFallback>
                         </Avatar>
                         {author.name}
@@ -66,5 +66,3 @@ export default function BlogPage() {
     </div>
   );
 }
-
-    

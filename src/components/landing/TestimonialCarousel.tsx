@@ -14,7 +14,6 @@ interface Testimonial {
   name: string;
   date: string;
   avatarUrl: string;
-  dataAiHint?: string;
   tag?: string;
 }
 
@@ -25,7 +24,6 @@ const mockTestimonials: Testimonial[] = [
     name: 'Michael S.',
     date: 'March 27, 2024',
     avatarUrl: 'https://placehold.co/80x80.png?text=MS',
-    dataAiHint: 'man portrait professional',
     tag: 'Efficiency Boost'
   },
   {
@@ -34,7 +32,6 @@ const mockTestimonials: Testimonial[] = [
     name: 'Emily R.',
     date: 'April 24, 2024',
     avatarUrl: 'https://placehold.co/80x80.png?text=ER',
-    dataAiHint: 'woman face professional',
   },
   {
     id: 't3',
@@ -42,7 +39,6 @@ const mockTestimonials: Testimonial[] = [
     name: 'David L.',
     date: 'June 15, 2024',
     avatarUrl: 'https://placehold.co/80x80.png?text=DL',
-    dataAiHint: 'man professional portrait',
   },
   {
     id: 't4',
@@ -50,7 +46,6 @@ const mockTestimonials: Testimonial[] = [
     name: 'Priya K.',
     date: 'January 10, 2024',
     avatarUrl: 'https://placehold.co/80x80.png?text=PK',
-    dataAiHint: 'woman indian portrait',
     tag: 'Client Onboarding Simplified'
   },
   {
@@ -59,7 +54,6 @@ const mockTestimonials: Testimonial[] = [
     name: 'Wei Z.',
     date: 'February 05, 2024',
     avatarUrl: 'https://placehold.co/80x80.png?text=WZ',
-    dataAiHint: 'man chinese portrait',
   }
 ];
 
@@ -125,7 +119,7 @@ export function TestimonialGrid() {
               <div className="mt-auto pt-3">
                 <div className="flex items-center space-x-3">
                     <Avatar className="w-10 h-10 border-2 border-primary/30">
-                    <AvatarImage src={testimonial.avatarUrl} alt={testimonial.name} data-ai-hint={testimonial.dataAiHint} />
+                    <AvatarImage src={testimonial.avatarUrl} alt={testimonial.name} />
                     <AvatarFallback>{testimonial.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                     </Avatar>
                     <div>

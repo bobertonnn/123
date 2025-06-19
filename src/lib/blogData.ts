@@ -3,7 +3,6 @@ export interface Author {
   id: string;
   name: string;
   avatarUrl: string;
-  dataAiHint: string;
   bio: string;
 }
 
@@ -22,35 +21,30 @@ export const mockAuthors: Author[] = [
     id: 'author1',
     name: 'Alice Wonderland',
     avatarUrl: 'https://placehold.co/80x80.png?text=AW',
-    dataAiHint: 'woman writer',
     bio: 'Alice is a tech enthusiast and expert in digital transformation, focusing on workflow automation.',
   },
   {
     id: 'author2',
     name: 'Bob The Builder',
     avatarUrl: 'https://placehold.co/80x80.png?text=BB',
-    dataAiHint: 'man engineer',
     bio: 'Bob has over 10 years of experience in software architecture and building scalable enterprise solutions.',
   },
   {
     id: 'author3',
     name: 'Charlie Brown',
     avatarUrl: 'https://placehold.co/80x80.png?text=CB',
-    dataAiHint: 'person product manager',
     bio: 'Charlie is a product manager passionate about user experience and creating intuitive digital tools.',
   },
   {
     id: 'author4',
     name: 'Diana Prince',
     avatarUrl: 'https://placehold.co/80x80.png?text=DP',
-    dataAiHint: 'woman security expert',
     bio: 'Diana is a cybersecurity expert specializing in data protection and digital identity verification.',
   },
   {
     id: 'author5',
     name: 'The DocuSigner Team',
     avatarUrl: 'https://placehold.co/80x80.png?text=DS',
-    dataAiHint: 'team logo',
     bio: 'Official updates, news, and insights from the creators of DocuSigner.',
   }
 ];
@@ -292,6 +286,3 @@ export const mockBlogPosts: BlogPost[] = [
     `,
   },
 ];
-
-    
-

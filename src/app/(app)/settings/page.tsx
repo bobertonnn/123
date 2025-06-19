@@ -712,7 +712,7 @@ export default function SettingsPage() {
               <div className="flex items-center space-x-4">
                 <Avatar className="h-20 w-20">
                    {avatarPreview || userAvatarUrl ? (
-                    <AvatarImage src={avatarPreview || userAvatarUrl!} alt={`${userFullName}'s avatar`} data-ai-hint="user avatar" />
+                    <AvatarImage src={avatarPreview || userAvatarUrl!} alt={`${userFullName}'s avatar`} />
                   ) : (
                      <AvatarFallback className="bg-card border border-border flex items-center justify-center">
                         <GradientBirdIcon className="h-10 w-10 text-primary" />
@@ -793,7 +793,6 @@ export default function SettingsPage() {
                             alt="Current signature"
                             width={400} height={150}
                             className="border rounded-md bg-card mx-auto mb-2 backface-hidden"
-                            data-ai-hint="signature image"
                             priority
                             draggable="false"
                           />

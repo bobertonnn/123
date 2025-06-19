@@ -11,7 +11,7 @@ export default function ContactUsPage() {
   return (
     <div className="container mx-auto py-12 md:py-20 px-4">
       <section className="text-center mb-16">
-        <Mail className="mx-auto h-16 w-16 text-primary mb-6" data-ai-hint="email envelope" />
+        <Mail className="mx-auto h-16 w-16 text-primary mb-6" />
         <h1 className="text-4xl md:text-5xl font-bold font-headline mb-4 text-primary">Get In Touch</h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
           We're here to help and answer any question you might have. We look forward to hearing from you!
@@ -91,7 +91,7 @@ export default function ContactUsPage() {
           </Card>
           <Card className="shadow-xl rounded-2xl">
             <CardHeader className="flex flex-row items-center space-x-3 pb-3">
-                <Clock className="w-6 h-6 text-primary" data-ai-hint="clock icon" />
+                <Clock className="w-6 h-6 text-primary" />
                 <CardTitle className="text-lg font-semibold">Operating Hours</CardTitle>
             </CardHeader>
             <CardContent>
@@ -105,7 +105,7 @@ export default function ContactUsPage() {
           </Card>
            <Card className="shadow-xl rounded-2xl">
             <CardHeader className="flex flex-row items-center space-x-3 pb-3">
-                <CalendarCheck2 className="w-6 h-6 text-primary" data-ai-hint="calendar check" />
+                <CalendarCheck2 className="w-6 h-6 text-primary" />
                 <CardTitle className="text-lg font-semibold">Response Time</CardTitle>
             </CardHeader>
             <CardContent>

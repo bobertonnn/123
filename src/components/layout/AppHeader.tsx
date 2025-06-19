@@ -372,7 +372,7 @@ export function AppHeader() {
             <Button variant="ghost" size="icon" className="overflow-hidden rounded-full w-9 h-9 md:w-10 md:h-10">
               <Avatar className="h-full w-full">
                 {userAvatarUrl ? (
-                  <AvatarImage src={userAvatarUrl} alt={userName} data-ai-hint="user avatar" />
+                  <AvatarImage src={userAvatarUrl} alt={userName} />
                 ) : (
                   <AvatarFallback className="bg-card border border-border flex items-center justify-center">
                      <GradientBirdIcon className="h-5 w-5 text-primary" />

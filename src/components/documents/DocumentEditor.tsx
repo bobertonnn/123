@@ -670,7 +670,7 @@ export function DocumentEditor({
                 <div className="p-3 border rounded-md bg-muted/50">
                   <Label className="font-medium text-muted-foreground flex items-center"><PenTool className="mr-2 h-4 w-4"/>Signature:</Label>
                   <div className="mt-1 inline-block bg-card p-1 border rounded-sm shadow-sm ml-6">
-                    <Image src={appendedSignatureUrl} alt="Appended signature" width={200} height={75} data-ai-hint="signature image"/>
+                    <Image src={appendedSignatureUrl} alt="Appended signature" width={200} height={75} />
                   </div>
                 </div>
               )}
@@ -816,7 +816,7 @@ export function DocumentEditor({
                 </p>
                 {!tempSignatureDataUrl && initialProfileSignatureUrl && (
                     <div className="mt-2 p-2 border rounded-md bg-muted/50 inline-block">
-                        <Image src={initialProfileSignatureUrl} alt="Saved signature preview" width={150} height={50} className="object-contain" data-ai-hint="signature image"/>
+                        <Image src={initialProfileSignatureUrl} alt="Saved signature preview" width={150} height={50} className="object-contain"/>
                     </div>
                 )}
               </div>
