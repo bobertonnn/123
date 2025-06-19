@@ -223,7 +223,17 @@ export function SignInForm() {
                         <div className="relative">
                           <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                           <FormControl>
-                            <Input placeholder="you@example.com" {...field} className="pl-10" disabled={isLoading} autoFocus />
+                            <Input
+                              placeholder="you@example.com"
+                              value={field.value}
+                              onChange={field.onChange}
+                              onBlur={field.onBlur}
+                              name={field.name}
+                              ref={field.ref}
+                              className="pl-10"
+                              disabled={isLoading}
+                              autoFocus
+                            />
                           </FormControl>
                         </div>
                         <FormMessage />
