@@ -105,8 +105,8 @@ export function SignInForm() {
         description: `If an account exists for ${values.resetEmail}, a password reset link has been sent. Please check your inbox (and spam folder).`,
         duration: 10000,
       });
-      setShowResetPasswordForm(false); // Go back to sign-in form
-      resetForm.reset(); // Clear the reset email input
+      setShowResetPasswordForm(false); 
+      resetForm.reset(); 
     } catch (error: any) {
       console.error("Firebase Reset Password Error:", error);
       const errorMessage = error.message || "Failed to send password reset email.";
@@ -242,7 +242,7 @@ export function SignInForm() {
                               ref={field.ref}
                               className="pl-10"
                               disabled={isLoading}
-                              autoFocus
+                              autoFocus // Ensuring autoFocus is present
                             />
                           </FormControl>
                         </div>
