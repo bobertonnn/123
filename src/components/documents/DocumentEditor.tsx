@@ -7,7 +7,7 @@ import { Send, ArrowLeft, CheckCircle, Download, Loader2, Edit3, User, CalendarD
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { PublicLinkGenerator } from "@/components/shared/PublicLinkGenerator";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react"; // Added useRef
 import { useRouter } from 'next/navigation';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter, SheetClose } from "@/components/ui/sheet";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -18,7 +18,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from 'date-fns';
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
-import { PDFDocument, rgb, StandardFonts, PDFFont, degrees } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts, PDFFont, degrees, PNG } from 'pdf-lib'; // Added PNG
+import QRCode from 'qrcode.react'; // For QR code generation
 
 interface DocumentEditorProps {
   documentId: string;
@@ -89,6 +90,8 @@ export function DocumentEditor({
   const [initialProfileFullName, setInitialProfileFullName] = useState<string | null>(null);
   const [initialProfilePhoneNumber, setInitialProfilePhoneNumber] = useState<string | null>(null);
   const [initialProfileCompanyName, setInitialProfileCompanyName] = useState<string | null>(null);
+
+  const qrCodeCanvasRef = useRef<HTMLDivElement>(null); // Ref for invisible div to render QR code
 
 
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
@@ -192,6 +195,27 @@ export function DocumentEditor({
     toast({ title: "Details Applied", description: description.trim() });
   };
   
+  const getQrCodeDataUrl = async (url: string): Promise<string | null> => {
+    return new Promise((resolve) => {
+        const canvas = qrCodeCanvasRef.current?.querySelector('canvas');
+        if (canvas) {
+            resolve(canvas.toDataURL('image/png'));
+        } else {
+            // Fallback if canvas isn't immediately available (might need a slight delay or more robust query)
+            setTimeout(() => {
+                const delayedCanvas = qrCodeCanvasRef.current?.querySelector('canvas');
+                if (delayedCanvas) {
+                    resolve(delayedCanvas.toDataURL('image/png'));
+                } else {
+                    console.error("QR Code Canvas not found even after delay.");
+                    resolve(null);
+                }
+            }, 100); 
+        }
+    });
+  };
+
+
   const handleFinalizeAndPrepareForSignedPage = async () => {
     if (!documentDataUrl) {
       toast({
@@ -448,8 +472,8 @@ export function DocumentEditor({
           });
         }
         
-        let detailsX = sigBoxX + sigBoxWidth + 20;
-        let detailsY = currentCertY - 5; 
+        let detailsX = sigBoxX + sigBoxWidth + 20; // X position for details next to signature
+        let detailsY = currentCertY - 5; // Y position for details, aligned with top of signature box
 
         const signatureId = generateSignatureId();
         certificatePage.drawText(`Signature ID: ${signatureId}`, {
@@ -463,7 +487,36 @@ export function DocumentEditor({
         certificatePage.drawText(`Device: ${getDeviceDescription()}`, {
             x: detailsX, y: detailsY, font: helveticaFont, size: 9, color: rgb(0.2,0.2,0.2)
         });
-        currentCertY = sigBoxY - sectionSpacing; 
+        currentCertY = sigBoxY - sectionSpacing; // Update Y to below signature box
+
+        // Generate QR code Data URL
+        const verificationUrl = `${window.location.origin}/verify-device/${documentId}?docName=${encodeURIComponent(documentName)}`;
+        const qrCodeDataUrl = await getQrCodeDataUrl(verificationUrl);
+
+        if (qrCodeDataUrl) {
+            try {
+                const qrImageBytes = Uint8Array.from(atob(qrCodeDataUrl.split(',')[1]), c => c.charCodeAt(0));
+                const qrImage = await pdfDoc.embedPng(qrImageBytes);
+                const qrSize = 50; // Desired size of QR code in PDF
+                const qrX = certPageWidth - certMargin - qrSize;
+                const qrY = certMargin; // Place at bottom right
+                certificatePage.drawImage(qrImage, {
+                    x: qrX,
+                    y: qrY,
+                    width: qrSize,
+                    height: qrSize,
+                });
+                 certificatePage.drawText("Scan for Verification Info", {
+                    x: qrX - 50, y: qrY - 10, font: helveticaFont, size: 7, color: rgb(0.3,0.3,0.3)
+                });
+            } catch (qrError) {
+                console.error("Error embedding QR code in PDF:", qrError);
+                 certificatePage.drawText("QR Error", {
+                    x: certPageWidth - certMargin - 30, y: certMargin + 10, font: helveticaFont, size: 8, color: rgb(1,0,0)
+                });
+            }
+        }
+
 
         certificatePage.drawText("Details", {
             x: certMargin, y: currentCertY, font: helveticaBoldFont, size: 12, color: rgb(0.1,0.1,0.1)
@@ -514,7 +567,7 @@ export function DocumentEditor({
       const finalizedPdfDataUri = await pdfDoc.saveAsBase64({ dataUri: true });
       
       localStorage.setItem('finalizedDocumentData', JSON.stringify({
-        documentId: documentId, // Ensure documentId is passed
+        documentId: documentId,
         finalizedPdfDataUri: finalizedPdfDataUri,
         signatureUrl: appendedSignatureUrl, 
         documentName: documentName,
@@ -539,6 +592,17 @@ export function DocumentEditor({
 
   return (
     <div className="flex flex-col h-[calc(100vh-var(--header-height,4rem)-2rem)] bg-background rounded-xl shadow-2xl overflow-hidden">
+       {/* Hidden div to render QR code to canvas */}
+      <div ref={qrCodeCanvasRef} style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+        {isProcessingPdf && ( /* Only render when needed to avoid continuous rendering */
+          <QRCode 
+            value={`${typeof window !== 'undefined' ? window.location.origin : ''}/verify-device/${documentId}?docName=${encodeURIComponent(documentName)}`} 
+            size={128} // Standard size for DataURL retrieval
+            level="M"
+            renderAs="canvas" // Crucial for toDataURL
+          />
+        )}
+      </div>
       <header className="flex items-center justify-between p-3 border-b bg-card shrink-0">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" asChild>

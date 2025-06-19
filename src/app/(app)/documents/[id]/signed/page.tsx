@@ -7,9 +7,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Download, CheckCircle, Home, Share2, AlertTriangle, Terminal, Phone, Building, QrCode } from 'lucide-react';
+import { Download, CheckCircle, Home, Share2, AlertTriangle, Terminal, Phone, Building } from 'lucide-react';
 import { motion } from 'framer-motion';
-import QRCode from 'qrcode.react';
+// Removed QRCode import as it's no longer generated here
 
 interface FinalizedDocumentData {
   documentId: string;
@@ -22,12 +22,12 @@ interface FinalizedDocumentData {
 
 export default function DocumentSignedPage() {
   const router = useRouter();
-  const params = useParams();
+  // const params = useParams(); // documentId is now from localStorage
   const [finalizedData, setFinalizedData] = useState<FinalizedDocumentData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const dataProcessedRef = useRef(false);
   const signatureBlobUrlToRevokeRef = useRef<string | null>(null);
-  const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
+  // Removed qrCodeUrl state
 
   useEffect(() => {
     if (dataProcessedRef.current) {
@@ -45,10 +45,7 @@ export default function DocumentSignedPage() {
         if (data.signatureUrl && data.signatureUrl.startsWith('blob:')) {
             signatureBlobUrlToRevokeRef.current = data.signatureUrl;
         }
-        if (typeof window !== 'undefined') {
-          const verificationUrl = `${window.location.origin}/verify-device/${data.documentId}?docName=${encodeURIComponent(data.documentName)}`;
-          setQrCodeUrl(verificationUrl);
-        }
+        // QR code generation logic removed from here
       } catch (e) {
         console.error("Error parsing finalized document data:", e);
         setError("Could not load document confirmation details.");
@@ -146,7 +143,7 @@ export default function DocumentSignedPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.5 }}
         >
-          <CheckCircle className="mr-2 h-5 w-5" /> Your details have been added.
+          <CheckCircle className="mr-2 h-5 w-5" /> Your details have been added to the document.
         </motion.p>
 
         {(finalizedData.companyName || finalizedData.phoneNumber) && (
@@ -175,7 +172,7 @@ export default function DocumentSignedPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
         >
-          You can now download the finalized document. Scan the QR code below for watermark and device verification information.
+          You can now download the finalized document. Information about watermarks and device verification (if applicable) is included in the PDF certificate page.
         </motion.p>
 
 
@@ -198,29 +195,7 @@ export default function DocumentSignedPage() {
         </motion.div>
       </motion.div>
       
-      {qrCodeUrl && (
-         <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.8 }}
-            className="w-full max-w-2xl mt-4 mb-8 flex flex-col items-center"
-          >
-            <Card className="bg-gray-700/80 border-cyan-500/50 shadow-lg rounded-xl backdrop-blur-sm p-6 inline-block">
-              <CardHeader className="p-0 mb-3 text-center">
-                <CardTitle className="text-lg font-headline text-cyan-300 flex items-center justify-center">
-                    <QrCode className="mr-2 h-5 w-5"/> Device & Watermark Info
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0 bg-white rounded-md inline-block">
-                 <QRCode value={qrCodeUrl} size={160} level="M" includeMargin={true} bgColor="#FFFFFF" fgColor="#111827" />
-              </CardContent>
-              <CardDescription className="text-xs text-gray-400 mt-3 text-center">
-                Scan for details on document watermarking and device verification status.
-              </CardDescription>
-            </Card>
-        </motion.div>
-      )}
-
+      {/* QR Code card removed from here */}
 
       <motion.div
           initial={{ opacity: 0, y: 10 }}
