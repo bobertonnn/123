@@ -25,10 +25,12 @@ const publicNavLinks = [
   { href: "/#features", label: "Features" },
   { href: "/pricing", label: "Pricing" },
   { href: "/about", label: "About Us" },
+  { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },
 ];
 
 export function PublicHeader() {
+  console.log("PublicHeader rendering.");
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [userName, setUserName] = useState<string | null>(null);
@@ -38,6 +40,7 @@ export function PublicHeader() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log("PublicHeader: onAuthStateChanged, user:", user);
       setCurrentUser(user);
       if (user) {
         const localName = typeof window !== 'undefined' ? localStorage.getItem("userFullName") : null;
@@ -95,7 +98,7 @@ export function PublicHeader() {
       animate={{ y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
     >
-      <div className="container mx-auto flex h-20 max-w-screen-2xl items-center justify-between">
+      <div className="container mx-auto flex h-20 max-w-screen-2xl items-center justify-between px-4">
         <Link href="/" className="flex items-center space-x-2">
           <Logo />
         </Link>

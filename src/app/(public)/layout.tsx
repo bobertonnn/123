@@ -1,5 +1,5 @@
 
-"use client"; 
+"use client";
 
 import React from 'react';
 import { PublicHeader } from '@/components/layout/PublicHeader';
@@ -10,6 +10,7 @@ export default function PublicLayout({
 }: {
   children: React.ReactNode;
 }) {
+  console.log("PublicLayout (for /about, /contact etc.) rendering.");
   return (
     <div className="flex flex-col min-h-screen text-foreground bg-background">
       <PublicHeader />

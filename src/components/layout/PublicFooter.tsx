@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { Logo } from '@/components/icons/Logo';
 
 export function PublicFooter() {
+  console.log("PublicFooter rendering.");
   return (
-    <footer>
+    <footer className="py-12 md:py-16 border-t border-border/40 bg-background">
       <div className="container mx-auto text-center">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
           <div>
@@ -28,7 +29,7 @@ export function PublicFooter() {
           <div>
             <h4 className="font-semibold mb-3 text-foreground">Resources</h4>
             <ul className="space-y-2">
-              <li><Link href="/blog" className="text-sm text-muted-foreground hover:text-primary">Blog (TBD)</Link></li>
+              {/* <li><Link href="/blog" className="text-sm text-muted-foreground hover:text-primary">Blog (TBD)</Link></li> */}
               <li><Link href="/faq" className="text-sm text-muted-foreground hover:text-primary">FAQ</Link></li>
             </ul>
           </div>
@@ -42,8 +43,10 @@ export function PublicFooter() {
           </div>
         </div>
         <div className="border-t border-border/40 pt-8">
-          <Logo />
-          <p className="text-sm text-muted-foreground mt-4">
+          <div className="flex justify-center mb-4">
+            <Logo />
+          </div>
+          <p className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} DocuSigner. All rights reserved.
           </p>
         </div>
