@@ -1,5 +1,5 @@
 
-"use client";
+"use client"; // Assuming client components from original version
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -328,6 +328,7 @@ const initialPdfLineStyles: PdfLineStyle[] = Array.from({ length: 12 }).map((_, 
 
 
 export default function LandingPage() {
+  console.log("LandingPage rendering - checking if this component is reached"); // Debug log
   const textShadowStyle = {
     color: 'hsl(var(--foreground))',
     textShadow: `
@@ -393,7 +394,7 @@ export default function LandingPage() {
   const springConfig = { stiffness: 200, damping: 25, mass: 1 };
   const springRotateX = useSpring(rotateX, springConfig);
   const springRotateY = useSpring(rotateY, springConfig);
-  const MAX_ROTATION = 45;
+  const MAX_ROTATION = 15; // Reduced rotation
 
   const handleMouseMove = useCallback((event: globalThis.MouseEvent) => {
     if (!pdfContainerRef.current) return;
@@ -494,9 +495,9 @@ export default function LandingPage() {
   let letterAnimationIndex = 0;
 
   return (
-    <>
+    <> {/* Using React.Fragment to ensure no extra div wraps the sections */}
       <ScrollToTopButton />
-      <motion.section
+      <section
         ref={heroSectionRef}
         className="container relative mx-auto grid place-items-center py-20 md:py-32 gap-10"
       >
@@ -708,7 +709,7 @@ export default function LandingPage() {
           </div>
         </motion.div>
 
-      </motion.section>
+      </section>
 
       <motion.section>
         <CompanyTicker />
@@ -890,4 +891,3 @@ export default function LandingPage() {
     </>
   );
 }
-      
