@@ -190,7 +190,7 @@ interface NetworkLineConfig {
 
 function NetworkLineParticle({ config, scrollYProgress }: { config: NetworkLineConfig; scrollYProgress: MotionValue<number> }) {
   const opacity = useTransform(scrollYProgress, [0, 0.4, 0.6, 1], config.opacityRange);
-
+  // Removed calc() from x2 and y2
   return (
     <motion.svg
       className="absolute"
@@ -579,19 +579,10 @@ export default function LandingPage() {
               <Button asChild className="btn-cta-primary-emerald" size="lg">
                   <Link href="/auth/signup">
                     <span>
-                      <span>Get Started</span>
+                      <span>Get Started Free</span>
                       <ArrowRight className="ml-2 h-5 w-5" />
                     </span>
                   </Link>
-              </Button>
-
-              <Button asChild className="btn-cta-secondary-emerald" size="lg">
-                <Link href="/dashboard">
-                    <span>
-                    <span>View Demo</span>
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </span>
-                </Link>
               </Button>
             </motion.div>
           </motion.div>
@@ -893,3 +884,5 @@ export default function LandingPage() {
     </>
   );
 }
+
+    
