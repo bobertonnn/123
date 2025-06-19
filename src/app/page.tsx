@@ -3,10 +3,12 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Logo } from '@/components/icons/Logo';
+// Logo is now in PublicLayout
+// DropdownMenu components are now in PublicLayout
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ArrowRight, CheckCircle, Linkedin, Twitter, Github, Youtube, Instagram, FacebookIcon, BookOpen, Wrench, ChevronDown, UploadCloud, PenTool, FileText as FileTextIconLucide, Move, Link2, Activity, Settings, Palette as PaletteIcon, Maximize, Briefcase, User as UserIcon, Building, Scale as ScaleIcon, Layers, Zap, ShieldCheck, BrainCircuit, Server, FileText, ArrowUp, Quote, Sparkles } from 'lucide-react';
+import { ArrowRight, CheckCircle, UploadCloud, PenTool, FileText as FileTextIconLucide, Move, Link2, Activity, Settings, Palette as PaletteIcon, Maximize, Briefcase, User as UserIcon, Building, Scale as ScaleIcon, Layers, Zap, ShieldCheck, BrainCircuit, Server, FileText, ArrowUp } from 'lucide-react';
+// Removed social icons and footer links as they are in PublicLayout
 import * as LucideIcons from 'lucide-react';
 import { motion, useScroll, useTransform, type MotionValue, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
 import { CompanyTicker } from '@/components/landing/CompanyTicker';
@@ -15,15 +17,9 @@ import AnimatedTechShowcase from '@/components/landing/AnimatedTechShowcase';
 import { DetailedBenefits } from '@/components/landing/DetailedBenefits';
 import { UseCases3D } from '@/components/landing/UseCases3D';
 import { TestimonialGrid } from '@/components/landing/TestimonialCarousel';
-// import { PlatformRatings } from '@/components/landing/PlatformRatings'; // Removed
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import React, { useRef, useState, useEffect, type MouseEvent, useCallback } from 'react';
 import type { LucideIcon } from 'lucide-react';
+
 
 const heroTitleSegments = [
   { type: 'group', words: ["Sign.", "Send."], gradientClass: "from-primary to-accent" },
@@ -46,38 +42,7 @@ const whyDocuSignerFeatures = [
   { title: "Trackable Progress", description: "Monitor document status in real-time.", icon: LucideIcons.Activity, hint: "progress chart" },
 ];
 
-const footerLinks = {
-  product: [
-    { label: "Dashboard", href: "/dashboard" },
-    { label: "Upload Document", href: "/documents/upload" },
-    { label: "Templates", href: "/templates" },
-    { label: "Public Signing Demo", href: "/sign/demo-link" },
-  ],
-  resources: [
-    { label: "Help & Support", href: "/help" },
-    { label: "FAQ", href: "#faq" }, // Assuming FAQ might be a section on help page or dedicated page
-    { label: "Blog", href: "#blog" }, // Placeholder for blog
-  ],
-  company: [
-    { label: "About Us", href: "/about" },
-    { label: "Contact Us", href: "/contact" },
-    { label: "Careers", href: "/careers" },
-  ],
-  legal: [
-    { label: "Privacy Policy", href: "/privacy-policy" },
-    { label: "Terms of Service", href: "/terms-of-service" },
-    { label: "Cookie Policy", href: "/cookie-policy" },
-  ]
-};
-
-const socialIcons = [
-  { icon: FacebookIcon, href: "#facebook", label: "Facebook" },
-  { icon: Twitter, href: "#twitter", label: "Twitter" },
-  { icon: Instagram, href: "#instagram", label: "Instagram" },
-  { icon: Linkedin, href: "#linkedin", label: "LinkedIn" },
-  { icon: Youtube, href: "#youtube", label: "YouTube" },
-  { icon: Github, href: "#github", label: "GitHub" },
-];
+// Footer links and social icons are now handled by PublicLayout
 
 
 const fadeInUp = {
@@ -180,7 +145,7 @@ function StaticGeometricShape({ config }: { config: GeometricShapeConfig }) {
         top: config.initialY,
         transform: `rotate(${config.initialRotation || 0}deg)`,
         borderRadius: config.type === 'circle' ? '50%' : config.type === 'rect' ? '0.25rem' : '0',
-        opacity: config.opacityRange ? config.opacityRange[1] : 0.3, // Static opacity
+        opacity: config.opacityRange ? config.opacityRange[1] : 0.3, 
       }}
       aria-hidden="true"
     />
@@ -420,12 +385,6 @@ export default function LandingPage() {
     offset: ["start end", "end start"]
   });
 
-  // const platformRatingsSectionRef = useRef<HTMLDivElement>(null); // Removed
-  // const { scrollYProgress: platformRatingsScrollYProgress } = useScroll({ // Removed
-  //   target: platformRatingsSectionRef,
-  //   offset: ["start end", "end start"]
-  // });
-
 
   const [heroParticlesConfig, setHeroParticlesConfig] = useState<HeroParticleConfig[]>([]);
   const [whyDocuSignerGeometricsConfig, setWhyDocuSignerGeometricsConfig] = useState<GeometricShapeConfig[]>([]);
@@ -450,7 +409,7 @@ export default function LandingPage() {
     const newRotateX = -(mouseY / (rect.height / 2)) * MAX_ROTATION;
     rotateX.set(newRotateX);
     rotateY.set(newRotateY);
-  }, [rotateX, rotateY]); // MAX_ROTATION is a const in component scope, no need for dep here
+  }, [rotateX, rotateY]); 
 
   const handleMouseLeave = useCallback(() => {
     rotateX.set(0);
@@ -469,7 +428,6 @@ export default function LandingPage() {
         currentPdfContainer.addEventListener('mouseleave', handleMouseLeave);
       }
 
-      // Hero Particles
       const heroParticles: HeroParticleConfig[] = Array.from({ length: 60 }).map((_, i) => ({
         id: i, type: Math.random() > 0.5 ? 'circle' : 'square', initialX: `${Math.random() * 100}%`, initialY: `${Math.random() * 100}%`,
         size: `w-${Math.floor(Math.random() * 3) + 1} h-${Math.floor(Math.random() * 3) + 1}`,
@@ -481,7 +439,6 @@ export default function LandingPage() {
       }));
       setHeroParticlesConfig(heroParticles);
 
-      // Why DocuSigner Geometrics
       const whyGeometrics: GeometricShapeConfig[] = Array.from({ length: 12 }).map((_, i) => {
         const type = ['line', 'circle', 'rect'][Math.floor(Math.random() * 3)] as 'line' | 'circle' | 'rect';
         return {
@@ -496,7 +453,6 @@ export default function LandingPage() {
       });
       setWhyDocuSignerGeometricsConfig(whyGeometrics);
 
-      // Detailed Benefits Geometrics
       const detailedGeometrics: GeometricShapeConfig[] = Array.from({ length: 15 }).map((_, i) => {
         const type = ['line', 'circle', 'rect'][Math.floor(Math.random() * 3)] as 'line' | 'circle' | 'rect';
         const animate = Math.random() > 0.4;
@@ -545,71 +501,8 @@ export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen text-foreground relative overflow-hidden bg-background">
       <ScrollToTopButton />
-      <motion.header
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60"
-      >
-        <div className="container mx-auto flex h-16 max-w-screen-2xl items-center justify-between">
-          <Link href="/">
-            <Logo />
-          </Link>
-          <nav className="flex items-center space-x-1 sm:space-x-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost">
-                  <span>Documentation</span>
-                  <ChevronDown className="ml-1 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link href="#"><span>Getting Started</span></Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="#"><span>API Reference</span></Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/help"><span>FAQs</span></Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost">
-                  <span>Tools</span>
-                  <ChevronDown className="ml-1 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard"><span>Dashboard</span></Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/documents/upload"><span>Upload Document</span></Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/templates"><span>Templates</span></Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Button variant="ghost" asChild>
-              <Link href="/auth/signin"><span>Sign In</span></Link>
-            </Button>
-            <Button asChild size="lg" className="btn-cta-primary-emerald">
-              <Link href="/auth/signup">
-                <span>
-                  <span>Sign Up Free</span>
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </span>
-              </Link>
-            </Button>
-          </nav>
-        </div>
-      </motion.header>
+      {/* Header is now handled by PublicLayout */}
+      {/* Removed <motion.header> ... </motion.header> block */}
 
       <main className="flex-1">
         <motion.section
@@ -1007,78 +900,8 @@ export default function LandingPage() {
         </motion.section>
       </main>
 
-      <motion.footer
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.5 }}
-        className="py-12 md:py-16 border-t border-border/40 bg-card text-card-foreground relative z-10"
-      >
-        <div className="container mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-8">
-            <div className="col-span-2 lg:col-span-1">
-              <Link href="/" className="mb-4 inline-block">
-                <Logo />
-              </Link>
-              <p className="text-sm text-muted-foreground">
-                Simplifying document workflows with secure, intuitive digital signing.
-              </p>
-            </div>
-
-            <div>
-              <h5 className="font-semibold mb-3 font-headline">Product</h5>
-              <ul className="space-y-2 text-sm">
-                {footerLinks.product.map(link => (
-                  <li key={link.label}><Link href={link.href} className="text-muted-foreground hover:text-primary transition-colors"><span>{link.label}</span></Link></li>
-                ))}
-              </ul>
-            </div>
-
-             <div>
-              <h5 className="font-semibold mb-3 font-headline">Resources</h5>
-              <ul className="space-y-2 text-sm">
-                {footerLinks.resources.map(link => (
-                  <li key={link.label}><Link href={link.href} className="text-muted-foreground hover:text-primary transition-colors"><span>{link.label}</span></Link></li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <h5 className="font-semibold mb-3 font-headline">Company</h5>
-              <ul className="space-y-2 text-sm">
-                {footerLinks.company.map(link => (
-                  <li key={link.label}><Link href={link.href} className="text-muted-foreground hover:text-primary transition-colors"><span>{link.label}</span></Link></li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <h5 className="font-semibold mb-3 font-headline">Legal</h5>
-              <ul className="space-y-2 text-sm">
-                {footerLinks.legal.map(link => (
-                  <li key={link.label}><Link href={link.href} className="text-muted-foreground hover:text-primary transition-colors"><span>{link.label}</span></Link></li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-border/40 pt-8 flex flex-col sm:flex-row justify-between items-center">
-            <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} DocuSigner. All rights reserved.
-            </p>
-            <div className="flex space-x-3 mt-4 sm:mt-0">
-              {socialIcons.map(social => {
-                const SocialIcon = social.icon;
-                return (
-                  <Link key={social.label} href={social.href} aria-label={social.label} className="text-muted-foreground hover:text-primary transition-colors">
-                    <SocialIcon className="h-5 w-5" />
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </motion.footer>
+      {/* Footer is now handled by PublicLayout */}
+      {/* Removed <motion.footer> ... </motion.footer> block */}
     </div>
   );
 }
-

@@ -2,19 +2,26 @@
 "use client";
 
 import Link from 'next/link';
-import { Logo } from '@/components/icons/Logo';
+import { Logo, GradientBirdIcon } from '@/components/icons/Logo'; // Added GradientBirdIcon
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, ArrowRight, Linkedin, Twitter, Github, Youtube, Instagram, FacebookIcon } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Added Avatar
+import { ChevronDown, ArrowRight, Linkedin, Twitter, Github, Youtube, Instagram, FacebookIcon, User, Settings, LogOut as LogOutIcon } from 'lucide-react'; // Added User, Settings, LogOutIcon
 import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
+import { useState, useEffect } from 'react'; // Added
+import { useRouter } from 'next/navigation'; // Added
+import { auth } from '@/lib/firebase'; // Added
+import { onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth'; // Added
+import { cn } from '@/lib/utils'; // Added for Avatar Fallback
 
-// Definitions copied from src/app/page.tsx for footer links and social icons
 const footerLinks = {
   product: [
     { label: "Dashboard", href: "/dashboard" },
@@ -24,8 +31,8 @@ const footerLinks = {
   ],
   resources: [
     { label: "Help & Support", href: "/help" },
-    { label: "FAQ", href: "/faq" }, // Assuming FAQ might be a section on help page or dedicated page
-    { label: "Blog", href: "/blog" }, // Placeholder for blog
+    { label: "FAQ", href: "/faq" }, 
+    { label: "Blog", href: "/blog" }, 
   ],
   company: [
     { label: "About Us", href: "/about" },
@@ -54,6 +61,56 @@ export default function PublicLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [userName, setUserName] = useState("User");
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | undefined>(undefined);
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      if (user) {
+        let storedName = localStorage.getItem("userFullName");
+        if (storedName && storedName.trim() !== "") {
+          setUserName(storedName.trim());
+        } else {
+          setUserName(user.displayName || "User");
+        }
+        const storedAvatar = localStorage.getItem("userAvatarUrl");
+        setUserAvatarUrl(storedAvatar && storedAvatar.trim() !== "" ? storedAvatar : user.photoURL || undefined);
+      } else {
+        setUserName("User");
+        setUserAvatarUrl(undefined);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      localStorage.removeItem('userUID');
+      localStorage.removeItem('userFullName');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('userSignature');
+      localStorage.removeItem('userJoinDate');
+      localStorage.removeItem('userAvatarUrl');
+      localStorage.removeItem('userTag');
+      localStorage.removeItem('userPhoneNumber');
+      localStorage.removeItem('userCompanyName');
+      localStorage.removeItem('userContacts');
+      localStorage.removeItem('userSiteNotifications');
+      localStorage.removeItem('uploadedDocuments');
+      localStorage.removeItem('userSubscription');
+      localStorage.removeItem('userBillingHistory');
+      localStorage.removeItem('onboardingPromptDismissed');
+      router.push('/');
+    } catch (error) {
+      console.error("Logout Error:", error);
+      // Consider adding a toast notification for logout errors
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen text-foreground bg-background">
       <motion.header
@@ -107,29 +164,77 @@ export default function PublicLayout({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button variant="ghost" asChild>
-              <Link href="/auth/signin"><span>Sign In</span></Link>
-            </Button>
-            <Button asChild size="lg" className="btn-cta-primary-emerald">
-              <Link href="/auth/signup">
-                <span>
-                  <span>Sign Up Free</span>
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </span>
-              </Link>
-            </Button>
+            {currentUser ? (
+              <>
+                <Button asChild className="btn-cta-primary-emerald hidden sm:inline-flex">
+                  <Link href="/dashboard">
+                    <span>Go to Dashboard</span>
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="overflow-hidden rounded-full w-9 h-9 md:w-10 md:h-10">
+                      <Avatar className="h-full w-full">
+                        {userAvatarUrl ? (
+                          <AvatarImage src={userAvatarUrl} alt={userName} data-ai-hint="user avatar" />
+                        ) : null}
+                        <AvatarFallback className={cn(!userAvatarUrl ? "bg-card border border-border flex items-center justify-center" : "bg-muted flex items-center justify-center", "text-sm")}>
+                          {userName.split(' ').map(n => n[0]).join('').substring(0,2) || <GradientBirdIcon className="h-5 w-5 text-primary" />}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>
+                      <p className="text-sm font-medium leading-none truncate">{userName}</p>
+                      <p className="text-xs leading-none text-muted-foreground truncate">{currentUser.email}</p>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                     <DropdownMenuItem asChild className="sm:hidden">
+                        <Link href="/dashboard"><span>Dashboard</span></Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile"><User className="mr-2 h-4 w-4" /> Profile</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/settings"><Settings className="mr-2 h-4 w-4" /> Settings</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10">
+                      <LogOutIcon className="mr-2 h-4 w-4" />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link href="/auth/signin"><span>Sign In</span></Link>
+                </Button>
+                <Button asChild size="lg" className="btn-cta-primary-emerald">
+                  <Link href="/auth/signup">
+                    <span>
+                      <span>Sign Up Free</span>
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </span>
+                  </Link>
+                </Button>
+              </>
+            )}
           </nav>
         </div>
       </motion.header>
 
-      <main className="flex-1"> {/* Removed flex items-center justify-center to allow pages to control their own layout */}
+      <main className="flex-1">
         {children}
       </main>
 
       <motion.footer
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.5 }} // Copied from page.tsx
+        transition={{ duration: 0.5, delay: 0.5 }}
         className="py-12 md:py-16 border-t border-border/40 bg-card text-card-foreground relative z-10"
       >
         <div className="container mx-auto">
