@@ -7,15 +7,17 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Download, CheckCircle, Home, Share2, AlertTriangle, Terminal, Phone, Building } from 'lucide-react';
+import { Download, CheckCircle, Home, Share2, AlertTriangle, Terminal, Phone, Building, QrCode } from 'lucide-react';
 import { motion } from 'framer-motion';
+import QRCode from 'qrcode.react';
 
 interface FinalizedDocumentData {
+  documentId: string;
   finalizedPdfDataUri: string; 
   signatureUrl: string | null;
   documentName: string;
-  phoneNumber?: string | null; // Added
-  companyName?: string | null; // Added
+  phoneNumber?: string | null; 
+  companyName?: string | null; 
 }
 
 export default function DocumentSignedPage() {
@@ -25,6 +27,7 @@ export default function DocumentSignedPage() {
   const [error, setError] = useState<string | null>(null);
   const dataProcessedRef = useRef(false);
   const signatureBlobUrlToRevokeRef = useRef<string | null>(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
 
   useEffect(() => {
     if (dataProcessedRef.current) {
@@ -41,6 +44,10 @@ export default function DocumentSignedPage() {
         setFinalizedData(data);
         if (data.signatureUrl && data.signatureUrl.startsWith('blob:')) {
             signatureBlobUrlToRevokeRef.current = data.signatureUrl;
+        }
+        if (typeof window !== 'undefined') {
+          const verificationUrl = `${window.location.origin}/verify-device/${data.documentId}?docName=${encodeURIComponent(data.documentName)}`;
+          setQrCodeUrl(verificationUrl);
         }
       } catch (e) {
         console.error("Error parsing finalized document data:", e);
@@ -68,21 +75,6 @@ export default function DocumentSignedPage() {
       document.body.removeChild(link);
     }
   };
-
-  const exampleCommands = {
-    windows: "echo 'Conceptual device verification command for Windows.'\nrem Example: verify-docusigner-device.exe --token YOUR_SECURE_TOKEN",
-    macos: "echo 'Conceptual device verification command for macOS.'\n# Example: ./verify-docusigner-device-mac --token YOUR_SECURE_TOKEN",
-    linux: "echo 'Conceptual device verification command for Linux.'\n# Example: docusigner-auth verify-device --key YOUR_API_KEY",
-  };
-  const [currentOs, setCurrentOs] = useState<'windows' | 'macos' | 'linux'>('windows');
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      if (navigator.platform.toUpperCase().indexOf('MAC') >= 0) setCurrentOs('macos');
-      else if (navigator.platform.toUpperCase().indexOf('LINUX') >= 0) setCurrentOs('linux');
-      else setCurrentOs('windows');
-    }
-  }, []);
-
 
   if (error) {
     return (
@@ -183,7 +175,7 @@ export default function DocumentSignedPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
         >
-          You can now download the finalized document.
+          You can now download the finalized document. Scan the QR code below for watermark and device verification information.
         </motion.p>
 
 
@@ -206,49 +198,35 @@ export default function DocumentSignedPage() {
         </motion.div>
       </motion.div>
       
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.8 }}
-        className="w-full max-w-2xl mt-8"
-      >
-        <Card className="bg-gray-700/80 border-yellow-500/50 shadow-lg rounded-xl backdrop-blur-sm">
-          <CardHeader className="flex-row items-center gap-3 pb-3">
-            <AlertTriangle className="h-6 w-6 text-yellow-400" />
-            <CardTitle className="text-xl font-headline text-yellow-300">Watermark Information</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-gray-300 space-y-3">
-            <p>
-              Please note: This document has been finalized with a "DOCUSIGNER PREVIEW" watermark on each page.
-            </p>
-            <p>
-              To verify your device for enhanced security or to explore advanced features (like watermark-free documents with a premium plan), you might be guided to use a command in your terminal or PowerShell. Below are conceptual examples of what such verification steps might look like:
-            </p>
-            <div className="mt-4 p-4 bg-black/30 rounded-lg">
-              <div className="flex justify-between items-center mb-2">
-                <h4 className="font-semibold text-gray-200 flex items-center"><Terminal className="mr-2 h-5 w-5"/> Conceptual Device Verification</h4>
-                <div className="flex gap-1">
-                    <Button size="xs" variant={currentOs === 'windows' ? 'secondary' : 'ghost'} onClick={() => setCurrentOs('windows')} className="text-xs px-2 py-0.5 h-auto">Win</Button>
-                    <Button size="xs" variant={currentOs === 'macos' ? 'secondary' : 'ghost'} onClick={() => setCurrentOs('macos')} className="text-xs px-2 py-0.5 h-auto">Mac</Button>
-                    <Button size="xs" variant={currentOs === 'linux' ? 'secondary' : 'ghost'} onClick={() => setCurrentOs('linux')} className="text-xs px-2 py-0.5 h-auto">Lin</Button>
-                </div>
-              </div>
-              <pre className="bg-black/50 p-3 rounded-md text-xs text-gray-400 overflow-x-auto whitespace-pre-wrap">
-                <code>{exampleCommands[currentOs]}</code>
-              </pre>
-              <p className="text-xs text-yellow-400/80 mt-2">
-                <strong className="font-medium">Disclaimer:</strong> The command above is a conceptual example for device verification or accessing advanced features. It does not directly remove the embedded watermark. Watermark-free documents are typically a benefit of premium services.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+      {qrCodeUrl && (
+         <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+            className="w-full max-w-2xl mt-4 mb-8 flex flex-col items-center"
+          >
+            <Card className="bg-gray-700/80 border-cyan-500/50 shadow-lg rounded-xl backdrop-blur-sm p-6 inline-block">
+              <CardHeader className="p-0 mb-3 text-center">
+                <CardTitle className="text-lg font-headline text-cyan-300 flex items-center justify-center">
+                    <QrCode className="mr-2 h-5 w-5"/> Device & Watermark Info
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 bg-white rounded-md inline-block">
+                 <QRCode value={qrCodeUrl} size={160} level="M" includeMargin={true} bgColor="#FFFFFF" fgColor="#111827" />
+              </CardContent>
+              <CardDescription className="text-xs text-gray-400 mt-3 text-center">
+                Scan for details on document watermarking and device verification status.
+              </CardDescription>
+            </Card>
+        </motion.div>
+      )}
+
 
       <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.9 }}
-          className="mt-8"
+          className="mt-4"
         >
           <Link href="/dashboard" className="text-green-400 hover:underline">
             Go Back to Dashboard
@@ -269,5 +247,3 @@ export default function DocumentSignedPage() {
     </div>
   );
 }
-
-    

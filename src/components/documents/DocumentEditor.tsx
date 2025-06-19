@@ -514,6 +514,7 @@ export function DocumentEditor({
       const finalizedPdfDataUri = await pdfDoc.saveAsBase64({ dataUri: true });
       
       localStorage.setItem('finalizedDocumentData', JSON.stringify({
+        documentId: documentId, // Ensure documentId is passed
         finalizedPdfDataUri: finalizedPdfDataUri,
         signatureUrl: appendedSignatureUrl, 
         documentName: documentName,
@@ -795,5 +796,3 @@ export function DocumentEditor({
     </div>
   );
 }
-
-    
